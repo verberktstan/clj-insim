@@ -20,5 +20,5 @@
 (comment
   (def socket (sockets/create-socket "127.0.0.1" 29998))
   (send socket (packets/is-isi-packet))
-  (send socket (packets/is-mst-packet "Hello from clj-insim!"))
+  (send socket (packets/is-mst-packet "Hello from clj-insimthisistooomuchtoomuch for this simple network freakin connection!"))
 )

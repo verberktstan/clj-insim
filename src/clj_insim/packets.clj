@@ -7,6 +7,10 @@
 
 (def ^:private DEFAULTS {:reqi 0 :zero 0})
 
+(defn- allocate-buffers [size]
+  {:byte-buffer (ByteBuffer/allocate size)
+   :buffer (byte-array size)})
+
 (defn is-isi-packet
     "Create a InSim init packet to send to LFS"
     []
@@ -14,8 +18,7 @@
           udp-port 0
           flags 0
           interval 0
-          byte-buffer (ByteBuffer/allocate size)
-          buffer (byte-array size)]
+          {:keys [byte-buffer buffer]} (allocate-buffers size)]
       (doto byte-buffer
         (.put (.byteValue size)) ; byte (1 byte)
         (.put (.byteValue (types/isp :isi)))
@@ -40,8 +43,7 @@
 (defn is-mst-packet
   [msg]
   (let [size 68 reqi 0 zero 0
-        byte-buffer (ByteBuffer/allocate size)
-        buffer (byte-array size)]
+        {:keys [byte-buffer buffer]} (allocate-buffers size)]
     (doto byte-buffer
       (.put (.byteValue size))
       (.put (.byteValue (types/isp :mst))) ; Type ISP_MST
