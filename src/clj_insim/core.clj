@@ -29,12 +29,18 @@
        :insimver (int (nth v 14))
        :spare (nth v 15)})))
 
+(defn parse-subt [b]
+  {:subt (types/tiny b)})
+
 (defn parse-packet [v]
   (if (neg? (count v))
     (throw (Exception. "Packet size is not positive"))
     (let [[type reqi zero & body] v]
-      (when (= type 2)
-        (parse-isp-ver-packet (vec body))))))
+      (case (types/isp type)
+        :ver
+        (parse-isp-ver-packet (vec body))
+        :tiny
+        (parse-subt zero)))))
 
 (defn send-packet [{:keys [host port]} packet]
   (with-open [sock (Socket. (or host HOST) (or port PORT))
@@ -53,10 +59,16 @@
   ;; (send socket (packets/is-mst-packet "Hello from clj-insim!"))
 
   (send-packet {} (packets/is-isi-packet)) ; => Returns a packet received from LFS InSim
-  (def received-packet (send-packet {} (packets/is-isi-packet)))
+  (def received-packet (send-packet {} (packets/is-isi-packet))) ; it gets closed, thats unfortunate!
+  (def some-packet (send-packet {} (packets/is-mst-packet "Hello from clj-insim!")))
+  (def another-packet (send-packet {} (packets/is-tiny-packet :close)))
   (def received-packet [2 1 0 48 46 54 84 0 0 0 0 83 51 0 0 0 0 8 0])
+  (def another-packet [3 1 0])
 
   (count received-packet)
 
   (parse-packet received-packet)
+  (parse-packet another-packet)
+
+  (types/isp :tiny)
 )

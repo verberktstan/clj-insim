@@ -35,6 +35,18 @@
         (.get buffer))
       buffer))
 
+(defn is-tiny-packet [k]
+  (let [size 4
+        {:keys [byte-buffer buffer]} (allocate-buffers size)]
+    (doto byte-buffer
+      (.put (.byteValue size))
+      (.put (.byteValue (types/tiny k)))
+      (.put (.byteValue (:reqi DEFAULTS)))
+      (.put (.byteValue (:zero DEFAULTS)))
+      (.flip)
+      (.get buffer))
+    buffer))
+
 (comment
   (count (into [] (packets/is-isi-packet))) ; Should be 44
   (count (String. (packets/is-isi-packet))) ; Should be 44
