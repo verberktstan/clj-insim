@@ -5,7 +5,7 @@
 
 (def ^:private INSIM-VERSION 7)
 
-(def ^:private DEFAULTS {:reqi 0 :zero 0})
+(def ^:private DEFAULTS {:reqi 1 :zero 0})
 
 (defn- allocate-buffers [size]
   {:byte-buffer (ByteBuffer/allocate size)
