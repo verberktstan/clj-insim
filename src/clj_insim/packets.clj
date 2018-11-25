@@ -1,5 +1,5 @@
 (ns clj-insim.packets
-  (:require [clj-insim.types :as types]
+  (:require [clj-insim.enums :as enums]
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
 
@@ -21,7 +21,7 @@
           {:keys [byte-buffer buffer]} (allocate-buffers size)]
       (doto byte-buffer
         (.put (.byteValue size)) ; byte (1 byte)
-        (.put (.byteValue (types/isp :isi)))
+        (.put (.byteValue (enums/isp :isi)))
         (.put (.byteValue (:reqi DEFAULTS))) ; If non-zero LFS will send IS_VER packet
         (.put (.byteValue (:zero DEFAULTS)))               ; 0
         (.putShort udp-port)    ; word (2 byte short) / Port for udp replies
@@ -40,7 +40,7 @@
         {:keys [byte-buffer buffer]} (allocate-buffers size)]
     (doto byte-buffer
       (.put (.byteValue size))
-      (.put (.byteValue (types/isp :tiny)))
+      (.put (.byteValue (enums/isp :tiny)))
       (.put (.byteValue 0)) ; 0 = no reqi
       (.put (.byteValue 0)) ; 0 = keepalive
       (.flip)
@@ -58,7 +58,7 @@
         {:keys [byte-buffer buffer]} (allocate-buffers size)]
     (doto byte-buffer
       (.put (.byteValue size))
-      (.put (.byteValue (types/isp :mst))) ; Type ISP_MST
+      (.put (.byteValue (enums/isp :mst))) ; Type ISP_MST
       (.put (.byteValue (:reqi DEFAULTS)))
       (.put (.byteValue (:zero DEFAULTS)))
       (.put (.getBytes (util/->cstring msg 64)))

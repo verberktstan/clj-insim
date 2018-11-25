@@ -5,8 +5,7 @@
             [clj-insim.enums :as enums]
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]
-           [java.net Socket]
-           ))
+           [java.net Socket]))
 
 (def HOST "127.0.0.1")
 (def PORT 29999)
@@ -34,15 +33,29 @@
             (send-packet socket out)))))
     running))
 
+(def type-dispatch
+  {:ver (fn [[type reqi subt & body]]
+          (println "Received version packet from LFS")
+          (println "Send tiny/none packet to lfs")
+          (packets/is-tiny-packet :none))
+   :tiny (fn [[type reqi subt & body]]
+           (let [tiny (enums/tiny-key (int subt))]
+             (println "Tiny packet type: " (name tiny))
+             (println "Send tiny/none packet to lfs")
+             (packets/is-tiny-packet :none)))})
+
 ;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
-(defn simple-handler [[size type reqi subt & body]]
-  (do
-    (println (str "Received packet: " (name (enums/isp-key (int type)))))
-    (packets/is-tiny-packet :none)))
+(defn simple-handler [packet]
+  (let [[type reqi subt & body] packet
+        type-key (enums/isp-key (int type))]
+    (do
+      (println (str "===== Received packet from LFS ====="))
+      (println (str "Type: " type " / " (name type-key)))
+      ((type-dispatch type-key) packet))))
 
 (comment
   ;; Start a tcp client with simple-handler
   (def simple-server (serve "127.0.0.1" 29999 simple-handler))
   ;; To stop the client
   (reset! simple-server false)
-)
+  )

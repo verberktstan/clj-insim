@@ -1,7 +1,7 @@
 (ns clj-insim.enums)
 
 ;; The second byte of any packet is one of these
-(def ^:private isp
+(def isp
   {:none 0 :isi 1 :ver 2 :tiny 3 :small 4
    :sta 5 :sch 6 :sfp 7 :scc 8 :cpp 9 
    :ism 10 :mso 11 :iii 12 :mst 13 :mtc 14
@@ -16,6 +16,15 @@
    :acr 55 :hcp 56 :nci 57 :jrr 58 :uco 59
    :oco 60 :ttc 61 :slc 62 :clc 63})
 
+;; The fourth byte of an IS_TINY packet is one of these
+(def tiny
+  {:none 0 :ver 1 :close 2 :ping 3 :reply 4
+   :vtc 5 :scp 6 :sst 7 :gth 8 :mpe 9 
+   :ism 10 :ren 11 :clr 12 :ncn 13 :npl 14
+   :res 15 :nlp 16 :mci 17 :reo 18 :rst 19
+   :axi 20 :axc 21 :rip 22 :nci 23 :alc 24
+   :axm 25 :slc 26})
+
 (defn index->key [m]
   (fn [i]
     (->>
@@ -25,6 +34,7 @@
      key)))
 
 (def isp-key (index->key isp))
+(def tiny-key (index->key tiny))
 
 (comment
   (:none isp) ; Return the index of :none in the isp enum
