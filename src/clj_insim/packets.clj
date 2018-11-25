@@ -5,8 +5,6 @@
 
 (def ^:private INSIM-VERSION 7)
 
-(def ^:private DEFAULTS {:reqi 1 :zero 0})
-
 (defn- allocate-buffers [size]
   {:byte-buffer (ByteBuffer/allocate size)
    :buffer (byte-array size)})
@@ -14,7 +12,7 @@
 (defn is-isi-packet
     "Create a InSim init packet to send to LFS"
     []
-    (let [size 44
+    (let [size 44 reqi 1 zero 0
           udp-port 0
           flags 0
           interval 0
@@ -22,8 +20,8 @@
       (doto byte-buffer
         (.put (.byteValue size)) ; byte (1 byte)
         (.put (.byteValue (enums/isp :isi)))
-        (.put (.byteValue (:reqi DEFAULTS))) ; If non-zero LFS will send IS_VER packet
-        (.put (.byteValue (:zero DEFAULTS)))               ; 0
+        (.put (.byteValue reqi)) ; If non-zero LFS will send IS_VER packet
+        (.put (.byteValue zero)) ; Zero: 0
         (.putShort udp-port)    ; word (2 byte short) / Port for udp replies
         (.putShort flags) ; bit flags for options
         (.put (.byteValue INSIM-VERSION)) ; The INSIM_VERSION used
@@ -36,13 +34,13 @@
       buffer))
 
 (defn is-tiny-packet [k]
-  (let [size 4
+  (let [size 4 reqi 0 subt 0
         {:keys [byte-buffer buffer]} (allocate-buffers size)]
     (doto byte-buffer
       (.put (.byteValue size))
       (.put (.byteValue (enums/isp :tiny)))
-      (.put (.byteValue 0)) ; 0 = no reqi
-      (.put (.byteValue 0)) ; 0 = keepalive
+      (.put (.byteValue reqi)) ; 
+      (.put (.byteValue subt)) ; 0 = keepalive packet
       (.flip)
       (.get buffer))
     buffer))
@@ -59,8 +57,8 @@
     (doto byte-buffer
       (.put (.byteValue size))
       (.put (.byteValue (enums/isp :mst))) ; Type ISP_MST
-      (.put (.byteValue (:reqi DEFAULTS)))
-      (.put (.byteValue (:zero DEFAULTS)))
+      (.put (.byteValue reqi))
+      (.put (.byteValue zero))
       (.put (.getBytes (util/->cstring msg 64)))
       (.flip)
       (.get buffer))
