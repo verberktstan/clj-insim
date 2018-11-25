@@ -5,70 +5,44 @@
             [clj-insim.types :as types]
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]
-           [java.net ServerSocket]
-           [java.net Socket]))
+           [java.net Socket]
+           ))
 
 (def HOST "127.0.0.1")
 (def PORT 29999)
 
-(def HEADER-SIZE 4)
+(defn receive-packet [socket]
+  (let [in (io/input-stream socket)
+        size (.read in)
+        ba (byte-array (dec size))]
+    (.read in ba)
+    (vec ba)))
 
-(defn bytes->string [v]
-  (->> v
-       util/strip-null-chars
-       (map char)
-       (apply str)))
-
-(defn parse-isp-ver-packet [v]
-  (if (not= (count v) (- 20 HEADER-SIZE))
-    (throw (Exception. "Packet is of invalid size"))
-    (let [version (subvec v 0 8)
-          product (subvec v 8 14)]
-      {:version (bytes->string version)
-       :product (bytes->string product)
-       :insimver (int (nth v 14))
-       :spare (nth v 15)})))
-
-(defn parse-subt [b]
-  {:subt (types/tiny b)})
-
-(defn parse-packet [v]
-  (if (neg? (count v))
-    (throw (Exception. "Packet size is not positive"))
-    (let [[type reqi zero & body] v]
-      (case (types/isp type)
-        :ver
-        (parse-isp-ver-packet (vec body))
-        :tiny
-        (parse-subt zero)))))
-
-(defn send-packet [{:keys [host port]} packet]
-  (with-open [sock (Socket. (or host HOST) (or port PORT))
-              out (io/output-stream sock)]
+(defn send-packet [socket packet]
+  (let [out (io/output-stream socket)]
     (.write out packet)
-    (.flush out)
-    (let [in (io/input-stream sock)
-          size (.read in)]
-      (when (pos? size)
-        (let [ba (byte-array (dec size))]
-          (.read in ba)
-          (vec ba))))))
+    (.flush out)))
+
+(defn serve [host port handler]
+  (let [running (atom true)]
+    (future
+      (with-open [socket (Socket. host port)
+                  _ (send-packet socket (packets/is-isi-packet))]
+        (while @running
+          (let [in (receive-packet socket)
+                out (handler in)]
+            (send-packet socket out)))))
+    running))
+
+;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
+(defn simple-handler [[size type reqi subt & body]]
+  (do
+    (println (str "Received packet: " (types/isp type)))
+    (packets/is-tiny-packet :none)))
 
 (comment
-  ;; (send socket (packets/is-isi-packet))
-  ;; (send socket (packets/is-mst-packet "Hello from clj-insim!"))
-
-  (send-packet {} (packets/is-isi-packet)) ; => Returns a packet received from LFS InSim
-  (def received-packet (send-packet {} (packets/is-isi-packet))) ; it gets closed, thats unfortunate!
-  (def some-packet (send-packet {} (packets/is-mst-packet "Hello from clj-insim!")))
-  (def another-packet (send-packet {} (packets/is-tiny-packet :close)))
-  (def received-packet [2 1 0 48 46 54 84 0 0 0 0 83 51 0 0 0 0 8 0])
-  (def another-packet [3 1 0])
-
-  (count received-packet)
-
-  (parse-packet received-packet)
-  (parse-packet another-packet)
-
-  (types/isp :tiny)
+  ;; Start a tcp client with simple-handler
+  (def simple-server (serve "127.0.0.1" 29999 simple-handler))
+  ;; To stop the client
+  (reset! simple-server false)
 )

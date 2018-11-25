@@ -40,9 +40,9 @@
         {:keys [byte-buffer buffer]} (allocate-buffers size)]
     (doto byte-buffer
       (.put (.byteValue size))
-      (.put (.byteValue (types/tiny k)))
-      (.put (.byteValue (:reqi DEFAULTS)))
-      (.put (.byteValue (:zero DEFAULTS)))
+      (.put (.byteValue (types/isp :tiny)))
+      (.put (.byteValue 0)) ; 0 = no reqi
+      (.put (.byteValue 0)) ; 0 = keepalive
       (.flip)
       (.get buffer))
     buffer))
