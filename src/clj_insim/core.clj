@@ -2,7 +2,7 @@
   (:require [clj-sockets.core :as sockets]
             [clojure.java.io :as io]
             [clj-insim.packets :as packets]
-            [clj-insim.types :as types]
+            [clj-insim.enums :as enums]
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]
            [java.net Socket]
@@ -37,7 +37,7 @@
 ;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
 (defn simple-handler [[size type reqi subt & body]]
   (do
-    (println (str "Received packet: " (types/isp type)))
+    (println (str "Received packet: " (name (enums/isp-key (int type)))))
     (packets/is-tiny-packet :none)))
 
 (comment
