@@ -1,8 +1,9 @@
 (ns clj-insim.core
   (:require [clj-sockets.core :as sockets]
             [clojure.java.io :as io]
-            [clj-insim.packets :as packets]
             [clj-insim.enums :as enums]
+            [clj-insim.packets :as packets]
+            [clj-insim.protocols :as protocols]
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]
            [java.net Socket]))
@@ -10,7 +11,7 @@
 (def HOST "127.0.0.1")
 (def PORT 29999)
 
-(def data (atom nil))
+;(def data (atom nil))
 
 (defn receive-packet [socket]
   (let [in (io/input-stream socket)
@@ -35,48 +36,6 @@
             (send-packet socket out)))))
     running))
 
-(defn parse-npl-packet [[type reqi player-id connection-id ptype & args]]
-  (let [body (into [] args)
-        flags (subvec body 0 2)
-        player-name (subvec body 2 (+ 2 24))
-        license-plate (subvec body 26 (+ 26 8))
-        car-name (subvec body 34 (+ 34 4))
-        skin-name (subvec body 38 (+ 38 16))
-        tyres (subvec body 54 (+ 54 4))
-        handicap-mass (nth body 58)
-        handicap-restriction (nth body 59)]
-    {:player-name player-name
-     :handicap-mass handicap-mass
-     :handicap-restriction handicap-restriction}))
-
-(defn bytes->int [c] (-> c first int))
-(defn bytes->string [c]
-  (->>
-   (map char (util/strip-null-chars c))
-   (apply str)))
-(defn bytes->isp-type [c]
-  (-> c first enums/isp-key))
-(defn bytes->tiny-subt [c]
-  (-> c first enums/tiny-key))
-
-(defn make-protocol [{:keys [key type length]}]
-  (case type
-    :string {:bytes length :cast bytes->string :key key}
-    :type {:bytes 1 :cast bytes->isp-type :key key}
-    :tiny-subt {:bytes 1 :cast bytes->tiny-subt :key key}
-    {:bytes 1 :cast bytes->int :key key}))
-
-(def is-ver-protocol [(make-protocol {:key :type :type :type})
-                      (make-protocol {:key :reqi})
-                      (make-protocol {:key :zero})
-                      (make-protocol {:key :version :type :string :length 8})
-                      (make-protocol {:key :product :type :string :length 6})
-                      (make-protocol {:key :insim-version})
-                      (make-protocol {:key :spare})])
-
-(def is-tiny-protocol [(make-protocol {:key :type :type :type})
-                       (make-protocol {:key :reqi})
-                       (make-protocol {:key :subt :type :tiny-subt})])
 
 (defn parse-bytes [{:keys [coll] :as m} {:keys [bytes cast key]}]
   (let [[c1 c2] (split-at bytes coll)]
@@ -90,21 +49,25 @@
 
 ;;(reduce parse-bytes {:coll is-ver-packet} (protocols :ver))
 
+(defn parse-packet [packet protocol]
+  (reduce parse-bytes {:coll packet} protocol))
+
 (def type-dispatch
   {:ver (fn [packet]
-          (let [m (reduce parse-bytes {:coll packet} is-ver-protocol)]
+          (let [m (parse-packet packet protocols/is-ver-protocol)]
             (println (str m))
-            (packets/is-tiny-packet :none)))
+            (packets/is-mst-packet "Hello from clj-insim!")))
    :tiny (fn [packet]
-           (let [m (reduce parse-bytes {:coll packet} is-tiny-protocol)]
+           (let [m (parse-packet packet protocols/is-tiny-protocol)]
              (println (str m))
              (packets/is-tiny-packet :none)))
    :mso (fn [[type reqi zero ucid plid user-type text-start & body]]
           (println (str "Received message of length " (count body)))
           (packets/is-tiny-packet :none))
    :npl (fn [packet]
-          (reset! data packet)
-          (packets/is-tiny-packet :none))})
+          (let [m (parse-packet packet protocols/is-npl-protocol)]
+            (println (str m))
+            (packets/is-tiny-packet :none)))})
 
 ;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
 (defn simple-handler [packet]
