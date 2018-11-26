@@ -12,7 +12,7 @@
 (defn- bytes->tiny-subt [c]
   (-> c first enums/tiny-key))
 
-(defn parse-protocol-map [{:keys [key type length]}]
+(defn- parse-protocol-map [{:keys [key type length]}]
   (case type
     :string {:bytes length :cast bytes->string :key key}
     :type {:bytes 1 :cast bytes->isp-type :key key}
@@ -20,30 +20,46 @@
     :word {:bytes 2 :cast #(map int %) :key key}
     :bytes {:bytes length :cast #(map int %) :key key}
     :int {:bytes 4 :cast #(map int %) :key key}
+    :float {:bytes 4 :cast #(map int %) :key key}
     {:bytes 1 :cast bytes->int :key key}))
 
-(defn make-protocol [c]
+(defn- make-protocol [c]
   (into [] (map parse-protocol-map c)))
 
 (def is-ver-protocol
   (make-protocol
-   [{:key :type :type :type}
+   [;{:key :size}
+    {:key :type :type :type} ; The first byte is parsed as {:type :some-key}
+    {:key :reqi} ; The second byte is parsed as {:reqi int}
+    {:key :zero}
+    {:key :version :type :string :length 8} ; The next 8 bytes are parsed as {:version "string"}
+    {:key :product :type :string :length 6} ; The next 6 bytes are parsed as {:product "string"}
+    {:key :insim-version} ; {:insim-version int}
+    {:key :spare}])) ; {:spare int}
+
+(def is-mso-protocol
+  (make-protocol
+   [;{:key :size}
+    {:key :type :type :type}
     {:key :reqi}
     {:key :zero}
-    {:key :version :type :string :length 8}
-    {:key :product :type :string :length 6}
-    {:key :insim-version}
-    {:key :spare}]))
+    {:key :uniq-connection-id}
+    {:key :player-id}
+    {:key :user-type}
+    {:key :text-start}
+    {:key :message :type :string :length 128}]))
 
 (def is-tiny-protocol
   (make-protocol
-   [{:key :type :type :type}
+   [;{:key :size}
+    {:key :type :type :type}
     {:key :reqi}
     {:key :subt :type :tiny-subt}]))
 
 (def is-npl-protocol
   (make-protocol
-   [{:key :type :type :type}
+   [;{:key :size}
+    {:key :type :type :type}
     {:key :reqi}
     {:key :player-id}
     {:key :uniq-connection-id}
@@ -63,3 +79,20 @@
     {:key :number-player}
     {:key :spare-2}
     {:key :spare-3}]))
+
+(def is-sta-protocol
+  (make-protocol
+   [{:key :type :type :type} {:key :reqi} {:key :zero}
+    {:key :replay-speed :type :float} {:key :flags :type :word}
+    {:key :ingame-cam} {:key :viewed-player-id}
+    {:key :num-players-in-race} {:key :num-connections}
+    {:key :num-finished} {:key :race-in-progress}
+    {:key :qualify-minutes} {:key :race-laps}
+    {:key :spare-2} {:key :spare-3}
+    {:key :track :type :string :length 6}
+    {:key :weather} {:key :wind}]))
+
+(def is-flg-protocol
+  (make-protocol
+   [{:key :type :type :type} {:key :reqi} {:key :player-id}
+    {:key :off-on} {:key :flag} {:key :car-behind} {:key :spare-3}]))

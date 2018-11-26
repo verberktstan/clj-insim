@@ -11,7 +11,7 @@
 (def HOST "127.0.0.1")
 (def PORT 29999)
 
-;(def data (atom nil))
+;; (def data (atom nil))
 
 (defn receive-packet [socket]
   (let [in (io/input-stream socket)
@@ -36,7 +36,6 @@
             (send-packet socket out)))))
     running))
 
-
 (defn parse-bytes [{:keys [coll] :as m} {:keys [bytes cast key]}]
   (let [[c1 c2] (split-at bytes coll)]
     (if (empty? c2)
@@ -47,7 +46,7 @@
           (assoc :coll c2) ; else replace coll
           (assoc key (cast c1))))))
 
-;;(reduce parse-bytes {:coll is-ver-packet} (protocols :ver))
+;; (reduce parse-bytes {:coll is-ver-packet} (protocols :ver))
 
 (defn parse-packet [packet protocol]
   (reduce parse-bytes {:coll packet} protocol))
@@ -61,11 +60,20 @@
            (let [m (parse-packet packet protocols/is-tiny-protocol)]
              (println (str m))
              (packets/is-tiny-packet :none)))
-   :mso (fn [[type reqi zero ucid plid user-type text-start & body]]
-          (println (str "Received message of length " (count body)))
-          (packets/is-tiny-packet :none))
+   :mso (fn [packet]
+          (let [m (parse-packet packet protocols/is-mso-protocol)]
+            (println (str m))
+            (packets/is-tiny-packet :none)))
    :npl (fn [packet]
           (let [m (parse-packet packet protocols/is-npl-protocol)]
+            (println (str m))
+            (packets/is-tiny-packet :none)))
+   :sta (fn [packet]
+          (let [m (parse-packet packet protocols/is-sta-protocol)]
+            (println (str m))
+            (packets/is-tiny-packet :none)))
+   :flg (fn [packet]
+          (let [m (parse-packet packet protocols/is-flg-protocol)]
             (println (str m))
             (packets/is-tiny-packet :none)))})
 
@@ -75,7 +83,7 @@
         type-key (enums/isp-key (int type))
         f (type-dispatch type-key)]
     (do
-      (println (str "===== Received packet from LFS ====="))
+      (println (str "===== Received " (name type-key) " packet from LFS ====="))
       (if f ; Execute dispatch OR return keepalive packet
         (f packet)
         (packets/is-tiny-packet :none)))))
