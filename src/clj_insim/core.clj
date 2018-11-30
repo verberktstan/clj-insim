@@ -51,31 +51,27 @@
 (defn parse-packet [packet protocol]
   (reduce parse-bytes {:coll packet} protocol))
 
+(defn standard-parse-dispatch [protocol]
+  (fn [packet]
+    (let [m (parse-packet packet protocol)]
+      (println (str m))
+      (packets/is-tiny-packet :none))))
+
 (def type-dispatch
   {:ver (fn [packet]
           (let [m (parse-packet packet protocols/is-ver-protocol)]
             (println (str m))
             (packets/is-mst-packet "Hello from clj-insim!")))
-   :tiny (fn [packet]
-           (let [m (parse-packet packet protocols/is-tiny-protocol)]
-             (println (str m))
-             (packets/is-tiny-packet :none)))
-   :mso (fn [packet]
-          (let [m (parse-packet packet protocols/is-mso-protocol)]
-            (println (str m))
-            (packets/is-tiny-packet :none)))
+   :tiny (standard-parse-dispatch protocols/is-tiny-protocol)
+   :mso (standard-parse-dispatch protocols/is-mso-protocol)
+;   :npl (standard-parse-dispatch protocols/is-npl-protocol)
+   :sta (standard-parse-dispatch protocols/is-sta-protocol)
+   :flg (standard-parse-dispatch protocols/is-flg-protocol)
+   :csc (standard-parse-dispatch protocols/is-csc-protocol)
    :npl (fn [packet]
           (let [m (parse-packet packet protocols/is-npl-protocol)]
-            (println (str m))
-            (packets/is-tiny-packet :none)))
-   :sta (fn [packet]
-          (let [m (parse-packet packet protocols/is-sta-protocol)]
-            (println (str m))
-            (packets/is-tiny-packet :none)))
-   :flg (fn [packet]
-          (let [m (parse-packet packet protocols/is-flg-protocol)]
-            (println (str m))
-            (packets/is-tiny-packet :none)))})
+            (do (println (:num-player m))
+                (packets/is-tiny-packet :none))))})
 
 ;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
 (defn simple-handler [packet]

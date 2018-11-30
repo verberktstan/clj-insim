@@ -96,3 +96,8 @@
   (make-protocol
    [{:key :type :type :type} {:key :reqi} {:key :player-id}
     {:key :off-on} {:key :flag} {:key :car-behind} {:key :spare-3}]))
+
+(def is-csc-protocol
+  (make-protocol
+   [{:key :type :type :type} {:key :reqi} {:key :player-id}
+    {:key :spare} {:key :csc-action} {:key :spare-2} {:key :spare-3}]))

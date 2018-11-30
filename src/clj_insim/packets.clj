@@ -63,3 +63,20 @@
       (.flip)
       (.get buffer))
     buffer))
+
+(defn is-jrr-packet
+  [player-id uniq-connection-id jrr-action]
+  (let [size 68 reqi 0 zero 0
+        {:keys [byte-buffer buffer]} (allocate-buffers size)]
+    (doto byte-buffer
+      (.put (.byteValue size))
+      (.put (.byteValue (enums/isp :jrr)))
+      (.put (.byteValue reqi))
+      (.put (.byteValue player-id))
+      (.put (.byteValue uniq-connection-id))
+      (.put (.byteValue jrr-action))
+      (.put (.byteValue 0)) ; spare
+      (.put (.byteValue 0)) ; spare
+      (.flip)
+      (.get buffer))
+    buffer))
