@@ -13,6 +13,14 @@
       (prn m)
       (packets/is-tiny))))
 
+(defn npl-dispatch [packet]
+  (let [{:keys [handicap-mass number-player uniq-connection-id]}
+         (parse-packet packet (is-protocols :npl))
+        jrr-map {:uniq-connection-id uniq-connection-id :player-id 0}]
+    (if (< handicap-mass 15)
+      (packets/is-jrr (assoc jrr-map :jrr-action (enums/jrr-action :reject)))
+      (packets/is-tiny))))
+
 (def type-dispatch
   {:ver (fn [packet]
           (let [m (parse-packet packet (is-protocols :ver))]
@@ -23,7 +31,8 @@
    :sta (print-keepalive-dispatch (is-protocols :sta))
    :flg (print-keepalive-dispatch (is-protocols :flg))
    :csc (print-keepalive-dispatch (is-protocols :csc))
-   :npl (print-keepalive-dispatch (is-protocols :npl))})
+   :npl npl-dispatch
+   })
 
 ;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
 (defn simple-handler [packet]
