@@ -19,13 +19,20 @@
   {:ver (fn [packet]
           (let [m (parse-packet packet (is-protocols :ver))]
             (println (str m))
-            (packets/is-mst-packet "Hello from clj-insim!")))
+            (packets/is-mst "Hello from clj-insim!")))
    :tiny (print-keepalive-dispatch (is-protocols :tiny))
    :mso (print-keepalive-dispatch (is-protocols :mso))
    :sta (print-keepalive-dispatch (is-protocols :sta))
    :flg (print-keepalive-dispatch (is-protocols :flg))
    :csc (print-keepalive-dispatch (is-protocols :csc))
-   :npl (print-keepalive-dispatch (is-protocols :npl))})
+;   :npl (print-keepalive-dispatch (is-protocols :npl))
+   :npl (fn [packet]
+          (let [{:keys [handicap-mass] :as m} (parse-packet packet (is-protocols :npl))]
+            (if (< handicap-mass 15)
+              (packets/is-jrr (assoc
+                                  (select-keys m [:player-id :uniq-connection-id])
+                                :jrr-action (enums/jrr-action :reject)))
+              (packets/is-tiny))))})
 
 ;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
 (defn simple-handler [packet]
