@@ -5,35 +5,9 @@
             [clj-insim.packets :as packets]
             [clj-insim.parsers :refer [parse-packet]]
             [clj-insim.protocols :as protocols]
+            [clj-insim.socket :refer [serve]]
             [clj-insim.util :as util])
-  (:import [java.nio ByteBuffer]
-           [java.net Socket]))
-
-(def HOST "127.0.0.1")
-(def PORT 29999)
-
-(defn receive-packet [socket]
-  (let [in (io/input-stream socket)
-        size (.read in)
-        ba (byte-array (dec size))]
-    (.read in ba)
-    (vec ba)))
-
-(defn send-packet [socket packet]
-  (let [out (io/output-stream socket)]
-    (.write out packet)
-    (.flush out)))
-
-(defn serve [host port handler]
-  (let [running (atom true)]
-    (future
-      (with-open [socket (Socket. host port)
-                  _ (send-packet socket (packets/is-isi))]
-        (while @running
-          (let [in (receive-packet socket)
-                out (handler in)]
-            (send-packet socket out)))))
-    running))
+  (:import [java.nio ByteBuffer]))
 
 (defn print-keepalive-dispatch [protocol]
   (fn [packet]
@@ -66,7 +40,8 @@
 
 (comment
   ;; Start a tcp client with simple-handler
-  (def simple-server (serve HOST PORT simple-handler))
+                                        ;  (def simple-server (serve HOST PORT simple-handler))
+  (def simple-server (serve simple-handler))
   ;; To stop the client
   (reset! simple-server false)
 )
