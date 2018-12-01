@@ -51,27 +51,23 @@
 (defn parse-packet [packet protocol]
   (reduce parse-bytes {:coll packet} protocol))
 
-(defn standard-parse-dispatch [protocol]
+(defn print-keepalive-dispatch [protocol]
   (fn [packet]
     (let [m (parse-packet packet protocol)]
-      (println (str m))
-      (packets/is-tiny-packet :none))))
+      (prn m)
+      (packets/is-tiny))))
 
 (def type-dispatch
   {:ver (fn [packet]
           (let [m (parse-packet packet protocols/is-ver-protocol)]
             (println (str m))
             (packets/is-mst-packet "Hello from clj-insim!")))
-   :tiny (standard-parse-dispatch protocols/is-tiny-protocol)
-   :mso (standard-parse-dispatch protocols/is-mso-protocol)
-;   :npl (standard-parse-dispatch protocols/is-npl-protocol)
-   :sta (standard-parse-dispatch protocols/is-sta-protocol)
-   :flg (standard-parse-dispatch protocols/is-flg-protocol)
-   :csc (standard-parse-dispatch protocols/is-csc-protocol)
-   :npl (fn [packet]
-          (let [m (parse-packet packet protocols/is-npl-protocol)]
-            (do (println (:num-player m))
-                (packets/is-tiny-packet :none))))})
+   :tiny (print-keepalive-dispatch protocols/is-tiny-protocol)
+   :mso (print-keepalive-dispatch protocols/is-mso-protocol)
+   :sta (print-keepalive-dispatch protocols/is-sta-protocol)
+   :flg (print-keepalive-dispatch protocols/is-flg-protocol)
+   :csc (print-keepalive-dispatch protocols/is-csc-protocol)
+   :npl (print-keepalive-dispatch protocols/is-npl-protocol)})
 
 ;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
 (defn simple-handler [packet]
@@ -82,7 +78,7 @@
       (println (str "===== Received " (name type-key) " packet from LFS ====="))
       (if f ; Execute dispatch OR return keepalive packet
         (f packet)
-        (packets/is-tiny-packet :none)))))
+        (packets/is-tiny)))))
 
 (comment
   ;; Start a tcp client with simple-handler
