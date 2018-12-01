@@ -1,11 +1,13 @@
 (ns clj-insim.core
   (:require [clj-insim.enums :as enums]
             [clj-insim.packets :as packets]
-            [clj-insim.parsers :refer [parse-packet]]
-            [clj-insim.protocols :refer [is-protocols]]
+            [clj-insim.parsers :refer [parse]]
             [clj-insim.socket :refer [serve]]
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
+
+(def connections (atom []))
+(def players (atom []))
 
 (def championship
   [{:player-name "AI 1" :points 10}
@@ -91,9 +93,6 @@
       (if f
         (f incoming)
         (packets/is-tiny)))))
-
-(defn parse [type-key packet]
-  (parse-packet packet (is-protocols type-key)))
 
 ;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
 (defn handler [packet]
