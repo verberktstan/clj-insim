@@ -22,7 +22,7 @@
   (let [running (atom true)]
     (future
       (with-open [socket (Socket. (or host HOST) (or port PORT))
-                  _ (send-packet socket (packets/is-isi {:flags 2048}))]
+                  _ (send-packet socket (packets/is-isi))]
         (while @running
           (let [in (receive-packet socket)
                 out (handler in)]

@@ -1,13 +1,14 @@
 (ns clj-insim.packets
   (:require [clj-insim.enums :as enums]
             [clj-insim.util :as util])
-  (:import [java.nio ByteBuffer]))
+  (:import [java.nio ByteBuffer
+            ByteOrder]))
 
 (def ^:private INSIM-VERSION 7)
 
 (def ^:private DEFAULTS {:admin util/null-char
                          :data 0
-                         :flags (short 0)
+                         :flags (short 2048)
                          :i-name "clj-insim"
                          :interval (short 0)
                          :prefix (int \space)
@@ -38,7 +39,8 @@
   "Returns a ByteBuffer with the InSim header"
   [{:keys [size type reqi data]}]
   (let [capacity (or size (:size DEFAULTS))
-        byte-buffer (ByteBuffer/allocate capacity)]
+        byte-buffer (doto (ByteBuffer/allocate capacity)
+                      (.order (ByteOrder/LITTLE_ENDIAN)))]
     (doto byte-buffer
       (put-byte capacity)
       (put-byte (or type (enums/isp :tiny)))
@@ -69,7 +71,7 @@
                   (put-byte (or prefix (:prefix DEFAULTS)))
                   (put-word (or interval (:interval DEFAULTS)))
                   (put-string (or admin (:admin DEFAULTS)) 16)
-                  (put-string ((or i-name (:i-name DEFAULTS)) 16)))]
+                  (put-string (or i-name (:i-name DEFAULTS)) 16))]
      (finalize packet))))
 
 (defn is-tiny
@@ -91,8 +93,8 @@
 
 (defn- put-object-info [byte-buffer {:keys [x y z-byte flags index heading]}]
   (doto byte-buffer
-    (put-byte (or x 0))
-    (put-byte (or y 0))
+    (put-word (or x 0))
+    (put-word (or y 0))
     (put-byte (or z-byte 0))
     (put-byte (or flags 0))
     (put-byte (or index 0))
@@ -109,5 +111,5 @@
                          (put-byte 0) ; spare
                          (put-byte 0))
         packet (doto partial-packet
-                 (put-object-info {}))]
+                 (put-object-info nil))]
     (finalize packet)))

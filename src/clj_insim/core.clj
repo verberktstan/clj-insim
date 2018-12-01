@@ -23,14 +23,7 @@
    :sta (print-keepalive-dispatch (is-protocols :sta))
    :flg (print-keepalive-dispatch (is-protocols :flg))
    :csc (print-keepalive-dispatch (is-protocols :csc))
-;   :npl (print-keepalive-dispatch (is-protocols :npl))
-   :npl (fn [packet]
-          (let [{:keys [handicap-mass] :as m} (parse-packet packet (is-protocols :npl))]
-            (if (< handicap-mass 15)
-              (packets/is-jrr (assoc
-                                  (select-keys m [:player-id :uniq-connection-id])
-                                :jrr-action (enums/jrr-action :reject)))
-              (packets/is-tiny))))})
+   :npl (print-keepalive-dispatch (is-protocols :npl))})
 
 ;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
 (defn simple-handler [packet]
@@ -50,5 +43,5 @@
   ;; To stop the client
   (reset! simple-server false)
 
-  (def npl-packet {:uniq-connection-id 0, :driver-model 30, :player-type 0, :spare-3 0, :car-name "FZR", :setup-flags 0, :number-player 1, :spare-2 0, :handicap-mass 0, :type :npl, :player-id 2, :skin-name "ARCHLINUX1", :passenger 0, :handicap-restriction 0, :reqi 0, :license-plate "", :flags (72 18), :player-name "Van Sterberkt", :tyres (2 2 1 1), :spare (0 0 0 0)})
+  (def npl-packet {:uniq-connection-id 0, :driver-model 30, :player-type 0, :spare-3 0, :car-name "FZR", :setup-flags 0, :number-player 1, :spare-2 0, :handicap-mass 0, :type :npl, :player-id 2, :skin-namE "ARCHLINUX1", :passenger 0, :handicap-restriction 0, :reqi 0, :license-plate "", :flags (72 18), :player-name "Van Sterberkt", :tyres (2 2 1 1), :spare (0 0 0 0)})
 )
