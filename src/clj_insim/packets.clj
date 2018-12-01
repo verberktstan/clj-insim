@@ -77,10 +77,10 @@
 (defn is-tiny
   ([]
    (is-tiny {}))
-  ([{:keys [data]}]
+  ([{:keys [data-key]}]
    (let [packet (header {:size 4
                          :type (enums/isp :tiny)
-                         :data (or data (enums/tiny :none))})]
+                         :data (or (enums/tiny data-key) (enums/tiny :none))})]
      (finalize packet))))
 
 (defn is-mst

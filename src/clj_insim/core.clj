@@ -7,7 +7,20 @@
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
 
-(def dispatchers nil)
+(defn welcome []
+  (packets/is-mst "Hello from clj-insim!"))
+
+(defn close-connection []
+  (packets/is-tiny {:data-key :close}))
+
+(defn check-version [{:keys [version insim-version]}]
+  (if (and (= version "0.6T")
+           (>= insim-version 7))
+    (welcome)
+    (close-connection)))
+
+(def dispatchers
+  {:ver check-version})
 
 (defn dispatch [{:keys [type] :as incoming}]
   (let [f (type dispatchers)]
