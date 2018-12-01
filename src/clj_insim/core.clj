@@ -6,8 +6,8 @@
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
 
-(def connections (atom []))
-(def players (atom []))
+(def connections (atom {}))
+(def players (atom {}))
 
 (def championship
   [{:player-name "AI 1" :points 10}
@@ -82,8 +82,16 @@
       (reject uniq-connection-id))
     (packets/is-tiny)))
 
+(defn new-connection [{:keys [player-name reqi] :as ncn}]
+  (if (= reqi 0) ; If new connection (not a response to info request)
+    (do
+      (swap! connections assoc player-name (select-keys ncn [:user-name :player-name :uniq-connection-id]))
+      (packets/is-mst (str player-name " added to connection pool!")))
+    (packets/is-tiny)))
+
 (def dispatchers
-  {:npl verify-new-player-join
+  {:ncn new-connection
+   :npl verify-new-player-join
    :tiny dispatch-tiny
    :ver check-version})
 

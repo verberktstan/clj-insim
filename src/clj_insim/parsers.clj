@@ -48,6 +48,14 @@
           {:key :user-type}
           {:key :text-start}
           {:key :message :type :string :length 128}])
+
+   ;;;;; IS_NCN - New ConnectioN ;;;;;
+   :ncn (make-protocol
+         [{:key :type :type :type} {:key :reqi} {:key :uniq-connection-id}
+          {:key :user-name :type :string :length 24}
+          {:key :player-name :type :string :length 24}
+          {:key :admin} {:key :total} {:key :flags} {:key :spare}])
+
    :npl (make-protocol
          [;{:key :size}
           {:key :type :type :type}
