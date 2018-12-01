@@ -30,8 +30,9 @@
 
 (defn- put-string
   "Return byte-buffer with x put as series of characters"
-  [byte-buffer x]
-  (.put byte-buffer (.getBytes x)))
+  [byte-buffer x n]
+  (let [strng (util/->cstring x n)]
+    (.put byte-buffer (.getBytes strng))))
 
 (defn- header
   "Returns a ByteBuffer with the InSim header"
@@ -67,11 +68,8 @@
                   (put-byte INSIM-VERSION)
                   (put-byte (or prefix (:prefix DEFAULTS)))
                   (put-word (or interval (:interval DEFAULTS)))
-;                  (.put (.getBytes (util/->cstring util/null-char 16)))
-                  (put-string (util/->cstring (or admin (:admin DEFAULTS)) 16))
-;                  (.put (.getBytes (util/->cstring "clj-insim" 16)))
-                  (put-string (util/->cstring (or i-name (:i-name DEFAULTS)) 16))
-                  )]
+                  (put-string (or admin (:admin DEFAULTS)) 16)
+                  (put-string ((or i-name (:i-name DEFAULTS)) 16)))]
      (finalize packet))))
 
 (defn is-tiny
@@ -88,7 +86,7 @@
   (let [header (header {:size 68
                         :type (enums/isp :mst)})
         packet (doto header
-                 (put-string (util/->cstring msg 64)))]
+                 (put-string msg 64))]
     (finalize packet)))
 
 (defn- put-object-info [byte-buffer {:keys [x y z-byte flags index heading]}]
