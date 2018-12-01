@@ -12,4 +12,5 @@
           (assoc key (cast c1))))))
 
 (defn parse-packet [packet protocol]
-  (reduce parse-bytes {:coll packet} protocol))
+  (when protocol
+    (reduce parse-bytes {:coll packet} protocol)))

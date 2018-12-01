@@ -7,6 +7,9 @@
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
 
+(def success-mass [{:player-name "Van Sterberkt" :handicap-mass 10}
+                   {:player-name "Boer Tarrel" :handicap-mass 15}])
+
 (defn welcome []
   (packets/is-mst "Hello from clj-insim!"))
 
@@ -19,8 +22,37 @@
     (welcome)
     (close-connection)))
 
+(defn dispatch-tiny [{:keys [subt]}]
+  (do
+    (println "Sent IS_TINY to maintain connection...")
+    (packets/is-tiny)))
+
+(defn respects-handicaps? [{:keys [player-name handicap-mass handicap-restriction]}]
+  (let [p (first (filter #(= (:player-name %) player-name) success-mass))]
+    (and
+     (or (not (:handicap-mass p))
+         (>= handicap-mass (:handicap-mass p)))
+     (or (not (:handicap-restriction p))
+         (>= handicap-restriction (:handicap-restriction p))))))
+
+(defn reject [uniq-connection-id]
+  (packets/is-jrr {:uniq-connection-id uniq-connection-id
+                   :jrr-action (enums/jrr-action :reject)}))
+(defn spawn [uniq-connection-id]
+  (packets/is-jrr {:uniq-connection-id uniq-connection-id
+                   :jrr-action (enums/jrr-action :spawn)}))
+
+(defn verify-new-player-join [{:keys [number-player uniq-connection-id] :as npl}]
+  (if (= number-player 0) ; If this is a join request...
+    (if (respects-handicaps? npl)
+      (spawn uniq-connection-id)
+      (reject uniq-connection-id))
+    (packets/is-tiny)))
+
 (def dispatchers
-  {:ver check-version})
+  {:npl verify-new-player-join
+   :tiny dispatch-tiny
+   :ver check-version})
 
 (defn dispatch [{:keys [type] :as incoming}]
   (let [f (type dispatchers)]
@@ -38,10 +70,11 @@
         type-key (enums/isp-key (int type))
         incoming (parse type-key packet)]
     (do
-      (println "=== Received " (name type-key) " packet from LFS ===")
+      (println "\n=== Received " (name type-key) " packet from LFS ===")
       (if incoming
         (dispatch incoming)
-        (packets/is-tiny)))))
+        (do (println "Incomping packet cannot be parsed: sending a IS_TINY packet by default...")
+          (packets/is-tiny))))))
 
 (comment
   ;; Start a tcp client with simple-handler
