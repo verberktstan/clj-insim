@@ -83,35 +83,33 @@
                          :data (or data (enums/tiny :none))})]
      (finalize packet))))
 
-;;;; OLD STUFF BELOW!
-
-(defn is-mst-packet
+(defn is-mst
   [msg]
-  (let [size 68 reqi 0 zero 0
-        {:keys [byte-buffer buffer]} (allocate-buffers size)]
-    (doto byte-buffer
-      (.put (.byteValue size))
-      (.put (.byteValue (enums/isp :mst))) ; Type ISP_MST
-      (.put (.byteValue reqi))
-      (.put (.byteValue zero))
-      (.put (.getBytes (util/->cstring msg 64)))
-      (.flip)
-      (.get buffer))
-    buffer))
+  (let [header (header {:size 68
+                        :type (enums/isp :mst)})
+        packet (doto header
+                 (put-string (util/->cstring msg 64)))]
+    (finalize packet)))
 
-(defn is-jrr-packet
-  [player-id uniq-connection-id jrr-action]
-  (let [size 68 reqi 0 zero 0
-        {:keys [byte-buffer buffer]} (allocate-buffers size)]
-    (doto byte-buffer
-      (.put (.byteValue size))
-      (.put (.byteValue (enums/isp :jrr)))
-      (.put (.byteValue reqi))
-      (.put (.byteValue player-id))
-      (.put (.byteValue uniq-connection-id))
-      (.put (.byteValue jrr-action))
-      (.put (.byteValue 0)) ; spare
-      (.put (.byteValue 0)) ; spare
-      (.flip)
-      (.get buffer))
-    buffer))
+(defn- put-object-info [byte-buffer {:keys [x y z-byte flags index heading]}]
+  (doto byte-buffer
+    (put-byte (or x 0))
+    (put-byte (or y 0))
+    (put-byte (or z-byte 0))
+    (put-byte (or flags 0))
+    (put-byte (or index 0))
+    (put-byte (or heading 0))))
+
+(defn is-jrr
+  [{:keys [player-id uniq-connection-id jrr-action]}]
+  (let [header (header {:size 16
+                        :type (enums/isp :jrr)
+                        :data player-id})
+        partial-packet (doto header
+                         (put-byte (or uniq-connection-id 0))
+                         (put-byte (or jrr-action (enums/jrr-action :spawn)))
+                         (put-byte 0) ; spare
+                         (put-byte 0))
+        packet (doto partial-packet
+                 (put-object-info {}))]
+    (finalize packet)))

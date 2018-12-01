@@ -25,6 +25,9 @@
    :axi 20 :axc 21 :rip 22 :nci 23 :alc 24
    :axm 25 :slc 26})
 
+(def jrr-action
+  {:reject 0 :spawn 1 :reset 4 :reset-no-repair 5})
+
 (defn index->key [m]
   (fn [i]
     (->>
