@@ -91,6 +91,17 @@
                  (put-string msg 64))]
     (finalize packet)))
 
+(defn is-mtc
+  [uniq-connection-id player-id msg]
+  (let [header (header {:size 128
+                        :type (enums/isp :mtc)})
+        packet (doto header
+                 (put-byte uniq-connection-id)
+                 (put-byte player-id)
+                 (put-byte 0) ;spare
+                 (put-byte 0)
+                 (put-string msg 120))]))
+
 (defn- put-object-info [byte-buffer {:keys [x y z-byte flags index heading]}]
   (doto byte-buffer
     (put-word (or x 0))
