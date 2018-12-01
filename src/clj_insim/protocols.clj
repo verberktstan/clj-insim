@@ -26,6 +26,69 @@
 (defn- make-protocol [c]
   (into [] (map parse-protocol-map c)))
 
+(def is-protocols {:csc (make-protocol
+                         [{:key :type :type :type} {:key :reqi} {:key :player-id}
+                          {:key :spare} {:key :csc-action} {:key :spare-2} {:key :spare-3}])
+                   :flg (make-protocol
+                         [{:key :type :type :type} {:key :reqi} {:key :player-id}
+                          {:key :off-on} {:key :flag} {:key :car-behind} {:key :spare-3}])
+                   :mso (make-protocol
+                         [;{:key :size}
+                          {:key :type :type :type}
+                          {:key :reqi}
+                          {:key :zero}
+                          {:key :uniq-connection-id}
+                          {:key :player-id}
+                          {:key :user-type}
+                          {:key :text-start}
+                          {:key :message :type :string :length 128}])
+                   :npl (make-protocol
+                         [;{:key :size}
+                          {:key :type :type :type}
+                          {:key :reqi}
+                          {:key :player-id}
+                          {:key :uniq-connection-id}
+                          {:key :player-type}
+                          {:key :flags :type :word}
+                          {:key :player-name :type :string :length 24}
+                          {:key :license-plate :type :string :length 8}
+                          {:key :car-name :type :string :length 4}
+                          {:key :skin-name :type :string :length 16}
+                          {:key :tyres :type :bytes :length 4}
+                          {:key :handicap-mass}
+                          {:key :handicap-restriction}
+                          {:key :driver-model}
+                          {:key :passenger}
+                          {:key :spare :type :int}
+                          {:key :setup-flags}
+                          {:key :number-player}
+                          {:key :spare-2}
+                          {:key :spare-3}])
+                   :tiny (make-protocol
+                          [;{:key :size}
+                           {:key :type :type :type}
+                           {:key :reqi}
+                           {:key :subt :type :tiny-subt}])
+                   :sta (make-protocol
+                         [{:key :type :type :type} {:key :reqi} {:key :zero}
+                          {:key :replay-speed :type :float} {:key :flags :type :word}
+                          {:key :ingame-cam} {:key :viewed-player-id}
+                          {:key :num-players-in-race} {:key :num-connections}
+                          {:key :num-finished} {:key :race-in-progress}
+                          {:key :qualify-minutes} {:key :race-laps}
+                          {:key :spare-2} {:key :spare-3}
+                          {:key :track :type :string :length 6}
+                          {:key :weather} {:key :wind}])
+                   :ver (make-protocol
+                         [;{:key :size}
+                          {:key :type :type :type} ; The first byte is parsed as {:type :some-key}
+                          {:key :reqi} ; The second byte is parsed as {:reqi int}
+                          {:key :zero}
+                          {:key :version :type :string :length 8} ; The next 8 bytes are parsed as {:version "string"}
+                          {:key :product :type :string :length 6} ; The next 6 bytes are parsed as {:product "string"}
+                          {:key :insim-version} ; {:insim-version int}
+                          {:key :spare}])})
+
 (def is-ver-protocol
   (make-protocol
    [;{:key :size}
