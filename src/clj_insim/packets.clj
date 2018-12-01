@@ -5,9 +5,10 @@
 
 (def ^:private INSIM-VERSION 7)
 
-(def ^:private DEFAULTS {:admin (util/->cstring util/null-char 16)
+(def ^:private DEFAULTS {:admin util/null-char
                          :data 0
                          :flags (short 0)
+                         :i-name "clj-insim"
                          :interval (short 0)
                          :prefix (int \space)
                          :reqi 0
@@ -22,20 +23,26 @@
   [byte-buffer x]
   (.put byte-buffer (.byteValue (int x))))
 
+(defn- put-word
+  "Return byte-buffer with x put as word (2-byte short)"
+  [byte-buffer x]
+  (.putShort byte-buffer (short x)))
+
+(defn- put-string
+  "Return byte-buffer with x put as series of characters"
+  [byte-buffer x]
+  (.put byte-buffer (.getBytes x)))
+
 (defn- header
   "Returns a ByteBuffer with the InSim header"
   [{:keys [size type reqi data]}]
   (let [capacity (or size (:size DEFAULTS))
         byte-buffer (ByteBuffer/allocate capacity)]
     (doto byte-buffer
-;      (put-byte capacity)
-      (.put (.byteValue (int capacity)))
-;      (put-byte (or type (enums/isp :tiny)))
-      (.put (.byteValue (int (or type (enums/isp :tiny)))))
-;      (put-byte (or reqi (:reqi DEFAULTS)))
-      (.put (.byteValue (int (or reqi (:reqi DEFAULTS)))))
-;      (put-byte (or data (:data DEFAULTS)))
-      (.put (.byteValue (int (or data (:data DEFAULTS))))))))
+      (put-byte capacity)
+      (put-byte (or type (enums/isp :tiny)))
+      (put-byte (or reqi (:reqi DEFAULTS)))
+      (put-byte (or data (:data DEFAULTS))))))
 
 (defn- finalize
   "Returns a byte-array filled with bytes from byte-buffer"
@@ -51,35 +58,32 @@
   ([]
    (is-isi {}))
   ([{:keys [admin flags i-name interval prefix udp-port]}]
-   (let [header (header {:size 44 :type (enums/isp :isi) :reqi 1})
+   (let [header (header {:size 44
+                         :type (enums/isp :isi)
+                         :reqi 1})
          packet (doto header
-                  (.putShort (or udp-port (:udp-port DEFAULTS)))
-                  (.putShort (or flags (:flags DEFAULTS)))
-                  (.put (.byteValue INSIM-VERSION))
-                  (.put (.byteValue (or prefix (:prefix DEFAULTS))))
-                  (.putShort (or interval (:interval DEFAULTS)))
-                  (.put (.getBytes (or admin (:admin DEFAULTS)))) ; Admin password (if set)
-                  (.put (.getBytes (util/->cstring "clj-insim" 16))))]
+                  (put-word (or udp-port (:udp-port DEFAULTS)))
+                  (put-word (or flags (:flags DEFAULTS)))
+                  (put-byte INSIM-VERSION)
+                  (put-byte (or prefix (:prefix DEFAULTS)))
+                  (put-word (or interval (:interval DEFAULTS)))
+;                  (.put (.getBytes (util/->cstring util/null-char 16)))
+                  (put-string (util/->cstring (or admin (:admin DEFAULTS)) 16))
+;                  (.put (.getBytes (util/->cstring "clj-insim" 16)))
+                  (put-string (util/->cstring (or i-name (:i-name DEFAULTS)) 16))
+                  )]
+     (finalize packet))))
+
+(defn is-tiny
+  ([]
+   (is-tiny {}))
+  ([{:keys [data]}]
+   (let [packet (header {:size 4
+                         :type (enums/isp :tiny)
+                         :data (or data (enums/tiny :none))})]
      (finalize packet))))
 
 ;;;; OLD STUFF BELOW!
-
-(defn is-tiny-packet [k]
-  (let [size 4 reqi 0 subt 0
-        {:keys [byte-buffer buffer]} (allocate-buffers size)]
-    (doto byte-buffer
-      (.put (.byteValue size))
-      (.put (.byteValue (enums/isp :tiny)))
-      (.put (.byteValue reqi)) ; 
-      (.put (.byteValue subt)) ; 0 = keepalive packet
-      (.flip)
-      (.get buffer))
-    buffer))
-
-(comment
-  (count (into [] (packets/is-isi-packet))) ; Should be 44
-  (count (String. (packets/is-isi-packet))) ; Should be 44
-)
 
 (defn is-mst-packet
   [msg]
