@@ -9,14 +9,14 @@
    (apply str)))
 (defn- bytes->isp-type [c]
   (-> c first enums/isp-key))
-(defn- bytes->tiny-subt [c]
+(defn- bytes->tiny-subtype [c]
   (-> c first enums/tiny-key))
 
 (defn- parse-protocol-map [{:keys [key type length]}]
   (case type
     :string {:bytes length :cast bytes->string :key key}
     :type {:bytes 1 :cast bytes->isp-type :key key}
-    :tiny-subt {:bytes 1 :cast bytes->tiny-subt :key key}
+    :tiny-subtype {:bytes 1 :cast bytes->tiny-subtype :key key}
     :word {:bytes 2 :cast #(map int %) :key key}
     :bytes {:bytes length :cast #(map int %) :key key}
     :int {:bytes 4 :cast #(map int %) :key key}
@@ -68,7 +68,7 @@
                           [;{:key :size}
                            {:key :type :type :type}
                            {:key :reqi}
-                           {:key :subt :type :tiny-subt}])
+                           {:key :subt-type :type :tiny-subtype}])
                    :sta (make-protocol
                          [{:key :type :type :type} {:key :reqi} {:key :zero}
                           {:key :replay-speed :type :float} {:key :flags :type :word}
@@ -117,7 +117,7 @@
    [;{:key :size}
     {:key :type :type :type}
     {:key :reqi}
-    {:key :subt :type :tiny-subt}]))
+    {:key :sub-type :type :tiny-subtype}]))
 
 (def is-npl-protocol
   (make-protocol

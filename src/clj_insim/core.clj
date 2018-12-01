@@ -13,7 +13,7 @@
    {:player-name "AI 3" :points 8}
    {:player-name "AI 4" :points 7}
    {:player-name "AI 5" :points 6}
-   {:player-name "AI 6" :points 5}
+   {:player-name "AI 6" :points 11}
    {:player-name "AI 7" :points 3}
    {:player-name "AI 8" :points 1}])
 
@@ -53,7 +53,7 @@
     (welcome)
     (close-connection)))
 
-(defn dispatch-tiny [{:keys [subt]}]
+(defn dispatch-tiny [{:keys [sub-type]}]
   (do
     (println "Sent IS_TINY to maintain connection...")
     (packets/is-tiny)))
@@ -112,6 +112,4 @@
   (def simple-server (serve handler))
   ;; To stop the client
   (reset! simple-server false)
-
-  (:test nil)
 )
