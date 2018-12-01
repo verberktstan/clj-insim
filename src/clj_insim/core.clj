@@ -11,6 +11,7 @@
 
 (def championship
   [{:player-name "AI 1" :points 10}
+   {:player-name "AI 2" :points 12}
    {:player-name "Henk" :points 9}
    {:player-name "AI 3" :points 8}
    {:player-name "Boer Tarrel" :points 7}
@@ -84,9 +85,11 @@
 
 (defn new-connection [{:keys [player-name reqi] :as ncn}]
   (if (= reqi 0) ; If new connection (not a response to info request)
-    (do
-      (swap! connections assoc player-name (select-keys ncn [:user-name :player-name :uniq-connection-id]))
-      (packets/is-mst (str player-name " added to connection pool!")))
+    (let [{:keys [handicap-mass]} (first (filter #(= (:player-name %) player-name) success-ballast))]
+      (do
+        (swap! connections assoc player-name (select-keys ncn [:user-name :player-name :uniq-connection-id]))
+        (packets/is-mst
+         (str player-name "'s current succest ballast: " (if handicap-mass handicap-mass 0) "kg"))))
     (packets/is-tiny)))
 
 (def dispatchers
