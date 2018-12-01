@@ -1,7 +1,5 @@
 (ns clj-insim.core
-  (:require [clj-sockets.core :as sockets]
-            [clojure.java.io :as io]
-            [clj-insim.enums :as enums]
+  (:require [clj-insim.enums :as enums]
             [clj-insim.packets :as packets]
             [clj-insim.parsers :refer [parse-packet]]
             [clj-insim.protocols :refer [is-protocols]]
