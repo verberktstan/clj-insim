@@ -7,8 +7,33 @@
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
 
-(def success-mass [{:player-name "Van Sterberkt" :handicap-mass 10}
-                   {:player-name "Boer Tarrel" :handicap-mass 15}])
+(def championship
+  [{:player-name "Van Sterberkt" :points 10}
+   {:player-name "Boer Tarrel" :points 5}
+   {:player-name "Henk" :points 0}])
+
+(defn positional-ballast [i]
+  (case i
+    0 50
+    1 44
+    2 38
+    3 32
+    4 26
+    5 21
+    6 15
+    7 8
+    0))
+
+(defn calculate-ballast
+  "Calculate success ballast based on position of player in result."
+  [result]
+  (let [result (sort-by :points > result)]
+    (map-indexed
+     (fn [i player]
+       (assoc player :handicap-mass (positional-ballast i)))
+     result)))
+
+(def success-ballast (calculate-ballast championship))
 
 (defn welcome []
   (packets/is-mst "Hello from clj-insim!"))
@@ -27,8 +52,8 @@
     (println "Sent IS_TINY to maintain connection...")
     (packets/is-tiny)))
 
-(defn respects-handicaps? [{:keys [player-name handicap-mass handicap-restriction]}]
-  (let [p (first (filter #(= (:player-name %) player-name) success-mass))]
+(defn respects-handicaps? [{:keys [player-name handicap-mass handicap-restriction]} success-ballast]
+  (let [p (first (filter #(= (:player-name %) player-name) success-ballast))]
     (and
      (or (not (:handicap-mass p))
          (>= handicap-mass (:handicap-mass p)))
@@ -44,7 +69,7 @@
 
 (defn verify-new-player-join [{:keys [number-player uniq-connection-id] :as npl}]
   (if (= number-player 0) ; If this is a join request...
-    (if (respects-handicaps? npl)
+    (if (respects-handicaps? npl success-ballast)
       (spawn uniq-connection-id)
       (reject uniq-connection-id))
     (packets/is-tiny)))
