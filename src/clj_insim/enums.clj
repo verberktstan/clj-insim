@@ -28,6 +28,9 @@
 (def jrr-action
   {:reject 0 :spawn 1 :reset 4 :reset-no-repair 5})
 
+(def vtn-action
+  {:none 0 :end 1 :restart 2 :qualify 3 :num 4})
+
 (defn index->key [m]
   (fn [i]
     (->>
@@ -38,6 +41,7 @@
 
 (def isp-key (index->key isp))
 (def tiny-key (index->key tiny))
+(def vtn-action-key (index->key vtn-action))
 
 (comment
   (:none isp) ; Return the index of :none in the isp enum

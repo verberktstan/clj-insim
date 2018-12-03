@@ -12,6 +12,8 @@
   (-> c first enums/isp-key))
 (defn- bytes->tiny-subtype [c]
   (-> c first enums/tiny-key))
+(defn- bytes->vtn-action [c]
+  (-> c first enums/vtn-action-key))
 
 (defn- parse-protocol-map [{:keys [key type length]}]
   (case type
@@ -22,10 +24,12 @@
     :bytes {:bytes length :cast #(map int %) :key key}
     :int {:bytes 4 :cast #(map int %) :key key}
     :float {:bytes 4 :cast #(map int %) :key key}
+    :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
     {:bytes 1 :cast bytes->int :key key}))
 
 (defn- make-protocol [c]
-  (into [] (map parse-protocol-map c)))
+  (when c
+    (into [] (map parse-protocol-map c))))
 
 (def ^{:private true} is-protocols
   {
@@ -107,7 +111,14 @@
          {:key :version :type :string :length 8}
          {:key :product :type :string :length 6}
          {:key :insim-version}
-         {:key :spare}]})
+         {:key :spare}]
+
+   ;; IS_VTN - VoTe Notify
+   :vtn [{:key :type :type :type} {:key :reqi} {:key :zero}
+         {:key :uniq-connection-id}
+         {:key :action :type :vtn-action}
+         {:key :spare-2}
+         {:key :spare-3}]})
 
 
 (defn- parse-bytes
