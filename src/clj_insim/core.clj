@@ -12,12 +12,9 @@
 (def championship
   [{:player-name "AI 1" :points 10}
    {:player-name "AI 2" :points 12}
-   {:player-name "Henk" :points 9}
    {:player-name "AI 3" :points 8}
-   {:player-name "Boer Tarrel" :points 7}
    {:player-name "AI 5" :points 6}
    {:player-name "AI 6" :points 11}
-   {:player-name "Van Sterberkt" :points 3}
    {:player-name "AI 8" :points 1}])
 
 (defn positional-ballast [i]
