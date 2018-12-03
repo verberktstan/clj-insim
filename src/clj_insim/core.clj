@@ -13,20 +13,23 @@
   [{:player-name "AI 1" :points 10}
    {:player-name "AI 2" :points 12}
    {:player-name "AI 3" :points 8}
+   {:player-name "Henk" :points 7}
    {:player-name "AI 5" :points 6}
    {:player-name "AI 6" :points 11}
    {:player-name "AI 8" :points 1}])
 
 (defn positional-ballast [i]
   (case i
-    0 50
-    1 44
-    2 38
-    3 32
-    4 26
-    5 21
-    6 15
-    7 8
+    0 54
+    1 48
+    2 42
+    3 36
+    4 30
+    5 24
+    6 18
+    7 12
+    8 6
+    9 6
     0))
 
 (defn calculate-ballast
@@ -114,9 +117,17 @@
         (do (println "Incomping packet cannot be parsed: sending a IS_TINY packet by default...")
           (packets/is-tiny))))))
 
+(defn print-binary-handler [packet]
+  (let [[type] packet
+        type-key (enums/isp-key (int type))]
+    (do
+      (println "\n=== Received " (name type-key) " packet from LFS ===")
+      (prn packet)
+      (packets/is-tiny))))
+
 (comment
   ;; Start a tcp client with simple-handler
-  (def simple-server (serve handler))
+  (def simple-server (serve print-binary-handler))
   ;; To stop the client
   (reset! simple-server false)
 )
