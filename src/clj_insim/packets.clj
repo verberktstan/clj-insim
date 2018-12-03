@@ -6,7 +6,7 @@
 
 (def ^:private INSIM-VERSION 7)
 
-(def ^:private DEFAULTS {:admin util/null-char
+(def ^:private DEFAULTS {:admin "abcde"
                          :data 0
                          :flags (short 2048)
                          :i-name "clj-insim"
@@ -113,11 +113,16 @@
 
 (defn is-jrr
   [{:keys [player-id uniq-connection-id jrr-action]}]
-  (let [header (header {:size 16
+  (let [join-request? (or (= jrr-action (enums/jrr-action :spawn))
+                     (= jrr-action (enums/jrr-action :reject)))
+        data (if join-request? 0 player-id)
+        ucid (if join-request? uniq-connection-id 0)
+        header (header {:size 16
                         :type (enums/isp :jrr)
-                        :data player-id})
+                        :reqi 1
+                        :data data})
         partial-packet (doto header
-                         (put-byte (or uniq-connection-id 0))
+                         (put-byte ucid)
                          (put-byte (or jrr-action (enums/jrr-action :spawn)))
                          (put-byte 0) ; spare
                          (put-byte 0))

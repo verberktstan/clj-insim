@@ -8,6 +8,7 @@
 
 (def connections (atom {}))
 (def players (atom {}))
+(def race-in-progress? (atom false))
 
 (def championship
   [{:player-name "AI 1" :points 10}
@@ -92,9 +93,17 @@
          (str player-name "'s current succest ballast: " (if handicap-mass handicap-mass 0) "kg"))))
     (packets/is-tiny)))
 
+(defn update-state [{:keys [race-in-progress]}]
+  (if (not= (>= race-in-progress 1)
+            @race-in-progress?)
+    (do (swap! race-in-progress? not)
+        (packets/is-mst "Race state changed!"))
+    (packets/is-tiny)))
+
 (def dispatchers
   {:ncn new-connection
    :npl verify-new-player-join
+   :sta update-state
    :tiny dispatch-tiny
    :ver check-version})
 
@@ -114,7 +123,7 @@
       (println "\n=== Received " (name type-key) " packet from LFS ===")
       (if incoming
         (dispatch incoming)
-        (do (println "Incomping packet cannot be parsed: sending a IS_TINY packet by default...")
+        (do (println "Incoming packet cannot be parsed: sending a IS_TINY packet by default...")
           (packets/is-tiny))))))
 
 (defn print-binary-handler [packet]
@@ -127,7 +136,7 @@
 
 (comment
   ;; Start a tcp client with simple-handler
-  (def simple-server (serve print-binary-handler))
+  (def simple-server (serve handler))
   ;; To stop the client
   (reset! simple-server false)
 )
