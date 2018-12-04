@@ -8,7 +8,7 @@
 
 (def connections (atom {}))
 (def players (atom {}))
-(def race-in-progress? (atom false))
+(def race-in-progress? (atom :none))
 
 (def championship
   [{:player-name "AI 1" :points 10}
@@ -94,10 +94,10 @@
     (packets/is-tiny)))
 
 (defn update-state [{:keys [race-in-progress]}]
-  (if (not= (>= race-in-progress 1)
-            @race-in-progress?)
-    (do (swap! race-in-progress? not)
-        (packets/is-mst "Race state changed!"))
+  (if (not= @race-in-progress? race-in-progress)
+    (do
+      (reset! race-in-progress? race-in-progress)
+      (packets/is-mst (str (name race-in-progress) " started!")))
     (packets/is-tiny)))
 
 (def dispatchers

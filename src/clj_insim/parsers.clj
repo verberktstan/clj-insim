@@ -12,6 +12,8 @@
   (-> c first enums/isp-key))
 (defn- bytes->tiny-subtype [c]
   (-> c first enums/tiny-key))
+(defn- bytes->sta-race-in-progress [c]
+  (-> c first enums/sta-race-in-progress-key))
 (defn- bytes->vtn-action [c]
   (-> c first enums/vtn-action-key))
 
@@ -24,6 +26,7 @@
     :bytes {:bytes length :cast #(map int %) :key key}
     :int {:bytes 4 :cast #(map int %) :key key}
     :float {:bytes 4 :cast #(map int %) :key key}
+    :sta-race-in-progress {:bytes 1 :cast bytes->sta-race-in-progress :key key}
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
     {:bytes 1 :cast bytes->int :key key}))
 
@@ -97,7 +100,7 @@
          {:key :num-players-in-race}
          {:key :num-connections}
          {:key :num-finished}
-         {:key :race-in-progress}
+         {:key :race-in-progress :type :sta-race-in-progress}
          {:key :qualify-minutes}
          {:key :race-laps}
          {:key :spare-2}

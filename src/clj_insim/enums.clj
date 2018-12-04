@@ -1,5 +1,13 @@
 (ns clj-insim.enums)
 
+(defn index->key [m]
+  (fn [i]
+    (->>
+     m
+     (filter #(= (val %) i))
+     first
+     key)))
+
 ;; The second byte of any packet is one of these
 (def isp
   {:none 0 :isi 1 :ver 2 :tiny 3 :small 4
@@ -16,6 +24,8 @@
    :acr 55 :hcp 56 :nci 57 :jrr 58 :uco 59
    :oco 60 :ttc 61 :slc 62 :csc 63})
 
+(def isp-key (index->key isp))
+
 ;; The fourth byte of an IS_TINY packet is one of these
 (def tiny
   {:none 0 :ver 1 :close 2 :ping 3 :reply 4
@@ -25,22 +35,18 @@
    :axi 20 :axc 21 :rip 22 :nci 23 :alc 24
    :axm 25 :slc 26})
 
+(def tiny-key (index->key tiny))
+
 (def jrr-action
   {:reject 0 :spawn 1 :reset 4 :reset-no-repair 5})
+
+(def sta-race-in-progress {:none 0 :race 1 :qualification 2})
+
+(def sta-race-in-progress-key (index->key sta-race-in-progress))
 
 (def vtn-action
   {:none 0 :end 1 :restart 2 :qualify 3 :num 4})
 
-(defn index->key [m]
-  (fn [i]
-    (->>
-     m
-     (filter #(= (val %) i))
-     first
-     key)))
-
-(def isp-key (index->key isp))
-(def tiny-key (index->key tiny))
 (def vtn-action-key (index->key vtn-action))
 
 (comment
