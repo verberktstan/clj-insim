@@ -22,10 +22,10 @@
     :string {:bytes length :cast bytes->string :key key}
     :type {:bytes 1 :cast bytes->isp-type :key key}
     :tiny-subtype {:bytes 1 :cast bytes->tiny-subtype :key key}
-    :word {:bytes 2 :cast #(map int %) :key key}
+    :word {:bytes 2 :cast #(apply + %) :key key}
     :bytes {:bytes length :cast #(map int %) :key key}
     :int {:bytes 4 :cast #(map int %) :key key}
-    :float {:bytes 4 :cast #(map int %) :key key}
+    :float {:bytes 4 :cast #(apply + %) :key key}
     :sta-race-in-progress {:bytes 1 :cast bytes->sta-race-in-progress :key key}
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
     {:bytes 1 :cast bytes->int :key key}))
@@ -87,6 +87,9 @@
          {:key :number-player}
          {:key :spare-2}
          {:key :spare-3}]
+
+   ;; IS_PLL ; PLayer Leave race
+   :pll [{:key :type :type :type} {:key :reqi} {:key :player-id}]
 
    ;; IS_TINY
    :tiny [{:key :type :type :type} {:key :reqi} {:key :subt-type :type :tiny-subtype}]

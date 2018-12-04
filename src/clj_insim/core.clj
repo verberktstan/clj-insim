@@ -6,8 +6,7 @@
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
 
-(def connections (atom {}))
-(def players (atom {}))
+(def connections (atom {})) ;; @connections
 (def race-in-progress? (atom :none))
 
 (def championship
@@ -70,18 +69,21 @@
      (or (not (:handicap-restriction p))
          (>= handicap-restriction (:handicap-restriction p))))))
 
-(defn reject [uniq-connection-id]
+(defn reject [{:keys [uniq-connection-id] :as npl}]
   (packets/is-jrr {:uniq-connection-id uniq-connection-id
                    :jrr-action (enums/jrr-action :reject)}))
-(defn spawn [uniq-connection-id]
-  (packets/is-jrr {:uniq-connection-id uniq-connection-id
-                   :jrr-action (enums/jrr-action :spawn)}))
 
-(defn verify-new-player-join [{:keys [number-player uniq-connection-id] :as npl}]
+(defn spawn [{:keys [player-name uniq-connection-id] :as npl}]
+  (do
+    (swap! players assoc player-name (select-keys npl [:user-name :player-id :player-name :uniq-connection-id]))
+    (packets/is-jrr {:uniq-connection-id uniq-connection-id
+                     :jrr-action (enums/jrr-action :spawn)})))
+
+(defn verify-new-player-join [{:keys [number-player] :as new-player}]
   (if (= number-player 0) ; If this is a join request...
-    (if (respects-handicaps? npl success-ballast)
-      (spawn uniq-connection-id)
-      (reject uniq-connection-id))
+    (if (respects-handicaps? new-player success-ballast)
+      (spawn new-player)
+      (reject new-player))
     (packets/is-tiny)))
 
 (defn new-connection [{:keys [player-name reqi] :as ncn}]
