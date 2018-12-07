@@ -6,43 +6,69 @@
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
 
+(def CAR-HANDICAPS
+  {"XFG" [{:mass 30} ; first (0)
+          {:mass 27}
+          {:mass 24}
+          {:mass 21}
+          {:mass 18}
+          {:mass 15}
+          {:mass 12}
+          {:mass 9}
+          {:mass 6} ; ninth (8)
+          {:mass 3}]
+   "XRG" [{:mass 27 :restriction 1} ; first (0)
+          {:mass 24 :restriction 1}
+          {:mass 21 :restriction 1}
+          {:mass 21}
+          {:mass 18}
+          {:mass 15}
+          {:mass 12}
+          {:mass 9}
+          {:mass 6} ; ninth (8)
+          {:mass 3}]})
+
 (def connections (atom {})) ;; @connections
 (def players (atom {})) ;; @players
+(def rejected (atom [])) ;; @rejected
 (def race-in-progress? (atom :none))
 
 (def championship
-  [{:player-name "AI 1" :points 10}
-   {:player-name "AI 2" :points 12}
-   {:player-name "AI 3" :points 8}
-   {:player-name "Henk" :points 7}
-   {:player-name "AI 5" :points 6}
-   {:player-name "AI 6" :points 11}
-   {:player-name "AI 8" :points 1}])
+  (sort-by :points > [{:player-name "AI 1" :points 10}
+                      {:player-name "AI 2" :points 12}
+                      {:player-name "AI 3" :points 8}
+                      {:player-name "Henk" :points 13}
+                      {:player-name "AI 5" :points 6}
+                      {:player-name "AI 6" :points 11}
+                      {:player-name "AI 8" :points 1}]))
+;; (assoc-positions championship)
 
-(defn positional-ballast [i]
-  (case i
-    0 54
-    1 48
-    2 42
-    3 36
-    4 30
-    5 24
-    6 18
-    7 12
-    8 6
-    9 6
-    0))
+;; Basic handicap mass is (horsepower/kilograms) * 250
+(defn car-handicaps
+  "Returns handicaps for position i for a specific car name"
+  [car-name i]
+  (-> CAR-HANDICAPS
+      (get car-name)
+      (nth i)))
 
-(defn calculate-ballast
-  "Calculate success ballast based on position of player in result."
-  [result]
-  (let [result (sort-by :points > result)]
-    (map-indexed
-     (fn [i player]
-       (assoc player :handicap-mass (positional-ballast i)))
-     result)))
+;; (car-handicaps "XFG" 0)
 
-(def success-ballast (calculate-ballast championship)) ;; success-ballast
+(defn assoc-positions [result]
+  (map-indexed
+   (fn [i player]
+     (assoc player :position i))
+   (sort-by :points > result)))
+;; (assoc-positions championship)
+
+(defn handicaps-for-player [player-name car-name]
+  (let [result (assoc-positions championship)
+        {:keys [position]} (first (filter #(= (:player-name %) player-name) result))]
+    (when position
+      (car-handicaps car-name position))))
+;; (handicaps-for-player "Henk" "XRG")
+;; (handicaps-for-player "AI 2" "XFG")
+;; (handicaps-for-player "AI 3" "XFG")
+;; (handicaps-for-player "AI 4" "XRG")
 
 (defn welcome []
   (packets/is-mst "Hello from clj-insim!"))
@@ -61,38 +87,25 @@
     (println "Sent IS_TINY to maintain connection...")
     (packets/is-tiny)))
 
-(defn respects-handicaps? [{:keys [player-name handicap-mass handicap-restriction]} success-ballast]
-  (let [p (first (filter #(= (:player-name %) player-name) success-ballast))]
-    (and
-     (or (not (:handicap-mass p))
-         (>= handicap-mass (:handicap-mass p)))
-     (or (not (:handicap-restriction p))
-         (>= handicap-restriction (:handicap-restriction p))))))
-
 (defn reject [{:keys [uniq-connection-id] :as npl}]
   (packets/is-jrr {:uniq-connection-id uniq-connection-id
                    :jrr-action (enums/jrr-action :reject)}))
 
-(defn spawn [{:keys [player-name uniq-connection-id] :as npl}]
+(defn spawn [{:keys [uniq-connection-id] :as npl}]
   (packets/is-jrr {:uniq-connection-id uniq-connection-id
                    :jrr-action (enums/jrr-action :spawn)}))
 
-(defn verify-new-player-join [{:keys [number-player] :as new-player}]
-  (when (= number-player 0) ; If this is a join request...
-    (if (respects-handicaps? new-player success-ballast)
+(defn respect-handicaps? [player-name car-name handicap-mass handicap-restriction]
+  (let [{:keys [mass restriction]} (handicaps-for-player player-name car-name)]
+    (and
+     (or (nil? mass) (>= handicap-mass mass))
+     (or (nil? restriction) (>= handicap-restriction restriction)))))
+
+(defn new-player [{:keys [car-name uniq-connection-id player-name handicap-mass handicap-restriction number-player] :as new-player}]
+  (when (= number-player 0) ; When this is a join request...
+    (if (respect-handicaps? player-name car-name handicap-mass handicap-restriction)
       (spawn new-player)
       (reject new-player))))
-
-(defn register-connection [{:keys [uniq-connection-id] :as new-connection}]
-  (swap! connections assoc (key uniq-connection-id)
-         (select-keys new-connection [:user-name :player-name :uniq-connection-id :admin :total :flags])))
-
-(defn new-connection [{:keys [player-name reqi] :as ncn}]
-  (when (= reqi 0) ; If new connection (not a response to info request)
-    (let [{:keys [handicap-mass]} (first (filter #(= (:player-name %) player-name) success-ballast))]
-      (register-connection ncn)
-      (packets/is-mst
-       (str player-name "'s current succest ballast: " (if handicap-mass handicap-mass 0) "kg")))))
 
 (defn update-state [{:keys [race-in-progress]}]
   (when (not= @race-in-progress? race-in-progress)
@@ -100,9 +113,12 @@
       (reset! race-in-progress? race-in-progress)
       (packets/is-mst (str (name race-in-progress) " started!")))))
 
+;; Specify dispatchers for each type of packet
 (def dispatchers
-  {:ncn new-connection
-   :npl verify-new-player-join
+  {
+;:mso reply-messages
+;   :ncn new-connection
+   :npl new-player
    :sta update-state
    :tiny dispatch-tiny
    :ver check-version})

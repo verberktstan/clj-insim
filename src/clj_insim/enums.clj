@@ -26,6 +26,18 @@
 
 (def isp-key (index->key isp))
 
+;; The seventh byte of an IS_MSO packets is one of these
+(def mso-user
+  {:system 0 :user 1 :prefix 2 :o 3 :num 4})
+
+(def mso-user-key (index->key mso-user))
+
+;; The sixth byte of an IS_NPL packet is one of these
+(def npl-player-type
+  {:female 0 :ai 1 :remote 2})
+
+(def npl-player-type-key (index->key npl-player-type))
+
 ;; The fourth byte of an IS_TINY packet is one of these
 (def tiny
   {:none 0 :ver 1 :close 2 :ping 3 :reply 4

@@ -16,6 +16,10 @@
   (-> c first enums/sta-race-in-progress-key))
 (defn- bytes->vtn-action [c]
   (-> c first enums/vtn-action-key))
+(defn- bytes->mso-user [c]
+  (-> c first enums/mso-user-key))
+(defn- bytes->npl-player-type [c]
+  (-> c first enums/npl-player-type-key))
 
 (defn- parse-protocol-map [{:keys [key type length]}]
   (case type
@@ -26,6 +30,8 @@
     :bytes {:bytes length :cast #(map int %) :key key}
     :int {:bytes 4 :cast #(map int %) :key key}
     :float {:bytes 4 :cast #(apply + %) :key key}
+    :mso-user {:bytes 1 :cast bytes->mso-user :key key}
+    :npl-player-type {:bytes 1 :cast bytes->npl-player-type :key key}
     :sta-race-in-progress {:bytes 1 :cast bytes->sta-race-in-progress :key key}
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
     :unsigned {:bytes 4 :cast #(map int %) :key key}
@@ -56,7 +62,7 @@
    :mso [{:key :type :type :type} {:key :reqi} {:key :zero}
          {:key :uniq-connection-id}
          {:key :player-id}
-         {:key :user-type}
+         {:key :user-type :type :mso-user}
          {:key :text-start}
          {:key :message :type :string :length 128}]
 
@@ -76,10 +82,10 @@
          {:key :spare-2}
          {:key :spare-3}]
 
-   ;; IS_NPL
+   ;; IS_NPL - New PLayer
    :npl [{:key :type :type :type} {:key :reqi} {:key :player-id}
          {:key :uniq-connection-id}
-         {:key :player-type}
+         {:key :player-type :type :npl-player-type}
          {:key :flags :type :word}
          {:key :player-name :type :string :length 24}
          {:key :license-plate :type :string :length 8}
