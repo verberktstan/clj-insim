@@ -2,11 +2,12 @@
   (:require [clj-insim.enums :as enums]
             [clj-insim.packets :as packets]
             [clj-insim.parsers :refer [parse]]
-            [clj-insim.socket :refer [serve]]
+            [clj-insim.socket :refer [client]]
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
 
 (def connections (atom {})) ;; @connections
+(def players (atom {})) ;; @players
 (def race-in-progress? (atom :none))
 
 (def championship
@@ -41,8 +42,7 @@
        (assoc player :handicap-mass (positional-ballast i)))
      result)))
 
-(def success-ballast (calculate-ballast championship))
-;; success-ballast
+(def success-ballast (calculate-ballast championship)) ;; success-ballast
 
 (defn welcome []
   (packets/is-mst "Hello from clj-insim!"))
@@ -74,33 +74,31 @@
                    :jrr-action (enums/jrr-action :reject)}))
 
 (defn spawn [{:keys [player-name uniq-connection-id] :as npl}]
-  (do
-    (swap! players assoc player-name (select-keys npl [:user-name :player-id :player-name :uniq-connection-id]))
-    (packets/is-jrr {:uniq-connection-id uniq-connection-id
-                     :jrr-action (enums/jrr-action :spawn)})))
+  (packets/is-jrr {:uniq-connection-id uniq-connection-id
+                   :jrr-action (enums/jrr-action :spawn)}))
 
 (defn verify-new-player-join [{:keys [number-player] :as new-player}]
-  (if (= number-player 0) ; If this is a join request...
+  (when (= number-player 0) ; If this is a join request...
     (if (respects-handicaps? new-player success-ballast)
       (spawn new-player)
-      (reject new-player))
-    (packets/is-tiny)))
+      (reject new-player))))
+
+(defn register-connection [{:keys [uniq-connection-id] :as new-connection}]
+  (swap! connections assoc (key uniq-connection-id)
+         (select-keys new-connection [:user-name :player-name :uniq-connection-id :admin :total :flags])))
 
 (defn new-connection [{:keys [player-name reqi] :as ncn}]
-  (if (= reqi 0) ; If new connection (not a response to info request)
+  (when (= reqi 0) ; If new connection (not a response to info request)
     (let [{:keys [handicap-mass]} (first (filter #(= (:player-name %) player-name) success-ballast))]
-      (do
-        (swap! connections assoc player-name (select-keys ncn [:user-name :player-name :uniq-connection-id]))
-        (packets/is-mst
-         (str player-name "'s current succest ballast: " (if handicap-mass handicap-mass 0) "kg"))))
-    (packets/is-tiny)))
+      (register-connection ncn)
+      (packets/is-mst
+       (str player-name "'s current succest ballast: " (if handicap-mass handicap-mass 0) "kg")))))
 
 (defn update-state [{:keys [race-in-progress]}]
-  (if (not= @race-in-progress? race-in-progress)
+  (when (not= @race-in-progress? race-in-progress)
     (do
       (reset! race-in-progress? race-in-progress)
-      (packets/is-mst (str (name race-in-progress) " started!")))
-    (packets/is-tiny)))
+      (packets/is-mst (str (name race-in-progress) " started!")))))
 
 (def dispatchers
   {:ncn new-connection
@@ -110,35 +108,24 @@
    :ver check-version})
 
 (defn dispatch [{:keys [type] :as incoming}]
-  (let [f (type dispatchers)]
-    (do (prn incoming)
-      (if f
-        (f incoming)
-        (packets/is-tiny)))))
+  (when incoming
+    (when-let [f (type dispatchers)]
+      (f incoming))))
 
-;; Simple hander prints the type of packet received and returns a IS_TYNI/none packet to maintain connection
-(defn handler [packet]
-  (let [[type] packet
-        type-key (enums/isp-key (int type))
-        incoming (parse type-key packet)]
-    (do
-      (println "\n=== Received " (name type-key) " packet from LFS ===")
-      (if incoming
-        (dispatch incoming)
-        (do (println "Incoming packet cannot be parsed: sending a IS_TINY packet by default...")
-          (packets/is-tiny))))))
+(defn print-incoming [type-key incoming]
+  (do
+    (println "\n-== Received " (name type-key) " packet from LFS ==-")
+    (prn incoming)))
 
-(defn print-binary-handler [packet]
-  (let [[type] packet
-        type-key (enums/isp-key (int type))]
-    (do
-      (println "\n=== Received " (name type-key) " packet from LFS ===")
-      (prn packet)
-      (packets/is-tiny))))
+(defn handler [[type :as packet]]
+  (let [type-key (enums/isp-key type)]
+    (when-let [incoming (parse type-key packet)]
+      (print-incoming type-key incoming)
+      (or (dispatch incoming) (packets/is-tiny)))))
 
 (comment
-  ;; Start a tcp client with simple-handler
-  (def simple-server (serve handler))
+  ;; Start a tcp client with a handler
+  (def simple-client (client handler))
   ;; To stop the client
-  (reset! simple-server false)
+  (reset! simple-client false)
 )

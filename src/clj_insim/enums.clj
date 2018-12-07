@@ -37,6 +37,9 @@
 
 (def tiny-key (index->key tiny))
 
+(def cnl-reason
+  {:disconnect 0 :time-out 1 :lost-connection 2 :kicked 3 :banned 4})
+
 (def jrr-action
   {:reject 0 :spawn 1 :reset 4 :reset-no-repair 5})
 

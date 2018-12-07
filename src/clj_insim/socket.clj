@@ -18,7 +18,7 @@
     (.write out packet)
     (.flush out)))
 
-(defn serve [handler & {:keys [host port]}]
+(defn client [handler & {:keys [host port]}]
   (let [running (atom true)]
     (future
       (with-open [socket (Socket. (or host HOST) (or port PORT))

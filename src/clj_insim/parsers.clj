@@ -28,6 +28,7 @@
     :float {:bytes 4 :cast #(apply + %) :key key}
     :sta-race-in-progress {:bytes 1 :cast bytes->sta-race-in-progress :key key}
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
+    :unsigned {:bytes 4 :cast #(map int %) :key key}
     {:bytes 1 :cast bytes->int :key key}))
 
 (defn- make-protocol [c]
@@ -68,6 +69,13 @@
          {:key :flags}
          {:key :spare}]
 
+   ;; IS_CNL - CoNnection Left
+   :cnl [{:key :type :type :type} {:key :reqi} {:key :uniq-connection-id}
+         {:key :reason}
+         {:key :total}
+         {:key :spare-2}
+         {:key :spare-3}]
+
    ;; IS_NPL
    :npl [{:key :type :type :type} {:key :reqi} {:key :player-id}
          {:key :uniq-connection-id}
@@ -90,6 +98,24 @@
 
    ;; IS_PLL ; PLayer Leave race
    :pll [{:key :type :type :type} {:key :reqi} {:key :player-id}]
+
+   ;; IS_RES ; RESult of qualify or confirmed finish
+   :res [{:key :type :type :type} {:key :reqi} {:key :player-id}
+         {:key :user-name :type :string :length 24}
+         {:key :player-name :type :string :length 24}
+         {:key :number-plate :type :string :length 8}
+         {:key :skin-prefix :type :string :length 4}
+         {:key :race-time :type :unsigned}
+         {:key :best-lap :type :unsigned}
+         {:key :spare-a}
+         {:key :num-stops}
+         {:key :confirmation-flags}
+         {:key :spare-b}
+         {:key :laps-done :type :word}
+         {:key :flags :type :word}
+         {:key :result-num}
+         {:key :num-results}
+         {:key :penalty-seconds :type :word}]
 
    ;; IS_TINY
    :tiny [{:key :type :type :type} {:key :reqi} {:key :subt-type :type :tiny-subtype}]
