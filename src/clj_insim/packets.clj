@@ -114,7 +114,7 @@
 (defn is-jrr
   [{:keys [player-id uniq-connection-id jrr-action]}]
   (let [join-request? (or (= jrr-action (enums/jrr-action :spawn))
-                     (= jrr-action (enums/jrr-action :reject)))
+                          (= jrr-action (enums/jrr-action :reject)))
         data (if join-request? 0 player-id)
         ucid (if join-request? uniq-connection-id 0)
         header (header {:size 16
