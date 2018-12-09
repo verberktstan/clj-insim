@@ -11,7 +11,7 @@
                          :flags (short 2048)
                          :i-name "clj-insim"
                          :interval (short 0)
-                         :prefix (int \space)
+                         :prefix (int (char \!))
                          :reqi 0
                          :udp-port (short 0)})
 
