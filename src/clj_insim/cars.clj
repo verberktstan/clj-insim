@@ -24,3 +24,10 @@
 ;; Map containing handicaps for first 10 positions for each car...
 (def CAR-HANDICAPS
   (reduce #(assoc %1 %2 (car-masses %2)) {} (keys POWER-WEIGHT)))
+
+(defn car-handicaps
+  "Returns handicaps for position i for a specific car name"
+  [car-name i]
+  (-> CAR-HANDICAPS
+      (get car-name)
+      (nth i)))
