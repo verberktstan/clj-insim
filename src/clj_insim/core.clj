@@ -6,7 +6,7 @@
             [clj-insim.util :as util])
   (:import [java.nio ByteBuffer]))
 
-(def power-weight {"XFG" {:power 115 :weight 942}
+(def POWER-WEIGHT {"XFG" {:power 115 :weight 942}
                    "XRG" {:power 140 :weight 1150}
                    "RB4" {:power 243 :weight 1210}
                    "FXO" {:power 234 :weight 1136}
@@ -26,7 +26,7 @@
   (map #(assoc {} :mass %) (positional-handicap-mass (power-weight car-name))))
 
 (def CAR-HANDICAPS
-  (reduce #(assoc %1 %2 (car-masses %2)) {} CAR-NAMES))
+  (reduce #(assoc %1 %2 (car-masses %2)) {} (keys POWER-WEIGHT)))
 
 (defonce connections (atom {})) ;; @connections
 (defonce players (atom {})) ;; @players
