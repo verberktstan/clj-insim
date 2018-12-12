@@ -4,8 +4,12 @@ A Clojure library designed to interface with Live For Speed InSim.
 
 ## Usage
 
-Start an LFS client with the default parser, on localhost and port 29999.
+Add clj-insim to your project.clj:
+```
+[clj-insim "0.1.0-SNAPSHOT"]
+```
 
+Start an LFS client with the default parser (by default on localhost with port 29999).
 ```
 (ns something.core
   (:require [clj-insim.core :as clj-insim]))
