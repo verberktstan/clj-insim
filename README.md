@@ -4,20 +4,18 @@ A Clojure library designed to interface with Live For Speed InSim.
 
 ## Usage
 
-```
-;; Define a handler that prints the parsed packet and ALWAYS returns an IS_TINY packet.
-(defn handler [packet]
-  (let [{:keys [type] :as parsed-packet} (parse packet)]
-    (do
-      (println "\nReceived " (name type) " packet from LFS")
-      (prn parsed-packet)
-      (packets/is-tiny))))
-      
-;; Start a tcp client with a handler
-(def simple-client (client handler))
+Start an LFS client with the default parser, on localhost and port 29999.
 
-;; To stop the client
-(reset! simple-client false)
+```
+(ns something.core
+  (:require [clj-insim.core :as clj-insim]))
+
+(def client (clj-insim/start-client))
+```
+
+Stop the client by resetting the atom to false.
+```
+(reset! client false)
 ```
 
 ## License
