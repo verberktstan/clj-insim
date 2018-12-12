@@ -105,6 +105,7 @@
 (defn handler [[type :as packet]]
   (let [type-key (enums/isp-key type)]
     (println "\n-== Received " (name type-key) " packet from LFS ==-")
+    (prn packet)
     (if-let [incoming (parse type-key packet)]
       (do
         (prn incoming)

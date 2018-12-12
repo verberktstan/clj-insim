@@ -21,7 +21,8 @@
 (defn- bytes->npl-player-type [c]
   (-> c first enums/npl-player-type-key))
 
-(defn- parse-protocol-map [{:keys [key type length]}]
+(defmulti ->byte-protocol type)
+(defmethod ->byte-protocol clojure.lang.PersistentArrayMap [{:keys [key type length]}]
   (case type
     :string {:bytes length :cast bytes->string :key key}
     :type {:bytes 1 :cast bytes->isp-type :key key}
@@ -37,54 +38,41 @@
     :unsigned {:bytes 4 :cast #(map int %) :key key}
     {:bytes 1 :cast bytes->int :key key}))
 
+(defmethod ->byte-protocol clojure.lang.Keyword [k]
+  (let [base-map (case k
+                   :type {:type :type}
+                   {})]
+    (->byte-protocol (assoc base-map :key k))))
+
 (defn- make-protocol [c]
   (when c
-    (into [] (map parse-protocol-map c))))
+    (into [] (map ->byte-protocol c))))
 
 (def ^{:private true} is-protocols
-  {
-   ;; IS_FLG
-   :flg [{:key :type :type :type} {:key :reqi} {:key :player-id}
-         {:key :off-on}
-         {:key :flag}
-         {:key :car-behind}
-         {:key :spare-3}]
+  {;; IS_FLG
+   :flg [:type :reqi :player-id :off-on :flag :car-behind :spare-3]
 
    ;; IS_ISM
-   :ism [{:key :type :type :type} {:key :reqi} {:key :zero}
-         {:key :host}
-         {:key :spare-1}
-         {:key :spare-2}
-         {:key :spare-3}
+   :ism [:type :reqi :zero :host :spare-1 :spare-2 :spare-3 
          {:key :host-name :type :string :length 32}]
 
    ;; IS_MSO
-   :mso [{:key :type :type :type} {:key :reqi} {:key :zero}
-         {:key :uniq-connection-id}
-         {:key :player-id}
+   :mso [:type :reqi :zero :uniq-connection-id :player-id
          {:key :user-type :type :mso-user}
-         {:key :text-start}
+         :text-start
          {:key :message :type :string :length 128}]
 
    ;; IS_NCN - New ConnectioN
-   :ncn [{:key :type :type :type} {:key :reqi} {:key :uniq-connection-id}
+   :ncn [:type :reqi :uniq-connection-id
          {:key :user-name :type :string :length 24}
          {:key :player-name :type :string :length 24}
-         {:key :admin}
-         {:key :total}
-         {:key :flags}
-         {:key :spare}]
+          :admin :total :flags :spare]
 
    ;; IS_CNL - CoNnection Left
-   :cnl [{:key :type :type :type} {:key :reqi} {:key :uniq-connection-id}
-         {:key :reason}
-         {:key :total}
-         {:key :spare-2}
-         {:key :spare-3}]
+   :cnl [:type :reqi :uniq-connection-id :reason :total :spare-2 :spare-3]
 
    ;; IS_NPL - New PLayer
-   :npl [{:key :type :type :type} {:key :reqi} {:key :player-id}
-         {:key :uniq-connection-id}
+   :npl [:type :reqi :player-id :uniq-connection-id
          {:key :player-type :type :npl-player-type}
          {:key :flags :type :word}
          {:key :player-name :type :string :length 24}
@@ -92,72 +80,51 @@
          {:key :car-name :type :string :length 4}
          {:key :skin-name :type :string :length 16}
          {:key :tyres :type :bytes :length 4}
-         {:key :handicap-mass}
-         {:key :handicap-restriction}
-         {:key :driver-model}
-         {:key :passenger}
+         :handicap-mass :handicap-restriction :driver-model :passenger
          {:key :spare :type :int}
-         {:key :setup-flags}
-         {:key :number-player}
-         {:key :spare-2}
-         {:key :spare-3}]
+         :setup-flags :number-player :spare-2 :spare-3]
 
    ;; IS_PLL ; PLayer Leave race
-   :pll [{:key :type :type :type} {:key :reqi} {:key :player-id}]
+   :pll [:type :reqi :player-id]
 
    ;; IS_RES ; RESult of qualify or confirmed finish
-   :res [{:key :type :type :type} {:key :reqi} {:key :player-id}
+   :res [:type :reqi :player-id
          {:key :user-name :type :string :length 24}
          {:key :player-name :type :string :length 24}
          {:key :number-plate :type :string :length 8}
          {:key :skin-prefix :type :string :length 4}
          {:key :race-time :type :unsigned}
          {:key :best-lap :type :unsigned}
-         {:key :spare-a}
-         {:key :num-stops}
-         {:key :confirmation-flags}
-         {:key :spare-b}
+         :spare-a :num-stops :confirmation-flags :spare-b
          {:key :laps-done :type :word}
          {:key :flags :type :word}
-         {:key :result-num}
-         {:key :num-results}
+          :result-num :num-results
          {:key :penalty-seconds :type :word}]
 
    ;; IS_TINY
-   :tiny [{:key :type :type :type} {:key :reqi} {:key :subt-type :type :tiny-subtype}]
+   :tiny [:type :reqi {:key :subt-type :type :tiny-subtype}]
 
    ;; IS_STA
-   :sta [{:key :type :type :type} {:key :reqi} {:key :zero}
+   :sta [:type :reqi :zero
          {:key :replay-speed :type :float}
          {:key :flags :type :word}
-         {:key :ingame-cam}
-         {:key :viewed-player-id}
-         {:key :num-players-in-race}
-         {:key :num-connections}
-         {:key :num-finished}
+         :ingame-cam :viewed-player-id :num-players-in-race :num-connections :num-finished
          {:key :race-in-progress :type :sta-race-in-progress}
-         {:key :qualify-minutes}
-         {:key :race-laps}
-         {:key :spare-2}
-         {:key :spare-3}
+         :qualify-minutes :race-laps :spare-2 :spare-3
          {:key :track :type :string :length 6}
-         {:key :weather}
-         {:key :wind}]
+         :weather :wind]
 
    ;; IS_VER
-   :ver [{:key :type :type :type} {:key :reqi} {:key :zero}
+   :ver [:type :reqi :zero
          {:key :version :type :string :length 8}
          {:key :product :type :string :length 6}
-         {:key :insim-version}
-         {:key :spare}]
+         :insim-version :spare]
 
    ;; IS_VTN - VoTe Notify
-   :vtn [{:key :type :type :type} {:key :reqi} {:key :zero}
-         {:key :uniq-connection-id}
+   :vtn [:type :reqi :zero
+         :uniq-connection-id
          {:key :action :type :vtn-action}
-         {:key :spare-2}
-         {:key :spare-3}]})
-
+         :spare-2 :spare-3]})
 
 (defn- parse-bytes
   [{:keys [coll] :as m} {:keys [bytes cast key]}]
