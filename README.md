@@ -9,17 +9,38 @@ Add clj-insim to your project.clj:
 [clj-insim "0.1.0-SNAPSHOT"]
 ```
 
-Start an LFS client with the default parser (by default on localhost with port 29999).
+Require packets, parser and socket namespaces.
 ```
 (ns something.core
-  (:require [clj-insim.core :as clj-insim]))
+  (:require [clj-insim.packets :as packets]
+            [clj-insim.parsers :refer [parse]]
+            [clj-insim.socket :refer [client]]))
+```
 
-(def client (clj-insim/start-client))
+Define a handler for incoming InSim packets.
+```
+(defn handler [[type :as packet]]
+  (let [{:keys [type] :as parsed} (parse packet)] ;; parse the packet
+    (if type ;; if type is not nil
+      (do
+        (println (str "\nReceived " (name type) " packet from LFS"))
+        (prn parsed)) ;; Print the parsed packet
+      (do
+        (println (str "\nCouldn't parse incoming packet from LFS"))
+        (prn packet))) ;; Print the incoming byte-array
+    (packets/is-tiny))) ;; ALWAYS return some packet, supply is-tiny to maintain connection..
+```
+
+Be sure to run LFS on your localhost and run `/insim 29999` to setup the TCP server from within LFS.
+
+Start an LFS client with our handler.
+```
+(def lfs-client (client handler))
 ```
 
 Stop the client by resetting the atom to false.
 ```
-(reset! client false)
+(reset! lfs-client false)
 ```
 
 ## License
