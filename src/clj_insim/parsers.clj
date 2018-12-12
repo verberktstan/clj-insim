@@ -177,7 +177,11 @@
           (assoc :coll c2) ; else replace coll
           (assoc key (cast c1))))))
 
-(defn parse [type-key packet]
-  (let [protocol (make-protocol (is-protocols type-key))]
-    (when protocol
-      (reduce parse-bytes {:coll packet} protocol))))
+(defn parse
+  ([packet]
+   (let [type-key (-> packet first enums/isp-key)]
+     (parse type-key packet)))
+  ([type-key packet]
+   (let [protocol (make-protocol (is-protocols type-key))]
+     (when protocol
+       (reduce parse-bytes {:coll packet} protocol)))))
