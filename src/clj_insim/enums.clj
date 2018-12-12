@@ -8,6 +8,19 @@
      first
      key)))
 
+(def cch-camera
+  {:follow 0 :heli 1 :cam 2 :driver 3 :custom 4 :num 5})
+(def cch-camera-key (index->key cch-camera))
+
+(def csc-action
+  {:stop 0 :start 1})
+(def csc-action-key (index->key csc-action))
+
+;; The sixth byte of a IS_FLG packet is one of these
+(def flg-flag
+  {:none 0 :blue-given 1 :yellow-caused 2})
+(def flg-flag-key (index->key flg-flag))
+
 ;; The second byte of any packet is one of these
 (def isp
   {:none 0 :isi 1 :ver 2 :tiny 3 :small 4
@@ -37,6 +50,16 @@
   {:female 0 :ai 1 :remote 2})
 
 (def npl-player-type-key (index->key npl-player-type))
+
+;; The fifth and sixth byte of an IS_PEN packet are one of these
+(def pen-penalty
+  {:none 0 :drive-through 1 :drive-through-valid 2 :stop-go 3 :stop-go-valid 4 :penalty-30 5 :penalty-45 6 :num 7})
+(def pen-penalty-key (index->key pen-penalty))
+
+;; The seventh byte of an IS_PEN packet is one of these
+(def pen-reason
+  {:unknown 0 :admin 1 :wrong-way 2 :false-start 3 :speeding 4 :stop-short 5 :stop-late 6 :num 7})
+(def pen-reason-key (index->key pen-reason))
 
 ;; The fourth byte of an IS_TINY packet is one of these
 (def tiny

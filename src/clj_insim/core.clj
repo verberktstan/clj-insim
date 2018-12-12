@@ -113,6 +113,8 @@
       (packets/is-tiny))))
 
 (comment
+  
+
   ;; Start a tcp client with a handler
   (def simple-client (client handler))
   ;; To stop the client

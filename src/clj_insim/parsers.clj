@@ -8,6 +8,16 @@
   (->>
    (map char (strip-null-chars c))
    (apply str)))
+(defn- bytes->cch-camera [c]
+  (-> c first enums/cch-camera-key))
+(defn- bytes->csc-action [c]
+  (-> c first enums/csc-action-key))
+(defn- bytes->flg-flag [c]
+  (-> c first enums/flg-flag-key))
+(defn- bytes->pen-penalty [c]
+  (-> c first enums/pen-penalty-key))
+(defn- bytes->pen-reason [c]
+  (-> c first enums/pen-reason-key))
 (defn- bytes->isp-type [c]
   (-> c first enums/isp-key))
 (defn- bytes->tiny-subtype [c]
@@ -24,6 +34,12 @@
 (defmulti ->byte-protocol type)
 (defmethod ->byte-protocol clojure.lang.PersistentArrayMap [{:keys [key type length]}]
   (case type
+    :cch-camera {:bytes 1 :cast bytes->cch-camera :key key}
+    :csc-action {:bytes 1 :cast bytes->csc-action :key key}
+    :flg-flag {:bytes 1 :cast bytes->flg-flag :key key}
+    :pen-penalty {:bytes 1 :cast bytes->pen-penalty :key key}
+    :pen-reason {:bytes 1 :cast bytes->pen-reason :key key}
+    :reo-player-ids {:bytes length :cast #(into [] (map int %)) :key key}
     :string {:bytes length :cast bytes->string :key key}
     :type {:bytes 1 :cast bytes->isp-type :key key}
     :tiny-subtype {:bytes 1 :cast bytes->tiny-subtype :key key}
@@ -41,6 +57,7 @@
 (defmethod ->byte-protocol clojure.lang.Keyword [k]
   (let [base-map (case k
                    :type {:type :type}
+                   :csc-action {:type k}
                    {})]
     (->byte-protocol (assoc base-map :key k))))
 
@@ -49,8 +66,15 @@
     (into [] (map ->byte-protocol c))))
 
 (def ^{:private true} is-protocols
-  {;; IS_FLG
-   :flg [:type :reqi :player-id :off-on :flag :car-behind :spare-3]
+  {;; IS_CCH - Camera CHange
+   :cch [:type :reqi :player-id
+         {:key :camera :type :cch-camera}
+         :spare-1 :spare-2 :spare-3]
+
+   ;; IS_FLG
+   :flg [:type :reqi :player-id :off-on
+         {:key :flag :type :flg-flag}
+         :car-behind :spare-3]
 
    ;; IS_ISM
    :ism [:type :reqi :zero :host :spare-1 :spare-2 :spare-3 
@@ -84,6 +108,12 @@
          {:key :spare :type :int}
          :setup-flags :number-player :spare-2 :spare-3]
 
+   ;; IS_PEN - PENalty (given or cleared)
+   :pen [:type :reqi :player-id
+         {:key :old-penalty :type :pen-penalty}
+         {:key :new-penalty :type :pen-penalty}
+         {:key :reason :type :pen-reason} :spare-3]
+
    ;; IS_PLL ; PLayer Leave race
    :pll [:type :reqi :player-id]
 
@@ -103,6 +133,16 @@
 
    ;; IS_TINY
    :tiny [:type :reqi {:key :subt-type :type :tiny-subtype}]
+
+   ;; IS_REO - RE-Order
+   :reo [:type :reqi :number-of-players
+         {:key :player-ids :type :reo-player-ids :length 40}]
+
+   ;; IS_SPX - SPlit X time
+   :spx [:type :reqi :player-id
+         {:key :split-time :type :unsigned}
+         {:key :total-time :type :unsigned}
+         :split :penalty :num-stops :spare-3]
 
    ;; IS_STA
    :sta [:type :reqi :zero
