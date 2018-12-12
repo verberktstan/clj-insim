@@ -1,6 +1,6 @@
 # clj-insim
 
-A Clojure library designed to interface with Live For Speed InSim.
+A Clojure library designed to interface with [Live For Speed](https://www.lfs.net/) [InSim](https://en.lfsmanual.net/wiki/InSim).
 
 ## Usage
 
