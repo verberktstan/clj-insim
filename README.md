@@ -47,5 +47,6 @@ Stop the client by resetting the atom to false.
 
 Copyright © 2018 Stan Verberkt
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the Unlicense License.
+This is free and unencumbered software released into the public domain.
+For more information, please refer to <http://unlicense.org>
