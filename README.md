@@ -9,34 +9,21 @@ Add clj-insim to your project.clj:
 [clj-insim "0.1.0-SNAPSHOT"]
 ```
 
-Require packets, parser and socket namespaces.
+Require clj-insim.core namespace
 ```
 (ns something.core
-  (:require [clj-insim.packets :as packets]
-            [clj-insim.parsers :refer [parse]]
-            [clj-insim.socket :refer [client]]))
-```
-
-Define a handler for incoming InSim packets.
-```
-(defn handler [[type :as packet]]
-  (let [{:keys [type] :as parsed} (parse packet)] ;; parse the packet
-    (if type ;; if type is not nil
-      (do
-        (println (str "\nReceived " (name type) " packet from LFS"))
-        (prn parsed)) ;; Print the parsed packet
-      (do
-        (println (str "\nCouldn't parse incoming packet from LFS"))
-        (prn packet))) ;; Print the incoming byte-array
-    (packets/is-tiny))) ;; ALWAYS return some packet, supply is-tiny to maintain connection..
+  (:require [clj-insim.core :refer [start-test-client]]))
 ```
 
 Be sure to run LFS on your localhost and run `/insim 29999` to setup the TCP server from within LFS.
 
-Start an LFS client with our handler.
+Start an LFS client with the default test handler as defined in `clj-insim.core`.
 ```
-(def lfs-client (client handler))
+(def lfs-client (start-test-client))
 ```
+
+If you're running LFS 0.6T you should see a welcome message in LFS! If you're running another version, the connection should be closed automatically.
+Inspect `clj-insim.core` to see how the test-handler and dispatch functions work.
 
 Stop the client by resetting the atom to false.
 ```
