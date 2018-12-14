@@ -6,7 +6,7 @@ A Clojure library designed to interface with [Live For Speed](https://www.lfs.ne
 
 Add clj-insim to your project.clj:
 ```
-[clj-insim "0.1.0-SNAPSHOT"]
+[clj-insim "0.1.1-SNAPSHOT"]
 ```
 
 Require clj-insim.core namespace
