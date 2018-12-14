@@ -36,16 +36,4 @@
       (f incoming))))
 
 (defn- default-handler [packet]
-  (if-let [{:keys [type] :as parsed-packet} (parse packet)]
-    (if-let [dispatch-fn (dispatch type)]
-      (dispatch-fn parsed-packet)
-      (packets/is-tiny))
-    (packets/is-tiny)))
-
-(defn start-client
-  ([]
-   (client default-handler))
-  ([host]
-   (client default-handler {:host host}))
-  ([host port]
-   (client default-handler {:host host :port port})))
+  (or (-> packet parse dispatch) (packets/is-tiny)))
