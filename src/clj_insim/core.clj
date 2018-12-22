@@ -49,3 +49,8 @@
 
 (defn start-test-client []
   (client test-handler))
+
+(comment
+  (def lfs-client (start-test-client))
+  (reset! lfs-client false)
+)

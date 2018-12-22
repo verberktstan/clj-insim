@@ -57,6 +57,14 @@
       (.get buffer))
     buffer))
 
+(defn- isf
+  "Returns an integer representing the IS_ISI bit flag options."
+  [keys]
+  (let [flags {:res-0 1 :res-1 2 :local 4 :mso-cols 8
+               :nlp 16 :mci 32 :con 64 :obh 128
+               :hlv 256 :axm-load 512 :axm-edit 1024 :req-join 2048}]
+    (apply + (vals (select-keys flags keys)))))
+
 (defn is-isi
   ([]
    (is-isi {}))
@@ -66,7 +74,7 @@
                          :reqi 1})
          packet (doto header
                   (put-word (or udp-port (:udp-port DEFAULTS)))
-                  (put-word (or flags (:flags DEFAULTS)))
+                  (put-word (or flags (isf [:req-join])))
                   (put-byte INSIM-VERSION)
                   (put-byte (or prefix (:prefix DEFAULTS)))
                   (put-word (or interval (:interval DEFAULTS)))
