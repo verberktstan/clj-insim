@@ -6,20 +6,20 @@ A Clojure library designed to interface with [Live For Speed](https://www.lfs.ne
 
 Add clj-insim to your project.clj:
 ```
-[clj-insim "0.1.1-SNAPSHOT"]
+[clj-insim "0.1.2-SNAPSHOT"]
 ```
 
 Require clj-insim.core namespace
 ```
 (ns something.core
-  (:require [clj-insim.core :refer [start-test-client]]))
+  (:require [clj-insim.core :refer [client test-handler]]))
 ```
 
 Be sure to run LFS on your localhost and run `/insim 29999` to setup the TCP server from within LFS.
 
 Start an LFS client with the default test handler as defined in `clj-insim.core`.
 ```
-(def lfs-client (start-test-client))
+(def lfs-client (client test-handler))
 ```
 
 If you're running LFS 0.6T you should see a welcome message in LFS! If you're running another version, the connection should be closed automatically.
