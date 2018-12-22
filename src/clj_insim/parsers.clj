@@ -9,6 +9,23 @@
     (when (<= x 7)
       {:symm-wheels symm-wheels :tc-enable tc-enable :abs-enable abs-enable})))
 
+(defn- ->player-flags [x]
+  (when (< x (* 2 16384))
+    {:swapside (>= (rem x 2) 1)
+     :reserved-2 (>= (rem x 4) 2)
+     :reserved-4 (>= (rem x 8) 4)
+     :autogears (>= (rem x 16) 8)
+     :shifter (>= (rem x 32) 16)
+     :reserved-32 (>= (rem x 64) 32)
+     :help-b (>= (rem x 128) 64)
+     :axis-clutch (>= (rem x 256) 128)
+     :inpits (>= (rem x 512) 256)
+     :autoclutch (>= (rem x 1024) 512)
+     :mouse (>= (rem x 2048) 1024)
+     :kb-no-help (>= (rem x 4096) 2048)
+     :kb-stabilised (>= (rem x 8192) 4096)
+     :custom-view (>= (rem x 16384) 8192)}))
+
 (defn- bytes->int [c] (-> c first int))
 (defn- bytes->string [c]
   (->>
@@ -40,6 +57,8 @@
   (map enums/tyre-compounds-key c))
 (defn- bytes->setup-flags [c]
   (-> c first ->setup-flags))
+(defn- bytes->player-flags [[a b]]
+  (->player-flags (+ (bit-shift-left b 8) a)))
 
 (defmulti ->byte-protocol type)
 (defmethod ->byte-protocol clojure.lang.PersistentArrayMap [{:keys [key type length]}]
@@ -61,6 +80,7 @@
     :npl-player-type {:bytes 1 :cast bytes->npl-player-type :key key}
     :npl-tyres {:bytes 4 :cast bytes->tyre-compounds :key :tyres}
     :npl-setup-flags {:bytes 1 :cast bytes->setup-flags :key :setup-flags}
+    :player-flags {:bytes 2 :cast bytes->player-flags :key :flags}
     :sta-race-in-progress {:bytes 1 :cast bytes->sta-race-in-progress :key key}
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
     :unsigned {:bytes 4 :cast #(map int %) :key key}
@@ -106,7 +126,7 @@
    ;; IS_NPL - New PLayer
    :npl [:type :reqi :player-id :uniq-connection-id
          {:key :player-type :type :npl-player-type}
-         {:key :flags :type :word}
+         {:type :player-flags}
          {:key :player-name :type :string :length 24}
          {:key :license-plate :type :string :length 8}
          {:key :car-name :type :string :length 4}
