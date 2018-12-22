@@ -2,7 +2,7 @@
   (:require [clj-insim.enums :as enums]
             [clj-insim.packets :as packets]
             [clj-insim.parsers :as parsers]
-            [clj-insim.socket :refer [client]]
+            [clj-insim.socket :as socket]
             [clj-insim.util :as util]))
 
 (defonce race-in-progress? (atom :none))
@@ -58,10 +58,18 @@
   [packet]
   (or (-> packet parse dispatch) (packets/is-tiny)))
 
-(defn start-test-client []
-  (client test-handler))
+(defn client [handler & {:keys [host port isi-options]}]
+  (let [running (atom true)]
+    (future
+      (with-open [socket (socket/make-socket (or host socket/HOST) (or port socket/PORT))
+                  _ (socket/send-packet socket (packets/is-isi isi-options))]
+        (while @running
+          (let [in (socket/receive-packet socket)
+                out (handler in)]
+            (socket/send-packet socket out)))))
+    running))
 
 (comment
-  (def lfs-client (start-test-client))
+  (def lfs-client (client test-handler))
   (reset! lfs-client false)
 )

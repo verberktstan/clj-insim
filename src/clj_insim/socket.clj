@@ -18,13 +18,5 @@
     (.write out packet)
     (.flush out)))
 
-(defn client [handler & {:keys [host port isi-options]}]
-  (let [running (atom true)]
-    (future
-      (with-open [socket (Socket. (or host HOST) (or port PORT))
-                  _ (send-packet socket (packets/is-isi isi-options))]
-        (while @running
-          (let [in (receive-packet socket)
-                out (handler in)]
-            (send-packet socket out)))))
-    running))
+(defn make-socket [host port]
+  (Socket. host port))
