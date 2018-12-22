@@ -57,7 +57,7 @@
       (.get buffer))
     buffer))
 
-(defn- isf
+(defn isf
   "Returns an integer representing the IS_ISI bit flag options."
   [keys]
   (let [flags {:res-0 1 :res-1 2 :local 4 :mso-cols 8

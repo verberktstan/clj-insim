@@ -1,7 +1,7 @@
 (ns clj-insim.core
   (:require [clj-insim.enums :as enums]
             [clj-insim.packets :as packets]
-            [clj-insim.parsers :refer [parse]]
+            [clj-insim.parsers :as parsers]
             [clj-insim.socket :refer [client]]
             [clj-insim.util :as util]))
 
@@ -42,7 +42,18 @@
     (when-let [f (type dispatchers)]
       (f packet))))
 
-(defn- test-handler
+;;;;; Public functions
+
+(defn parse
+  ([packet]
+   (let [type-key (-> packet first enums/isp-key)]
+     (parse type-key packet)))
+  ([type-key packet]
+   (let [protocol (parsers/make-protocol type-key)]
+     (when protocol
+       (reduce parsers/parse-bytes {:coll packet} protocol)))))
+
+(defn test-handler
   "Consumes a binary packet from LFS InSim, returns a packet by dispatching. If dispatch returns nil, will return a IS_TINY packet to maintain connection."
   [packet]
   (or (-> packet parse dispatch) (packets/is-tiny)))

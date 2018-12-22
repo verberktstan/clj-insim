@@ -61,10 +61,6 @@
                    {})]
     (->byte-protocol (assoc base-map :key k))))
 
-(defn- make-protocol [c]
-  (when c
-    (into [] (map ->byte-protocol c))))
-
 (def ^{:private true} is-protocols
   {;; IS_CCH - Camera CHange
    :cch [:type :reqi :player-id
@@ -166,7 +162,14 @@
          {:key :action :type :vtn-action}
          :spare-2 :spare-3]})
 
-(defn- parse-bytes
+;;;;; Public functions
+
+(defn make-protocol [k]
+  (let [c (is-protocols k)]
+    (when c
+      (into [] (map ->byte-protocol c)))))
+
+(defn parse-bytes
   [{:keys [coll] :as m} {:keys [bytes cast key]}]
   (let [[c1 c2] (split-at bytes coll)]
     (if (empty? c2)
@@ -176,12 +179,3 @@
       (-> m
           (assoc :coll c2) ; else replace coll
           (assoc key (cast c1))))))
-
-(defn parse
-  ([packet]
-   (let [type-key (-> packet first enums/isp-key)]
-     (parse type-key packet)))
-  ([type-key packet]
-   (let [protocol (make-protocol (is-protocols type-key))]
-     (when protocol
-       (reduce parse-bytes {:coll packet} protocol)))))
