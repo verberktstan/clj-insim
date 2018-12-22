@@ -2,6 +2,12 @@
   (:require [clj-insim.enums :as enums]
             [clj-insim.util :refer [strip-null-chars]]))
 
+(defn- ->setup-flags [x]
+  (let [abs-enable (>= x 4)
+        tc-enable (>= (rem x 4) 2)
+        symm-wheels (>= (rem x 2) 1)]
+    (when (<= x 7)
+      {:symm-wheels symm-wheels :tc-enable tc-enable :abs-enable abs-enable})))
 
 (defn- bytes->int [c] (-> c first int))
 (defn- bytes->string [c]
@@ -32,6 +38,8 @@
   (-> c first enums/npl-player-type-key))
 (defn- bytes->tyre-compounds [c]
   (map enums/tyre-compounds-key c))
+(defn- bytes->setup-flags [c]
+  (-> c first ->setup-flags))
 
 (defmulti ->byte-protocol type)
 (defmethod ->byte-protocol clojure.lang.PersistentArrayMap [{:keys [key type length]}]
@@ -52,6 +60,7 @@
     :mso-user {:bytes 1 :cast bytes->mso-user :key key}
     :npl-player-type {:bytes 1 :cast bytes->npl-player-type :key key}
     :npl-tyres {:bytes 4 :cast bytes->tyre-compounds :key :tyres}
+    :npl-setup-flags {:bytes 1 :cast bytes->setup-flags :key :setup-flags}
     :sta-race-in-progress {:bytes 1 :cast bytes->sta-race-in-progress :key key}
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
     :unsigned {:bytes 4 :cast #(map int %) :key key}
