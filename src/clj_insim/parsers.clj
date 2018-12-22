@@ -30,6 +30,8 @@
   (-> c first enums/mso-user-key))
 (defn- bytes->npl-player-type [c]
   (-> c first enums/npl-player-type-key))
+(defn- bytes->tyre-compounds [c]
+  (map enums/tyre-compounds-key c))
 
 (defmulti ->byte-protocol type)
 (defmethod ->byte-protocol clojure.lang.PersistentArrayMap [{:keys [key type length]}]
@@ -49,6 +51,7 @@
     :float {:bytes 4 :cast #(apply + %) :key key}
     :mso-user {:bytes 1 :cast bytes->mso-user :key key}
     :npl-player-type {:bytes 1 :cast bytes->npl-player-type :key key}
+    :npl-tyres {:bytes 4 :cast bytes->tyre-compounds :key :tyres}
     :sta-race-in-progress {:bytes 1 :cast bytes->sta-race-in-progress :key key}
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
     :unsigned {:bytes 4 :cast #(map int %) :key key}
@@ -99,10 +102,11 @@
          {:key :license-plate :type :string :length 8}
          {:key :car-name :type :string :length 4}
          {:key :skin-name :type :string :length 16}
-         {:key :tyres :type :bytes :length 4}
+         {:type :npl-tyres}
          :handicap-mass :handicap-restriction :driver-model :passenger
          {:key :spare :type :int}
-         :setup-flags :number-player :spare-2 :spare-3]
+         {:type :npl-setup-flags}
+         :number-player :spare-2 :spare-3]
 
    ;; IS_PEN - PENalty (given or cleared)
    :pen [:type :reqi :player-id

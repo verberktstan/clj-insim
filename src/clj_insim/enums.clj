@@ -51,6 +51,13 @@
 
 (def npl-player-type-key (index->key npl-player-type))
 
+(def tyre-compounds
+  {:r1 0 :r2 1 :r3 2 :r4 3
+   :road-super 4 :road-normal 5
+   :hybrid 6 :knobbly 7
+   :num 8})
+(def tyre-compounds-key (index->key tyre-compounds))
+
 ;; The fifth and sixth byte of an IS_PEN packet are one of these
 (def pen-penalty
   {:none 0 :drive-through 1 :drive-through-valid 2 :stop-go 3 :stop-go-valid 4 :penalty-30 5 :penalty-45 6 :num 7})
