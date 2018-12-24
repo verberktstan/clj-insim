@@ -57,6 +57,14 @@
 
         :else flags))))
 
+(defn- ->state-flags [x]
+  (when (< x ( * 2 32768))
+    (parse-byte-flags
+     {:game 1 :replay 2 :paused 4 :shiftu 8
+      :dialog 16 :shiftu-follow 32 :shiftu-no-opt 64 :show-2d 128
+      :front-end 256 :multi 512 :mpspeedup 1024 :windowed 2048
+      :sound-mute 4096 :view-override 8192 :visible 16384 :text-entry 32768} x)))
+
 (defn- ->unsigned-byte [x]
   (if (neg? x)
     (+ x 256)
@@ -100,6 +108,9 @@
 (defn- bytes->unsigned [coll]
   (let [[a b c d] (map ->unsigned-byte coll)]
     (+ (bit-shift-left d 24) (bit-shift-left c 16) (bit-shift-left b 8) a)))
+(defn- bytes->word [coll]
+  (let [[a b] (map ->unsigned-byte coll)]
+    (+ (bit-shift-left b 8) a)))
 
 (defmulti ->byte-protocol type)
 (defmethod ->byte-protocol clojure.lang.PersistentArrayMap [{:keys [key type length]}]
@@ -114,10 +125,8 @@
     :string {:bytes length :cast bytes->string :key key}
     :type {:bytes 1 :cast bytes->isp-type :key key}
     :tiny-subtype {:bytes 1 :cast bytes->tiny-subtype :key key}
-    :word {:bytes 2 :cast #(apply + %) :key key}
     :bytes {:bytes length :cast #(map int %) :key key}
     :int {:bytes 4 :cast #(map int %) :key key}
-    :float {:bytes 4 :cast #(apply + %) :key key}
     :mso-user {:bytes 1 :cast bytes->mso-user :key key}
     :npl-player-type {:bytes 1 :cast bytes->npl-player-type :key key}
     :npl-tyres {:bytes 4 :cast bytes->tyre-compounds :key :tyres}
@@ -126,6 +135,9 @@
     :sta-race-in-progress {:bytes 1 :cast bytes->sta-race-in-progress :key key}
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
     :unsigned {:bytes 4 :cast bytes->unsigned :key key}
+    :state-flags {:bytes 2 :cast #(-> % bytes->word ->state-flags) :key key}
+    :float {:bytes 4 :cast (fn [x] nil) :key key}
+    :word {:bytes 2 :cast bytes->word :key key}
     {:bytes 1 :cast bytes->int :key key}))
 
 (defmethod ->byte-protocol clojure.lang.Keyword [k]
@@ -220,7 +232,7 @@
    ;; IS_STA
    :sta [:type :reqi :zero
          {:key :replay-speed :type :float}
-         {:key :flags :type :word}
+         {:key :flags :type :state-flags}
          :ingame-cam :viewed-player-id :num-players-in-race :num-connections :num-finished
          {:key :race-in-progress :type :sta-race-in-progress}
          :qualify-minutes :race-laps :spare-2 :spare-3
