@@ -10,8 +10,7 @@
 (defn- welcome
   "Returns an IS_MST packet with a warm welcom message from clj-insim."
   []
-  [(packets/is-mst "Hello from clj-insim!")
-   (packets/is-mst "More messages!!!")])
+  (packets/is-mtc 255 0 "Welcome to clj-insim!"))
 
 (defn- check-version
   "Returns a welcome message if LFS version of host is 0.6T and insim-version is greater than 7. Else returns an IS_TINY packet that closes the connection."
@@ -27,7 +26,7 @@
   (when (not= @race-in-progress? race-in-progress)
     (do
       (reset! race-in-progress? race-in-progress)
-      (packets/is-mst (str (name race-in-progress) " started!")))))
+      (packets/is-mtc 255 0 (str "Race in progress: " (name race-in-progress))))))
 
 (defn simple-messaging [{:keys [message text-start user-type player-id uniq-connection-id]}]
   (when (= user-type :prefix)
@@ -35,6 +34,7 @@
       (case command
         "!mst" (packets/is-mst "Echo!")
         "!mtc" (packets/is-mtc uniq-connection-id player-id "Echo, baby!")
+        "!ubermessage" [(packets/is-mst "Uberecho!") (packets/is-mtc uniq-connection-id player-id "Uberecho, baby!")]
         nil))))
 
 ;; Specify dispatchers for each type of packet
