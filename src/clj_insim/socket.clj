@@ -1,6 +1,5 @@
 (ns clj-insim.socket
-  (:require [clj-insim.packets :as packets]
-            [clojure.java.io :as io])
+  (:require [clojure.java.io :as io])
   (:import [java.net Socket]))
 
 (def HOST "127.0.0.1")
@@ -13,9 +12,13 @@
     (.read in ba)
     (vec ba)))
 
-(defn send-packet [socket packet]
+(defn send-packet
+  "Send packet(s) to socket."
+  [socket packets]
   (let [out (io/output-stream socket)]
-    (.write out packet)
+    (if (coll? packets)
+      (.write out (byte-array (mapcat seq packets)))
+      (.write out packets))
     (.flush out)))
 
 (defn make-socket [host port]

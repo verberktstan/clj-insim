@@ -10,7 +10,8 @@
 (defn- welcome
   "Returns an IS_MST packet with a warm welcom message from clj-insim."
   []
-  (packets/is-mst "Hello from clj-insim!"))
+  [(packets/is-mst "Hello from clj-insim!")
+   (packets/is-mst "More messages!!!")])
 
 (defn- check-version
   "Returns a welcome message if LFS version of host is 0.6T and insim-version is greater than 7. Else returns an IS_TINY packet that closes the connection."
