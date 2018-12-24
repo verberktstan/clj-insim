@@ -29,10 +29,19 @@
       (reset! race-in-progress? race-in-progress)
       (packets/is-mst (str (name race-in-progress) " started!")))))
 
+(defn simple-messaging [{:keys [message text-start user-type player-id uniq-connection-id]}]
+  (when (= user-type :prefix)
+    (let [command (subs message text-start)]
+      (case command
+        "!mst" (packets/is-mst "Echo!")
+        "!mtc" (packets/is-mtc uniq-connection-id player-id "Echo, baby!")
+        nil))))
+
 ;; Specify dispatchers for each type of packet
 (def ^:private dispatchers
   {:sta update-state
-   :ver check-version})
+   :ver check-version
+   :mso simple-messaging})
 
 (defn- dispatch
   "Returns the result of (dispachters (:type packet)) applied to the incoming packet. Prints incoming packet as side effect."

@@ -101,14 +101,18 @@
 
 (defn is-mtc
   [uniq-connection-id player-id msg]
-  (let [header (header {:size 128
+  (let [msg-size (+ (* 4 (int (/ (count msg) 4))) 4)
+        msg-size (min msg-size 128)
+        packet-size (+ 8 msg-size)
+        header (header {:size packet-size
                         :type (enums/isp :mtc)})
         packet (doto header
                  (put-byte uniq-connection-id)
                  (put-byte player-id)
                  (put-byte 0) ;spare
                  (put-byte 0)
-                 (put-string msg 120))]))
+                 (put-string msg msg-size))]
+    (finalize packet)))
 
 (defn- put-object-info [byte-buffer {:keys [x y z-byte flags index heading]}]
   (doto byte-buffer
