@@ -57,6 +57,11 @@
 
         :else flags))))
 
+(defn- ->unsigned-byte [x]
+  (if (neg? x)
+    (+ x 256)
+    x))
+
 (defn- bytes->int [c] (-> c first int))
 (defn- bytes->string [c]
   (->>
@@ -92,6 +97,9 @@
   (->player-flags (+ (bit-shift-left b 8) a)))
 (defn- bytes->confirmation-flags [c]
   (-> c first ->confirmation-flags))
+(defn- bytes->unsigned [coll]
+  (let [[a b c d] (map ->unsigned-byte coll)]
+    (+ (bit-shift-left d 24) (bit-shift-left c 16) (bit-shift-left b 8) a)))
 
 (defmulti ->byte-protocol type)
 (defmethod ->byte-protocol clojure.lang.PersistentArrayMap [{:keys [key type length]}]
@@ -117,7 +125,7 @@
     :player-flags {:bytes 2 :cast bytes->player-flags :key :flags}
     :sta-race-in-progress {:bytes 1 :cast bytes->sta-race-in-progress :key key}
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
-    :unsigned {:bytes 4 :cast #(map int %) :key key}
+    :unsigned {:bytes 4 :cast bytes->unsigned :key key}
     {:bytes 1 :cast bytes->int :key key}))
 
 (defmethod ->byte-protocol clojure.lang.Keyword [k]
