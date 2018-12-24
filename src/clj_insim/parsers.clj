@@ -2,29 +2,60 @@
   (:require [clj-insim.enums :as enums]
             [clj-insim.util :refer [strip-null-chars]]))
 
+(defn- byte-checked?
+  "Returns true if nth-byte is checked.
+  (byte-checked? 9 8) => true
+  (byte-checked? 9 1) => true
+  (byte-checked? 9 2) => false
+  (byte-checked? 9 4) => false"
+  [x nth-byte]
+  (>= (rem x (* 2 nth-byte)) nth-byte))
+
+(defn- parse-byte-flags [protocol x]
+  (reduce-kv (fn [m k v]
+               (assoc m k (byte-checked? x v))) {} protocol))
+
 (defn- ->setup-flags [x]
-  (let [abs-enable (>= x 4)
-        tc-enable (>= (rem x 4) 2)
-        symm-wheels (>= (rem x 2) 1)]
-    (when (<= x 7)
-      {:symm-wheels symm-wheels :tc-enable tc-enable :abs-enable abs-enable})))
+  (when (< x (* 2 4))
+    (parse-byte-flags
+     {:symm-wheels 1 :tc-enable 2 :abs-enable 4} x)))
 
 (defn- ->player-flags [x]
   (when (< x (* 2 16384))
-    {:swapside (>= (rem x 2) 1)
-     :reserved-2 (>= (rem x 4) 2)
-     :reserved-4 (>= (rem x 8) 4)
-     :autogears (>= (rem x 16) 8)
-     :shifter (>= (rem x 32) 16)
-     :reserved-32 (>= (rem x 64) 32)
-     :help-b (>= (rem x 128) 64)
-     :axis-clutch (>= (rem x 256) 128)
-     :inpits (>= (rem x 512) 256)
-     :autoclutch (>= (rem x 1024) 512)
-     :mouse (>= (rem x 2048) 1024)
-     :kb-no-help (>= (rem x 4096) 2048)
-     :kb-stabilised (>= (rem x 8192) 4096)
-     :custom-view (>= (rem x 16384) 8192)}))
+    (parse-byte-flags
+     {:swapside 1
+      :reserved-2 2
+      :reserved-4 4
+      :autogears 8
+      :shifter 16
+      :reserved-32 32
+      :help-b 64
+      :axis-clutch 128
+      :inpits 256
+      :autoclutch 512
+      :mouse 1024
+      :kb-no-help 2048
+      :kb-stabilised 4096
+      :custom-view 8192} x)))
+
+(defn- ->confirmation-flags [x]
+  (when (< x (* 2 64))
+    (let [flags (parse-byte-flags
+                 {:mentioned 1
+                  :confirmed 2
+                  :penalty-drive-trough 4
+                  :penalty-stop-go 8
+                  :penalty-30 16
+                  :penalty-45 32
+                  :did-not-pit 64} x)]
+      (cond
+        (reduce #(or %1 %2) (vals (select-keys flags [:penalty-drive-trough :penalty-stop-go :did-not-pit])))
+        (assoc flags :disqualified true)
+
+        (reduce #(or %1 %2) (vals (select-keys flags [:penalty-30 :penalty-45])))
+        (assoc flags :time true)
+
+        :else flags))))
 
 (defn- bytes->int [c] (-> c first int))
 (defn- bytes->string [c]
@@ -59,10 +90,13 @@
   (-> c first ->setup-flags))
 (defn- bytes->player-flags [[a b]]
   (->player-flags (+ (bit-shift-left b 8) a)))
+(defn- bytes->confirmation-flags [c]
+  (-> c first ->confirmation-flags))
 
 (defmulti ->byte-protocol type)
 (defmethod ->byte-protocol clojure.lang.PersistentArrayMap [{:keys [key type length]}]
   (case type
+    :confirmation-flags {:bytes 1 :cast bytes->confirmation-flags :key type}
     :cch-camera {:bytes 1 :cast bytes->cch-camera :key key}
     :csc-action {:bytes 1 :cast bytes->csc-action :key key}
     :flg-flag {:bytes 1 :cast bytes->flg-flag :key key}
@@ -154,7 +188,9 @@
          {:key :skin-prefix :type :string :length 4}
          {:key :race-time :type :unsigned}
          {:key :best-lap :type :unsigned}
-         :spare-a :num-stops :confirmation-flags :spare-b
+         :spare-a :num-stops
+         {:type :confirmation-flags}
+         :spare-b
          {:key :laps-done :type :word}
          {:key :flags :type :word}
           :result-num :num-results
