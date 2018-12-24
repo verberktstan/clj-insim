@@ -28,7 +28,7 @@
       (reset! race-in-progress? race-in-progress)
       (packets/is-mtc 255 0 (str "Race in progress: " (name race-in-progress))))))
 
-(defn simple-messaging [{:keys [message text-start user-type player-id uniq-connection-id]}]
+(defn simple-commands [{:keys [message text-start user-type player-id uniq-connection-id]}]
   (when (= user-type :prefix)
     (let [command (subs message text-start)]
       (case command
@@ -41,7 +41,7 @@
 (def ^:private dispatchers
   {:sta update-state
    :ver check-version
-   :mso simple-messaging})
+   :mso simple-commands})
 
 (defn- dispatch
   "Returns the result of (dispachters (:type packet)) applied to the incoming packet. Prints incoming packet as side effect."
