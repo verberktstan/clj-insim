@@ -99,6 +99,22 @@
                  (put-string msg 64))]
     (finalize packet)))
 
+(defn is-msx
+  [msg]
+  (let [header (header {:size 100
+                        :type (enums/isp :msx)})
+        packet (doto header
+                 (put-string msg 96))]
+    (finalize packet)))
+
+(defn is-msl
+  [msg]
+  (let [header (header {:size 132
+                        :type (enums/isp :msl)})
+        packet (doto header
+                 (put-string msg 128))]
+    (finalize packet)))
+
 (defn is-mtc
   [uniq-connection-id player-id msg]
   (let [msg-size (+ (* 4 (int (/ (count msg) 4))) 4)
@@ -112,6 +128,12 @@
                  (put-byte 0) ;spare
                  (put-byte 0)
                  (put-string msg msg-size))]
+    (finalize packet)))
+
+(defn is-reo [num-players new-order]
+  (let [header (header {:size 4 :type (enums/isp :reo) :data num-players})
+        packet (doto header
+                 (put-string (str new-order) 40))]
     (finalize packet)))
 
 (defn- put-object-info [byte-buffer {:keys [x y z-byte flags index heading]}]
