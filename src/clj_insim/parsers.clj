@@ -131,7 +131,7 @@
     :vtn-action {:bytes 1 :cast bytes->vtn-action :key key}
     :unsigned {:bytes 4 :cast bytes->unsigned :key key}
     :state-flags {:bytes 2 :cast #(-> % bytes->word ->state-flags) :key key}
-    :float {:bytes 4 :cast (fn [x] nil) :key key}
+    :float {:bytes 4 :cast #(fn [x] nil) :key key}
     :word {:bytes 2 :cast bytes->word :key key}
     :node-laps {:bytes (* 6 40) :cast #(reduce bytes->node-lap [] (partition 6 %)) :key key}
     {:bytes 1 :cast bytes->int :key key}))
