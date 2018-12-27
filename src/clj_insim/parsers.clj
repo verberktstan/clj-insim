@@ -65,11 +65,6 @@
       :front-end 256 :multi 512 :mpspeedup 1024 :windowed 2048
       :sound-mute 4096 :view-override 8192 :visible 16384 :text-entry 32768} x)))
 
-(defn- ->unsigned-byte [x]
-  (if (neg? x)
-    (+ x 256)
-    x))
-
 (defn- bytes->int [c] (-> c first int))
 (defn- bytes->string [c]
   (->>
@@ -105,12 +100,10 @@
   (->player-flags (+ (bit-shift-left b 8) a)))
 (defn- bytes->confirmation-flags [c]
   (-> c first ->confirmation-flags))
-(defn- bytes->unsigned [coll]
-  (let [[a b c d] (map ->unsigned-byte coll)]
-    (+ (bit-shift-left d 24) (bit-shift-left c 16) (bit-shift-left b 8) a)))
-(defn- bytes->word [coll]
-  (let [[a b] (map ->unsigned-byte coll)]
-    (+ (bit-shift-left b 8) a)))
+(defn- bytes->unsigned [[a b c d]]
+  (+ (bit-shift-left d 24) (bit-shift-left c 16) (bit-shift-left b 8) a))
+(defn- bytes->word [[a b]]
+  (+ (bit-shift-left b 8) a))
 (defn- bytes->node-lap [result [node-a node-b lap-a lap-b player-id position]]
   (conj result {:node [node-a node-b] :lap [lap-a lap-b] :player-id player-id :position position}))
 

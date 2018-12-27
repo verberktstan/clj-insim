@@ -1,6 +1,7 @@
 (ns clj-insim.socket
   (:require [clojure.java.io :as io]
-            [clj-insim.packets :as packets])
+            [clj-insim.packets :as packets]
+            [clj-insim.util :refer [->unsigned-byte]])
   (:import [java.net Socket]))
 
 (def HOST "127.0.0.1")
@@ -11,7 +12,7 @@
     (let [size (.read in)
           ba (byte-array (dec size))]
       (.read in ba)
-      (conj (collect-bytes result in) (seq ba)))
+      (conj (collect-bytes result in) (doall (map ->unsigned-byte (seq ba)))))
     result))
 
 (defn- receive-packets [socket]

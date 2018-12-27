@@ -26,3 +26,10 @@
   "Takes all values of vector v until it encounters a null char"
   [v]
   (take-while #(not= 0 %) v))
+
+(defn ->unsigned-byte
+  "Returns the unsigned version of the signed byte"
+  [x]
+  (if (neg? x)
+    (+ x 256)
+    x))
