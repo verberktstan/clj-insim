@@ -57,6 +57,6 @@
     (packets/is-tiny)))
 
 (comment
-  (def lfs-client (client (partial map handler)))
+  (def lfs-client (client (partial map print-handler)))
   (reset! lfs-client false)
 )

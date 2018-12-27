@@ -67,9 +67,9 @@
                   (put-word (or udp-port 0))
                   (put-word (or flags (isf [:req-join])))
                   (put-byte INSIM-VERSION)
-                  (put-byte (or prefix \!))
-                  (put-word (or interval 5000))
-                  (put-string (or admin (char 0)) 16)
+                  (put-byte (or prefix (char \!)))
+                  (put-word (or interval 0))
+                  (put-string (or admin "abcde") 16)
                   (put-string (or i-name "clj-insim") 16))]
      (finalize packet))))
 
