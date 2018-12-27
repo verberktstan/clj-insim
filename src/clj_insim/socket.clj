@@ -7,34 +7,47 @@
 (def HOST "127.0.0.1")
 (def PORT 29999)
 
-(defn- collect-bytes [result in]
-  (if (pos? (.available in))
-    (let [size (.read in)
-          ba (byte-array (dec size))]
-      (.read in ba)
-      (conj (collect-bytes result in) (doall (map ->unsigned-byte (seq ba)))))
-    result))
+(defn- split-packets [result coll]
+  (if-not (seq coll)
+    result
+    (let [length (first coll)]
+      (recur (conj result (take length coll)) (drop length coll)))))
 
 (defn- receive-packets [socket]
-  (let [in (io/input-stream socket)]
-    (collect-bytes [] in)))
+  (let [in (io/input-stream socket)
+        available (.available in)]
+    (when (pos? available)
+      (let [ba (byte-array available)]
+        (.read in ba)
+        (split-packets nil (map ->unsigned-byte ba))))))
 
-(defn- send-packets
-  "Send packet(s) to socket."
-  [socket packets]
+(defn- send-packets [socket packets]
   (let [out (io/output-stream socket)]
     (if (coll? packets)
       (.write out (byte-array (mapcat seq (flatten packets))))
       (.write out packets))
     (.flush out)))
 
-(defn client [handler & {:keys [host port]}]
+;;;;; PUBLIC FUNCTIONS ;;;;;
+
+(defn client [handler]
   (let [running (atom true)]
     (future
-      (with-open [socket (Socket. (or host HOST) (or port PORT))
+      (with-open [socket (Socket. HOST PORT)
                   _ (send-packets socket (packets/is-isi))]
         (while @running
           (let [in (receive-packets socket)
-                out (handler in)]
-            (send-packets socket out)))))
+                out (when in (handler in))]
+            (when out (send-packets socket out))))))
     running))
+
+(comment
+  (defn test-handler [p]
+    (do
+      (newline)
+      (println (str p))
+      (packets/is-tiny {:reqi 0})))
+
+  (def lfs (client test-handler))
+  (reset! lfs false)
+)
