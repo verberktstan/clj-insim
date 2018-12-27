@@ -6,15 +6,6 @@
 
 (def ^:private INSIM-VERSION 8)
 
-(def ^:private DEFAULTS {:admin "abcde"
-                         :data 0
-                         :flags (short 2048)
-                         :i-name "clj-insim"
-                         :interval (short 0)
-                         :prefix (int (char \!))
-                         :reqi 0
-                         :udp-port (short 0)})
-
 (defn- allocate-buffers [size]
   {:byte-buffer (ByteBuffer/allocate size)
    :buffer (byte-array size)})
@@ -73,13 +64,13 @@
                          :type (enums/isp :isi)
                          :reqi 1})
          packet (doto header
-                  (put-word (or udp-port (:udp-port DEFAULTS)))
+                  (put-word (or udp-port 0))
                   (put-word (or flags (isf [:req-join])))
                   (put-byte INSIM-VERSION)
-                  (put-byte (or prefix (:prefix DEFAULTS)))
+                  (put-byte (or prefix \!))
                   (put-word (or interval 5000))
-                  (put-string (or admin (:admin DEFAULTS)) 16)
-                  (put-string (or i-name (:i-name DEFAULTS)) 16))]
+                  (put-string (or admin (char 0)) 16)
+                  (put-string (or i-name "clj-insim") 16))]
      (finalize packet))))
 
 (defn is-tiny
