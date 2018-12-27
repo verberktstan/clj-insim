@@ -4,7 +4,7 @@
   (:import [java.nio ByteBuffer
             ByteOrder]))
 
-(def ^:private INSIM-VERSION 7)
+(def ^:private INSIM-VERSION 8)
 
 (def ^:private DEFAULTS {:admin "abcde"
                          :data 0
@@ -77,7 +77,7 @@
                   (put-word (or flags (isf [:req-join])))
                   (put-byte INSIM-VERSION)
                   (put-byte (or prefix (:prefix DEFAULTS)))
-                  (put-word (or interval (:interval DEFAULTS)))
+                  (put-word (or interval 5000))
                   (put-string (or admin (:admin DEFAULTS)) 16)
                   (put-string (or i-name (:i-name DEFAULTS)) 16))]
      (finalize packet))))
@@ -85,9 +85,10 @@
 (defn is-tiny
   ([]
    (is-tiny {}))
-  ([{:keys [data-key]}]
+  ([{:keys [data-key reqi]}]
    (let [packet (header {:size 4
                          :type (enums/isp :tiny)
+                         :reqi (or reqi 1)
                          :data (or (enums/tiny data-key) (enums/tiny :none))})]
      (finalize packet))))
 

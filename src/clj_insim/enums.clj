@@ -32,7 +32,7 @@
    :pen 30 :toc 31 :flg 32 :pfl 33 :fin 34
    :res 35 :reo 36 :nlp 37 :mci 38 :msx 39
    :msl 40 :crs 41 :bfn 42 :axi 43 :axo 44
-   :btn 45 :btc 46 :btt 47 :rip 48  :ssh 49
+   :btn 45 :btc 46 :btt 47 :rip 48 :ssh 49
    :con 50 :obh 51 :hlv 52 :plc 53 :axm 54
    :acr 55 :hcp 56 :nci 57 :jrr 58 :uco 59
    :oco 60 :ttc 61 :slc 62 :csc 63})
@@ -59,9 +59,9 @@
 (def tyre-compounds-key (index->key tyre-compounds))
 
 ;; The fifth and sixth byte of an IS_PEN packet are one of these
-(def pen-penalty
+(def penalty
   {:none 0 :drive-through 1 :drive-through-valid 2 :stop-go 3 :stop-go-valid 4 :penalty-30 5 :penalty-45 6 :num 7})
-(def pen-penalty-key (index->key pen-penalty))
+(def penalty-key (index->key penalty))
 
 ;; The seventh byte of an IS_PEN packet is one of these
 (def pen-reason

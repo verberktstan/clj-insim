@@ -81,8 +81,8 @@
   (-> c first enums/csc-action-key))
 (defn- bytes->flg-flag [c]
   (-> c first enums/flg-flag-key))
-(defn- bytes->pen-penalty [c]
-  (-> c first enums/pen-penalty-key))
+(defn- bytes->penalty [c]
+  (-> c first enums/penalty-key))
 (defn- bytes->pen-reason [c]
   (-> c first enums/pen-reason-key))
 (defn- bytes->isp-type [c]
@@ -111,6 +111,8 @@
 (defn- bytes->word [coll]
   (let [[a b] (map ->unsigned-byte coll)]
     (+ (bit-shift-left b 8) a)))
+(defn- bytes->node-lap [result [node-a node-b lap-a lap-b player-id position]]
+  (conj result {:node [node-a node-b] :lap [lap-a lap-b] :player-id player-id :position position}))
 
 (defmulti ->byte-protocol type)
 (defmethod ->byte-protocol clojure.lang.PersistentArrayMap [{:keys [key type length]}]
@@ -119,7 +121,7 @@
     :cch-camera {:bytes 1 :cast bytes->cch-camera :key key}
     :csc-action {:bytes 1 :cast bytes->csc-action :key key}
     :flg-flag {:bytes 1 :cast bytes->flg-flag :key key}
-    :pen-penalty {:bytes 1 :cast bytes->pen-penalty :key key}
+    :penalty {:bytes 1 :cast bytes->penalty :key key}
     :pen-reason {:bytes 1 :cast bytes->pen-reason :key key}
     :reo-player-ids {:bytes length :cast #(into [] (map int %)) :key key}
     :string {:bytes length :cast bytes->string :key key}
@@ -138,6 +140,7 @@
     :state-flags {:bytes 2 :cast #(-> % bytes->word ->state-flags) :key key}
     :float {:bytes 4 :cast (fn [x] nil) :key key}
     :word {:bytes 2 :cast bytes->word :key key}
+    :node-laps {:bytes (* 6 40) :cast #(reduce bytes->node-lap [] (partition 6 %)) :key key}
     {:bytes 1 :cast bytes->int :key key}))
 
 (defmethod ->byte-protocol clojure.lang.Keyword [k]
@@ -177,6 +180,30 @@
    ;; IS_CNL - CoNnection Left
    :cnl [:type :reqi :uniq-connection-id :reason :total :spare-2 :spare-3]
 
+   ;; IS_FIN - FINished race
+   :fin [:type :reqi :player-id
+         {:key :race-time :type :unsigned}
+         {:key :best-lap :type :unsigned}
+         :spare-a :num-stops
+         {:type :confirmation-flags}
+         :spare-b
+         {:key :laps-done :type :word}
+         {:key :flags :type :word}]
+
+   ;; IS_LAP - LAP
+   :lap [:type :reqi :player-id
+         {:key :lap-time :type :unsigned}
+         {:key :total-time :type :unsigned}
+         {:key :laps-done :type :word}
+         {:key :flags :type :word}
+         :spare-0 
+         {:key :penalty :type :penalty}
+         :num-stops :spare-3]
+
+   ;; IS_NLP - Node and Lap Packet
+   :nlp [:type :reqi :num-players
+         {:key :players :type :node-laps}]
+
    ;; IS_NPL - New PLayer
    :npl [:type :reqi :player-id :uniq-connection-id
          {:key :player-type :type :npl-player-type}
@@ -193,8 +220,8 @@
 
    ;; IS_PEN - PENalty (given or cleared)
    :pen [:type :reqi :player-id
-         {:key :old-penalty :type :pen-penalty}
-         {:key :new-penalty :type :pen-penalty}
+         {:key :old-penalty :type :penalty}
+         {:key :new-penalty :type :penalty}
          {:key :reason :type :pen-reason} :spare-3]
 
    ;; IS_PLL ; PLayer Leave race
@@ -227,7 +254,9 @@
    :spx [:type :reqi :player-id
          {:key :split-time :type :unsigned}
          {:key :total-time :type :unsigned}
-         :split :penalty :num-stops :spare-3]
+         :split
+         {:key :penalty :type :penalty}
+         :num-stops :spare-3]
 
    ;; IS_STA
    :sta [:type :reqi :zero
