@@ -29,14 +29,14 @@
 (defn- header
   "Returns a ByteBuffer with the InSim header"
   [{:keys [size type reqi data]}]
-  (let [capacity (or size (:size DEFAULTS))
+  (let [capacity (or size 4)
         byte-buffer (doto (ByteBuffer/allocate capacity)
                       (.order (ByteOrder/LITTLE_ENDIAN)))]
     (doto byte-buffer
       (put-byte capacity)
       (put-byte (or type (enums/isp :tiny)))
-      (put-byte (or reqi (:reqi DEFAULTS)))
-      (put-byte (or data (:data DEFAULTS))))))
+      (put-byte (or reqi 1))
+      (put-byte (or data 0)))))
 
 (defn- finalize
   "Returns a byte-array filled with bytes from byte-buffer"

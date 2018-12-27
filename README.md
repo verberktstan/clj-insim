@@ -11,13 +11,13 @@ Add clj-insim to your project.clj:
 [clj-insim "0.1.4-SNAPSHOT"]
 ```
 
-Require clj-insim.socket/client fn, enums ns
+Require clj-insim.socket/client fn, packets & enums ns and the parse and dispatch functions
 ```
 (ns my-project.core
   (:require [clj-insim.socket :refer [client]]
-            [clj-insim.packets :as [packets]]
+            [clj-insim.packets :as packets]
             [clj-insim.enums :as enums]
-            [clj-insim.core :refer [parse]]))
+            [clj-insim.core :refer [parse dispatch]]))
 ```
 
 Define a handler to simply print an incoming packet
