@@ -10,14 +10,14 @@
 (defn- collect-bytes [result in]
   (if (pos? (.available in))
     (let [size (.read in)
-          ba (byte-array (dec size))
-          _ (.read in ba)]
+          ba (byte-array (dec size))]
+      (.read in ba)
       (conj (collect-bytes result in) (doall (map ->unsigned-byte (seq ba)))))
     result))
 
 (defn- receive-packets [socket]
   (let [in (io/input-stream socket)]
-    (collect-bytes '() in)))
+    (collect-bytes [] in)))
 
 (defn- send-packets
   "Send packet(s) to socket."
