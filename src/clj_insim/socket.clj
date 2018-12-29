@@ -2,7 +2,8 @@
   (:require [clojure.java.io :as io]
             [clj-insim.packets :as packets]
             [clj-insim.enums :as enums]
-            [clj-insim.util :refer [->unsigned-byte]])
+            [clj-insim.util :refer [strip-null-chars ->unsigned-byte]]
+            [clj-insim.parser :refer [parse]])
   (:import [java.net Socket]))
 
 (def ^:private HOST "127.0.0.1") ;; Default host
@@ -15,6 +16,11 @@
     (let [length (first coll)]
       (recur (conj result (into [] (doall (take length coll)))) (drop length coll)))))
 
+(defn write-flush [output-stream data]
+  (doto output-stream
+    (.write data)
+    .flush))
+
 ;;;;; PUBLIC FUNCTIONS ;;;;;
 
 (defn client [handler & {:keys [host port interval]}]
@@ -22,23 +28,22 @@
     (future
       (with-open [socket (Socket. (or host HOST) (or port PORT))
                   input-stream (io/input-stream socket)
-                  output-stream (doto (io/output-stream socket)
-                                  (.write (packets/is-isi))
-                                  .flush)]
+                  output-stream (write-flush (io/output-stream socket) (packets/is-isi))]
         (while @running
           (if (pos? (.available input-stream))
             (let [bytearray (byte-array (.available input-stream))
                   bytes (.read input-stream bytearray)
                   data (split-packets [] (map ->unsigned-byte bytearray))
-                  _ (handler data)]
-              (doto output-stream
-                (.write (packets/is-tiny))
-                .flush))
+                  _ (doall (for [packet data] (handler packet)))]
+              (write-flush output-stream (packets/is-tiny)))
             (Thread/sleep (or interval INTERVAL))))))
     running))
 
 ;; (def packets (atom []))
+;; (first @packets)
 
-(def lfs (client prn))
-;; (def lfs (client #(swap! packets conj %)))
-(reset! lfs false)
+(comment
+  (def lfs (client #(do (newline) (prn (parse %)))))
+  ;; (def lfs (client #(swap! packets conj %)))
+  (reset! lfs false)
+)
