@@ -1,53 +1,44 @@
 (ns clj-insim.socket
   (:require [clojure.java.io :as io]
             [clj-insim.packets :as packets]
+            [clj-insim.enums :as enums]
             [clj-insim.util :refer [->unsigned-byte]])
   (:import [java.net Socket]))
 
-(def HOST "127.0.0.1")
-(def PORT 29999)
+(def ^:private HOST "127.0.0.1") ;; Default host
+(def ^:private PORT 29999) ;; Default port
+(def ^:private INTERVAL 50) ;; Default update interval
 
 (defn- split-packets [result coll]
   (if-not (seq coll)
     result
     (let [length (first coll)]
-      (recur (conj result (take length coll)) (drop length coll)))))
-
-(defn- receive-packets [socket]
-  (let [in (io/input-stream socket)
-        available (.available in)]
-    (when (pos? available)
-      (let [ba (byte-array available)]
-        (.read in ba)
-        (split-packets nil (map ->unsigned-byte ba))))))
-
-(defn- send-packets [socket packets]
-  (let [out (io/output-stream socket)]
-    (if (coll? packets)
-      (.write out (byte-array (mapcat seq (flatten packets))))
-      (.write out packets))
-    (.flush out)))
+      (recur (conj result (into [] (doall (take length coll)))) (drop length coll)))))
 
 ;;;;; PUBLIC FUNCTIONS ;;;;;
 
-(defn client [handler]
+(defn client [handler & {:keys [host port interval]}]
   (let [running (atom true)]
     (future
-      (with-open [socket (Socket. HOST PORT)
-                  _ (send-packets socket (packets/is-isi))]
+      (with-open [socket (Socket. (or host HOST) (or port PORT))
+                  input-stream (io/input-stream socket)
+                  output-stream (doto (io/output-stream socket)
+                                  (.write (packets/is-isi))
+                                  .flush)]
         (while @running
-          (let [in (receive-packets socket)
-                out (when in (handler in))]
-            (when out (send-packets socket out))))))
+          (if (pos? (.available input-stream))
+            (let [bytearray (byte-array (.available input-stream))
+                  bytes (.read input-stream bytearray)
+                  data (split-packets [] (map ->unsigned-byte bytearray))
+                  _ (handler data)]
+              (doto output-stream
+                (.write (packets/is-tiny))
+                .flush))
+            (Thread/sleep (or interval INTERVAL))))))
     running))
 
-(comment
-  (defn test-handler [p]
-    (do
-      (newline)
-      (println (str p))
-      (packets/is-tiny {:reqi 0})))
+;; (def packets (atom []))
 
-  (def lfs (client test-handler))
-  (reset! lfs false)
-)
+(def lfs (client prn))
+;; (def lfs (client #(swap! packets conj %)))
+(reset! lfs false)
