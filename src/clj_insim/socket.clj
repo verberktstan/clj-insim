@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [clj-insim.packets :as packets]
             [clj-insim.enums :as enums]
-            [clj-insim.util :refer [strip-null-chars ->unsigned-byte]]
+            [clj-insim.util :as util]
             [clj-insim.parser :refer [parse]])
   (:import [java.net Socket]))
 
@@ -16,9 +16,9 @@
     (let [length (first coll)]
       (recur (conj result (into [] (doall (take length coll)))) (drop length coll)))))
 
-(defn write-flush [output-stream data]
+(defn- write-flush [output-stream packet]
   (doto output-stream
-    (.write data)
+    (.write packet)
     .flush))
 
 ;;;;; PUBLIC FUNCTIONS ;;;;;
@@ -33,17 +33,19 @@
           (if (pos? (.available input-stream))
             (let [bytearray (byte-array (.available input-stream))
                   bytes (.read input-stream bytearray)
-                  data (split-packets [] (map ->unsigned-byte bytearray))
-                  _ (doall (for [packet data] (handler packet)))]
-              (write-flush output-stream (packets/is-tiny)))
+                  data (split-packets [] (map util/->unsigned-byte bytearray))
+                  returns (doall (map handler data))]
+              (doseq [packet returns] (write-flush output-stream packet)))
             (Thread/sleep (or interval INTERVAL))))))
     running))
 
-;; (def packets (atom []))
-;; (first @packets)
-
 (comment
-  (def lfs (client #(do (newline) (prn (parse %)))))
-  ;; (def lfs (client #(swap! packets conj %)))
+  (def lfs (client
+            #(do
+               (newline)
+               (prn (parse %))
+               (packets/is-tiny))))
   (reset! lfs false)
+
+  (parse [28 17 0 0 1 0 2 65 82 79 53 0 0 0 0 1 97 1 190 0 58 0 182 0 255 255 255 255])
 )
