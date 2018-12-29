@@ -27,9 +27,8 @@
   [v]
   (take-while #(not= 0 %) v))
 
-(defn ->unsigned-byte
-  "Returns the unsigned version of the signed byte"
-  [x]
-  (if (neg? x)
-    (+ x 256)
-    x))
+(def ->unsigned-byte
+  (memoize
+   (fn [x]
+     (let [result (if (neg? x) (+ x 256) x)]
+       (when (and (>= result -256) (< result 256)) result)))))

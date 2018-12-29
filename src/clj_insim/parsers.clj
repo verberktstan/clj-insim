@@ -145,36 +145,41 @@
 
 (def ^{:private true} is-protocols
   {;; IS_CCH - Camera CHange
-   :cch [:type :reqi :player-id
+   :cch [;:size :type :reqi :player-id
          {:key :camera :type :cch-camera}
          :spare-1 :spare-2 :spare-3]
 
    ;; IS_FLG
-   :flg [:type :reqi :player-id :off-on
+   :flg [;:size :type :reqi :player-id
+         :off-on
          {:key :flag :type :flg-flag}
          :car-behind :spare-3]
 
    ;; IS_ISM
-   :ism [:type :reqi :zero :host :spare-1 :spare-2 :spare-3 
+   :ism [;:size :type :reqi :zero
+         :host :spare-1 :spare-2 :spare-3 
          {:key :host-name :type :string :length 32}]
 
    ;; IS_MSO
-   :mso [:type :reqi :zero :uniq-connection-id :player-id
+   :mso [;:size :type :reqi :zero
+         :uniq-connection-id :player-id
          {:key :user-type :type :mso-user}
          :text-start
          {:key :message :type :string :length 128}]
 
    ;; IS_NCN - New ConnectioN
-   :ncn [:type :reqi :uniq-connection-id
+   :ncn [;:size :type :reqi :uniq-connection-id
          {:key :user-name :type :string :length 24}
          {:key :player-name :type :string :length 24}
           :admin :total :flags :spare]
 
    ;; IS_CNL - CoNnection Left
-   :cnl [:type :reqi :uniq-connection-id :reason :total :spare-2 :spare-3]
+   :cnl [;:size :type :reqi :uniq-connection-id
+         :reason :total :spare-2 :spare-3
+         ]
 
    ;; IS_FIN - FINished race
-   :fin [:type :reqi :player-id
+   :fin [;:size :type :reqi :player-id
          {:key :race-time :type :unsigned}
          {:key :best-lap :type :unsigned}
          :spare-a :num-stops
@@ -184,7 +189,7 @@
          {:key :flags :type :word}]
 
    ;; IS_LAP - LAP
-   :lap [:type :reqi :player-id
+   :lap [;:size :type :reqi :player-id
          {:key :lap-time :type :unsigned}
          {:key :total-time :type :unsigned}
          {:key :laps-done :type :word}
@@ -194,11 +199,11 @@
          :num-stops :spare-3]
 
    ;; IS_NLP - Node and Lap Packet
-   :nlp [:type :reqi :num-players
+   :nlp [;:size :type :reqi :num-players
          {:key :players :type :node-laps}]
 
    ;; IS_NPL - New PLayer
-   :npl [:type :reqi :player-id :uniq-connection-id
+   :npl [;:size :type :reqi :player-id :uniq-connection-id
          {:key :player-type :type :npl-player-type}
          {:type :player-flags}
          {:key :player-name :type :string :length 24}
@@ -212,16 +217,17 @@
          :number-player :spare-2 :spare-3]
 
    ;; IS_PEN - PENalty (given or cleared)
-   :pen [:type :reqi :player-id
+   :pen [;:size :type :reqi :player-id
          {:key :old-penalty :type :penalty}
          {:key :new-penalty :type :penalty}
          {:key :reason :type :pen-reason} :spare-3]
 
    ;; IS_PLL ; PLayer Leave race
-   :pll [:type :reqi :player-id]
+   :pll [;:size :type :reqi :player-id
+         ]
 
    ;; IS_RES ; RESult of qualify or confirmed finish
-   :res [:type :reqi :player-id
+   :res [;:size :type :reqi :player-id
          {:key :user-name :type :string :length 24}
          {:key :player-name :type :string :length 24}
          {:key :number-plate :type :string :length 8}
@@ -237,14 +243,15 @@
          {:key :penalty-seconds :type :word}]
 
    ;; IS_TINY
-   :tiny [:type :reqi {:key :subt-type :type :tiny-subtype}]
+   :tiny [;:size :type :reqi {:key :subt-type :type :tiny-subtype}
+          ]
 
    ;; IS_REO - RE-Order
-   :reo [:type :reqi :number-of-players
+   :reo [:size :type :reqi :number-of-players
          {:key :player-ids :type :reo-player-ids :length 40}]
 
    ;; IS_SPX - SPlit X time
-   :spx [:type :reqi :player-id
+   :spx [;:size :type :reqi :player-id
          {:key :split-time :type :unsigned}
          {:key :total-time :type :unsigned}
          :split
@@ -252,7 +259,7 @@
          :num-stops :spare-3]
 
    ;; IS_STA
-   :sta [:type :reqi :zero
+   :sta [;:size :type :reqi :zero
          {:key :replay-speed :type :float}
          {:key :flags :type :state-flags}
          :ingame-cam :viewed-player-id :num-players-in-race :num-connections :num-finished
@@ -262,13 +269,13 @@
          :weather :wind]
 
    ;; IS_VER
-   :ver [:type :reqi :zero
+   :ver [;:size :type :reqi :zero
          {:key :version :type :string :length 8}
          {:key :product :type :string :length 6}
          :insim-version :spare]
 
    ;; IS_VTN - VoTe Notify
-   :vtn [:type :reqi :zero
+   :vtn [;:size :type :reqi :zero
          :uniq-connection-id
          {:key :action :type :vtn-action}
          :spare-2 :spare-3]})
@@ -290,3 +297,49 @@
       (-> m
           (assoc :coll c2) ; else replace coll
           (assoc key (cast c1))))))
+
+;;;;;;;; NEW STYLE ;;;;;;;;
+
+(defn ->string [coll]
+  (->> (strip-null-chars coll)
+       (map char)
+       (apply str)))
+
+;; Parse protocols ;;
+(defmulti protocol :type)
+(defmethod protocol :ver [_]
+  [{:key :version :length 8 :parser ->string}
+   {:key :product :length 6 :parser ->string}
+   :insim-version :spare])
+
+(defn header
+  "Parse the first 4 (header) bytes"
+  [[size type reqi data]]
+  {:size size :type (enums/isp-key type) :reqi reqi :data data})
+
+(defn split
+  "Split coll at 1 or at (:length k)"
+  [coll k]
+  (let [out (split-at (or (:length k) 1) coll)]
+    (take-while #(seq %) out)))
+
+(defn split-last [colls protocol]
+  (concat (drop-last colls) (split (last colls) protocol)))
+
+(defn protocol-key [protocol]
+  (or (:key protocol) protocol))
+
+(defn assoc-protocol [result protocol colls]
+  (let [parser (or (-> protocol first :parser) first)]
+    (if-not (seq colls)
+      result
+      (recur (assoc result (-> protocol first protocol-key) (parser (first colls))) (rest protocol) (rest colls)))))
+
+(defn parse [packet]
+  (let [header (header (take 4 packet))
+        protocol (protocol header)
+        colls (reduce split-last [(drop 4 packet)] protocol)
+        body (assoc-protocol {} protocol colls)]
+    (merge header body)))
+
+;; (parse [20 2 1 0 48 46 54 84 0 0 0 0 83 51 0 0 0 0 8 0])

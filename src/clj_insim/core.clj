@@ -33,7 +33,7 @@
 
 (defn parse
   ([packet]
-   (let [type-key (-> packet first enums/isp-key)]
+   (let [type-key (-> packet second enums/isp-key)]
      (parse type-key packet)))
   ([type-key packet]
    (let [protocol (parsers/make-protocol type-key)]
@@ -54,9 +54,10 @@
   (let [{:keys [type] :as parsed} (parse packet)]
     (println (str "\n== Received a " (name type) " packet from LFS =="))
     (prn parsed)
-    (packets/is-tiny)))
+    [(packets/is-tiny {:reqi 0 :data-key :none})]))
 
 (comment
-  (def lfs-client (client (partial map print-handler)))
+  (def lfs-client (client handler))
   (reset! lfs-client false)
+
 )

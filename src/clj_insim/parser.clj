@@ -9,13 +9,22 @@
 
 ;; Parse protocols ;;
 (defmulti protocol :type)
+
+(defmethod protocol :default [_]
+  nil)
+
+(defmethod protocol :sta [_]
+  [{:key :replay-speed :length 4 :parser ->string}
+   {:key :flags :length 2 :parser ->string}
+   :ingame-cam :viewed-player-id :num-players-in-race :num-connections :num-finished
+   :race-in-progress :qualify-minutes :race-laps :spare-2 :spare-3
+   {:key :track :length 6 :parser ->string}
+   :weather :wind])
+
 (defmethod protocol :ver [_]
   [{:key :version :length 8 :parser ->string}
    {:key :product :length 6 :parser ->string}
    :insim-version :spare])
-
-(defmethod protocol :default [_]
-  nil)
 
 (defn header
   "Parse the first 4 (header) bytes"
