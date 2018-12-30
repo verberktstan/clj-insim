@@ -1,13 +1,65 @@
 (ns clj-insim.parser
   (:require [clj-insim.parser.util :as util]
             [clj-insim.parser.flags :as flags]
-            [clj-insim.enums :as enums]))
+            [clj-insim.enums :as enums]
+            [clj-insim.parser.post :as post]))
 
 ;;;;; PARSER PROTOCOLS ;;;;;
 (defmulti protocol :type)
 
+(defmethod protocol :cnl [_]
+  [:reason :total :spare-2 :spare-3])
+
+(defmethod protocol :fin [_]
+  [(util/protocol-node :race-time :unsigned)
+   (util/protocol-node :best-lap :unsigned)
+   :spare-a :num-stops
+   {:key :confirmation-flags :length 1 :parser flags/->confirmation}
+   :spare-b
+   (util/protocol-node :laps-done :word)
+   {:key :flags :length 2 :parser flags/->player}])
+
+(defmethod protocol :flg [_]
+  [:off-on {:key :flag :length 1 :parser #(-> % first enums/flg-flag-key)}
+   :car-behind :spare-3])
+
+(defmethod protocol :ism [_]
+  [:host :spare-1 :spare-2 :spare-3
+   {:key :host-name :length 32 :parser util/->string}])
+
+(defmethod protocol :lap [_]
+  [(util/protocol-node :lap-time :unsigned)
+   (util/protocol-node :total-time :unsigned)
+   (util/protocol-node :laps-done :word)
+   (util/protocol-node :flags :word)
+   :spare-0
+   {:key :penalty :length 1 :parser #(-> % first enums/penalty-key)}
+   :num-stops :spare-3])
+
+(defmethod protocol :mso [_]
+  [:uniq-connection-id :player-id
+   {:key :user-type :length 1 :parser #(-> first enums/mso-user-key)}])
+
+(defmethod protocol :ncn [_]
+  [{:key :user-name :length 24 :parser util/->string}
+   {:key :player-name :length 24 :parser util/->string}
+   :admin :total :flags :spare])
+
+(defmethod protocol :npl [_]
+  [{:key :player-type :length 1 :parser #(-> % first enums/npl-player-type-key)}
+   {:key :player-flags :length 2 :parser #(-> % util/->word flags/->player)}
+   {:key :player-name :length 24 :parser util/->string}
+   {:key :license-plate :length 8 :parser util/->string}
+   {:key :car-name :length 4 :parser util/->string}
+   {:key :skin-name :length 16 :parser util/->string}
+   {:key :tyres :length 4 :parser #(map enums/tyre-compounds-key %)}
+   :handicap-mass :handicap-restriction :driver-model :passenger
+   (util/protocol-node :spare :int)
+   {:key :setup-flags :length 1 :parser flags/->setup}
+   :number-player :spare-2 :spare-3])
+
 (defmethod protocol :rst [_]
-  [:race-laps :qualify-minutes :num-players :timing
+  [:race-laps :qualify-minutes :num-players :timing ;; TODO timing bits
    {:key :track :length 6 :parser util/->string}
    :weather :wind
    {:key :flags :length 2 :parser #(-> % util/->word flags/->race)}
@@ -56,7 +108,9 @@
     (if-let [prtcl (protocol header)]
       (let [colls (reduce util/split-last [(drop 4 packet)] prtcl)
             body (assoc-protocol {} prtcl colls)]
-        (merge header body))
-      header)))
+        (post/parse (merge header body)))
+      (post/parse header))))
 
-;; (parse [20 2 1 0 48 46 54 84 0 0 0 0 83 51 0 0 0 0 8 0])
+;; (post/parse (parse [20 2 1 0 48 46 54 84 0 0 0 0 83 51 0 0 0 0 8 0]))
+
+;;

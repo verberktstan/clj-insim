@@ -15,6 +15,16 @@
   (reduce-kv (fn [m k v]
                (assoc m k (byte-checked? x v))) {} protocol))
 
+(defn- ->state-flags
+  "Flags (word) for the IS_STA packet"
+  [x]
+  (when (< x ( * 2 32768))
+    (parse-byte-flags
+     {:game 1 :replay 2 :paused 4 :shiftu 8
+      :dialog 16 :shiftu-follow 32 :shiftu-no-opt 64 :show-2d 128
+      :front-end 256 :multi 512 :mpspeedup 1024 :windowed 2048
+      :sound-mute 4096 :view-override 8192 :visible 16384 :text-entry 32768} x)))
+
 (defn- ->setup-flags [x]
   (when (< x (* 2 4))
     (parse-byte-flags
@@ -57,13 +67,7 @@
 
         :else flags))))
 
-(defn- ->state-flags [x]
-  (when (< x ( * 2 32768))
-    (parse-byte-flags
-     {:game 1 :replay 2 :paused 4 :shiftu 8
-      :dialog 16 :shiftu-follow 32 :shiftu-no-opt 64 :show-2d 128
-      :front-end 256 :multi 512 :mpspeedup 1024 :windowed 2048
-      :sound-mute 4096 :view-override 8192 :visible 16384 :text-entry 32768} x)))
+
 
 (defn- bytes->int [c] (-> c first int))
 (defn- bytes->string [c]

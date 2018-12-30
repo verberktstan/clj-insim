@@ -43,9 +43,10 @@
   (def lfs (client
             #(do
                (newline)
-               (prn (parse %))
+               (prn %)
                (packets/is-tiny))))
   (reset! lfs false)
 
   (parse [28 17 0 0 1 0 2 65 82 79 53 0 0 0 0 1 97 1 190 0 58 0 182 0 255 255 255 255])
+  (parse [4 23 0 1])
 )
