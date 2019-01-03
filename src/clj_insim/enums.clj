@@ -35,7 +35,7 @@
    :btn 45 :btc 46 :btt 47 :rip 48 :ssh 49
    :con 50 :obh 51 :hlv 52 :plc 53 :axm 54
    :acr 55 :hcp 56 :nci 57 :jrr 58 :uco 59
-   :oco 60 :ttc 61 :slc 62 :csc 63})
+   :oco 60 :ttc 61 :slc 62 :csc 63 :cim 64})
 
 (def isp-key (index->key isp))
 

@@ -40,13 +40,25 @@
     running))
 
 (comment
-  (def lfs (client
-            #(do
-               (newline)
-               (prn %)
-               (packets/is-tiny))))
+  (defmulti packet-dispatch :type)
+  (defmethod packet-dispatch :mso [_]
+    (packets/is-hcp {:bf1 {:restriction 50 :mass 50}}))
+  (defmethod packet-dispatch :default [p] nil)
+
+  (defn handler [p]
+    (let [packet (parse p)]
+      (newline)
+      (prn packet)
+      (or (packet-dispatch packet)
+       (packets/is-tiny))))
+
+  (def lfs (client handler))
   (reset! lfs false)
 
   (parse [28 17 0 0 1 0 2 65 82 79 53 0 0 0 0 1 97 1 190 0 58 0 182 0 255 255 255 255])
   (parse [4 23 0 1])
+
+  (def test-data (read-string (slurp "race-data.txt")))
+  (parse (nth test-data 3))
+  (handler (nth test-data 3))
 )

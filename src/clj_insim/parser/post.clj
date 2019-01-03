@@ -12,4 +12,4 @@
       (update :data enums/tiny-key)
       (rename-keys {:data :sub-type})))
 
-(defmethod parse :default [packet] packet)
+(defmethod parse :default [packet] (identity packet))

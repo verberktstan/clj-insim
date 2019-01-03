@@ -36,9 +36,11 @@
    {:key :penalty :length 1 :parser #(-> % first enums/penalty-key)}
    :num-stops :spare-3])
 
-(defmethod protocol :mso [_]
+(defmethod protocol :mso [header]
   [:uniq-connection-id :player-id
-   {:key :user-type :length 1 :parser #(-> first enums/mso-user-key)}])
+   {:key :user-type :length 1 :parser #(-> % first enums/mso-user-key)}
+   :text-start
+   {:key :message :length (- (:size header) 8) :parser util/->string}])
 
 (defmethod protocol :ncn [_]
   [{:key :user-name :length 24 :parser util/->string}
@@ -46,7 +48,8 @@
    :admin :total :flags :spare])
 
 (defmethod protocol :npl [_]
-  [{:key :player-type :length 1 :parser #(-> % first enums/npl-player-type-key)}
+  [:uniq-connection-id
+   {:key :player-type :length 1 :parser #(-> % first enums/npl-player-type-key)}
    {:key :player-flags :length 2 :parser #(-> % util/->word flags/->player)}
    {:key :player-name :length 24 :parser util/->string}
    {:key :license-plate :length 8 :parser util/->string}
@@ -55,7 +58,7 @@
    {:key :tyres :length 4 :parser #(map enums/tyre-compounds-key %)}
    :handicap-mass :handicap-restriction :driver-model :passenger
    (util/protocol-node :spare :int)
-   {:key :setup-flags :length 1 :parser flags/->setup}
+   {:key :setup-flags :length 1 :parser #(-> % first flags/->setup)}
    :number-player :spare-2 :spare-3])
 
 (defmethod protocol :rst [_]
