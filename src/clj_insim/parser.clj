@@ -54,13 +54,10 @@
    {:key :player-name :length 24 :parser util/->string}
    :admin :total :flags :spare])
 
-(comment
-  (enums/npl-player-type-key 0)
-)
-
 (defmethod protocol :npl [_]
   [:uniq-connection-id
-   {:key :player-type :length 1 :parser #(-> % first enums/npl-player-type-key)}
+   :player-type
+;   {:key :player-type :length 1 :parser #(-> % first enums/npl-player-type-key)}
    {:key :player-flags :length 2 :parser #(-> % util/->word flags/->player)}
    {:key :player-name :length 24 :parser util/->string}
    {:key :license-plate :length 8 :parser util/->string}

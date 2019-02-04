@@ -5,13 +5,16 @@
 (defn- data->uniq-connection-id [p]
   (rename-keys p {:data :uniq-connection-id}))
 
+(defn- data->player-id [p]
+  (rename-keys p {:data :player-id}))
+
 (defmulti parse :type)
 
 (defmethod parse :cnl [packet]
   (data->uniq-connection-id packet))
 
 (defmethod parse :flg [packet]
-  (rename-keys packet {:data :player-id}))
+  (data->player-id packet))
 
 (defmethod parse :ncn [packet]
   (data->uniq-connection-id packet))
@@ -20,7 +23,10 @@
   (data->uniq-connection-id packet))
 
 (defmethod parse :npl [packet]
-  (rename-keys packet {:data :player-id}))
+  (data->player-id packet))
+
+(defmethod parse :pll [packet]
+  (data->player-id packet))
 
 (defmethod parse :slc [packet]
   (data->uniq-connection-id packet))
