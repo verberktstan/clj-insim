@@ -8,7 +8,7 @@
 
 (def ^:private HOST "127.0.0.1") ;; Default host
 (def ^:private PORT 29999) ;; Default port
-(def ^:private INTERVAL 50) ;; Default update interval
+(def ^:private INTERVAL 15) ;; Default update interval
 
 (defn- split-packets [result coll]
   (if-not (seq coll)
@@ -35,14 +35,20 @@
                   bytes (.read input-stream bytearray)
                   data (split-packets [] (map util/->unsigned-byte bytearray))
                   returns (doall (map handler data))]
-              (doseq [packet returns] (write-flush output-stream packet)))
+              (doseq [packet returns]
+                (if (coll? packet)
+                  (doseq [sub-packet packet]
+                    (write-flush output-stream sub-packet))
+                  (write-flush output-stream packet))))
             (Thread/sleep (or interval INTERVAL))))))
     running))
 
 (comment
   (defmulti packet-dispatch :type)
+  (defmethod packet-dispatch :ver
+    (packets/is-msl "Warm welcome from clj-insim!"))
   (defmethod packet-dispatch :mso [_]
-    (packets/is-hcp {:bf1 {:restriction 50 :mass 50}}))
+    (packets/is-hcp {:xrt {:restriction 2} :fxo {:restriction 5} :uf1 {:restriction 10}}))
   (defmethod packet-dispatch :default [p] nil)
 
   (defn handler [p]

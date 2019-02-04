@@ -39,6 +39,20 @@
 
 (def isp-key (index->key isp))
 
+(def language
+  {:english 0 :deutsch 1 :portuguese 2 :french 3
+   :suomi 4 :norsk 5 :nederlands 6 :catalan 7
+   :turkish 8 :castellano 9 :italiano 10 :dansk 11
+   :czech 12 :russian 13 :estionian 14 :serbian 15
+   :greek 16 :polski 17 :croatian 18 :hungarian 19
+   :brazilian 20 :swedish 21 :slovak 22 :galego 23
+   :slovenski 24 :belarussian 25 :latvian 26 :lithuanian 27
+   :traditional-chinese 28 :simplified-chinese 29 :japanese 30 :korean 31
+   :bulgarian 32 :latino 33 :ukrainian 34 :indonesian 35
+   :romanian 36 :num-lang 37})
+
+(def language-key (index->key language))
+
 ;; The seventh byte of an IS_MSO packets is one of these
 (def mso-user
   {:system 0 :user 1 :prefix 2 :o 3 :num 4})
@@ -47,7 +61,7 @@
 
 ;; The sixth byte of an IS_NPL packet is one of these
 (def npl-player-type
-  {:female 0 :ai 1 :remote 2})
+  {:female 0 :ai 1 :remote 2 :num 3 :unknown 4})
 
 (def npl-player-type-key (index->key npl-player-type))
 
@@ -79,8 +93,12 @@
 
 (def tiny-key (index->key tiny))
 
-(def cnl-reason
-  {:disconnect 0 :time-out 1 :lost-connection 2 :kicked 3 :banned 4})
+(def leave-reason
+  {:disconnect 0 :time-out 1 :lost-connection 2 :kicked 3
+   :banned 4 :security 5 :cpw 6 :oos 7
+   :joos 8 :hack 9 :leave-reason-num 10})
+
+(def leave-reason-key (index->key leave-reason))
 
 (def jrr-action
   {:reject 0 :spawn 1 :reset 4 :reset-no-repair 5})

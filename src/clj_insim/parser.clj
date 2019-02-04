@@ -8,7 +8,8 @@
 (defmulti protocol :type)
 
 (defmethod protocol :cnl [_]
-  [:reason :total :spare-2 :spare-3])
+  [{:key :reason :parser #(-> % first enums/leave-reason-key)}
+   :total :spare-2 :spare-3])
 
 (defmethod protocol :fin [_]
   [(util/protocol-node :race-time :unsigned)
@@ -42,10 +43,20 @@
    :text-start
    {:key :message :length (- (:size header) 8) :parser util/->string}])
 
+(defmethod protocol :nci [_]
+  [{:key :language :parser #(-> % first enums/language-key)}
+   :spare-1 :spare-2 :spare-3
+   (util/protocol-node :user-id :unsigned)
+   (util/protocol-node :ip-address :unsigned)])
+
 (defmethod protocol :ncn [_]
   [{:key :user-name :length 24 :parser util/->string}
    {:key :player-name :length 24 :parser util/->string}
    :admin :total :flags :spare])
+
+(comment
+  (enums/npl-player-type-key 0)
+)
 
 (defmethod protocol :npl [_]
   [:uniq-connection-id
@@ -59,7 +70,8 @@
    :handicap-mass :handicap-restriction :driver-model :passenger
    (util/protocol-node :spare :int)
    {:key :setup-flags :length 1 :parser #(-> % first flags/->setup)}
-   :number-player :spare-2 :spare-3])
+   :number-player :spare-2 :spare-3
+   ])
 
 (defmethod protocol :rst [_]
   [:race-laps :qualify-minutes :num-players :timing ;; TODO timing bits
@@ -79,6 +91,9 @@
    :race-in-progress :qualify-minutes :race-laps :spare-2 :spare-3
    {:key :track :length 6 :parser util/->string}
    :weather :wind])
+
+(defmethod protocol :slc [_]
+  {:key :car-name :length 4 :parser util/->string})
 
 (defmethod protocol :ver [_]
   [{:key :version :length 8 :parser util/->string}
