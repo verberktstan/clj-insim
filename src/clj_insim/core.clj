@@ -4,7 +4,7 @@
             [clj-insim.packets :as packets]
             [clj-insim.player :as player]
             [clj-insim.parser :refer [parse]]
-            [clj-insim.socket :refer [client]]
+            [clj-insim.socket :as socket]
             [clj-insim.util :as util]))
 
 (defn- check-version
@@ -40,6 +40,13 @@
       (when print-packets?
         (newline) (println (str "== Received a " (name type) " from LFS ==")) (prn packet))
       (or (dispatch packet) (packets/is-tiny)))))
+
+(defn client
+  "Creates a new tcp client, returns an atom representing the running state of the client; reset! this atom to false to stop the client. Specify :host, :port and :interval in options, connects to localhost:29999 by default."
+  ([handler]
+   (client handler nil))
+  ([handler options]
+   (socket/client handler options)))
 
 (comment
   ;; Start insim from lfs by typing: "/insim 29999"
