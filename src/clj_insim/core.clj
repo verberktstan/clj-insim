@@ -43,6 +43,8 @@
 
 (defn client
   "Creates a new tcp client, returns an atom representing the running state of the client; reset! this atom to false to stop the client. Specify :host, :port and :interval in options, connects to localhost:29999 by default."
+  ([]
+   (client (default-handler {:print-packets? true})))
   ([handler]
    (client handler nil))
   ([handler options]
