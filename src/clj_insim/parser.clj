@@ -88,6 +88,9 @@
    :result-num :num-results
    (util/protocol-node :penalty-time :word)])
 
+(defmethod protocol :reo [_]
+  [{:key :player-ids :length 40 :parser identity}])
+
 (defmethod protocol :rst [_]
   [:race-laps :qualify-minutes :num-players :timing ;; TODO timing bits
    {:key :track :length 6 :parser util/->string}

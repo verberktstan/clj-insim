@@ -34,6 +34,9 @@
 (defmethod parse :res [packet]
   (data->player-id packet))
 
+(defmethod parse :reo [packet]
+  (rename-keys packet {:date :num-players}))
+
 (defmethod parse :slc [packet]
   (data->uniq-connection-id packet))
 
