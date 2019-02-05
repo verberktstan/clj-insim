@@ -15,10 +15,10 @@
   [(util/protocol-node :race-time :unsigned)
    (util/protocol-node :best-lap :unsigned)
    :spare-a :num-stops
-   {:key :confirmation-flags :length 1 :parser flags/->confirmation}
+   {:key :confirmation-flags :length 1 :parser #(-> % first flags/->confirmation)}
    :spare-b
    (util/protocol-node :laps-done :word)
-   {:key :flags :length 2 :parser flags/->player}])
+   {:key :flags :length 2 :parser #(-> % util/->word flags/->player)}])
 
 (defmethod protocol :flg [_]
   [:off-on {:key :flag :length 1 :parser #(-> % first enums/flg-flag-key)}
@@ -35,7 +35,9 @@
    (util/protocol-node :flags :word)
    :spare-0
    {:key :penalty :length 1 :parser #(-> % first enums/penalty-key)}
-   :num-stops :spare-3])
+   :penlalty
+   :num-stops :spare-3
+   ])
 
 (defmethod protocol :mso [header]
   [:uniq-connection-id :player-id
@@ -60,7 +62,7 @@
 ;   {:key :player-type :length 1 :parser #(-> % first enums/npl-player-type-key)}
    {:key :player-flags :length 2 :parser #(-> % util/->word flags/->player)}
    {:key :player-name :length 24 :parser util/->string}
-   {:key :license-plate :length 8 :parser util/->string}
+   {:key :plate :length 8 :parser util/->string}
    {:key :car-name :length 4 :parser util/->string}
    {:key :skin-name :length 16 :parser util/->string}
    {:key :tyres :length 4 :parser #(map enums/tyre-compounds-key %)}
@@ -69,6 +71,21 @@
    {:key :setup-flags :length 1 :parser #(-> % first flags/->setup)}
    :number-player :spare-2 :spare-3
    ])
+
+(defmethod protocol :res [_]
+  [{:key :user-name :length 24 :parser util/->string}
+   {:key :player-name :length 24 :parser util/->string}
+   {:key :plate :length 8 :parser util/->string}
+   {:key :skin-prefix :length 4 :parser util/->string}
+   (util/protocol-node :race-time :unsigned)
+   (util/protocol-node :best-lap :unsigned)
+   :spare-a :num-stops
+   {:key :confirmation-flags :length 1 :parser #(-> % first flags/->confirmation)}
+   :spare-b
+   (util/protocol-node :laps-done :word)
+   {:key :flags :length 2 :parser #(-> % util/->word flags/->player)}
+   :result-num :num-results
+   (util/protocol-node :penalty-time :word)])
 
 (defmethod protocol :rst [_]
   [:race-laps :qualify-minutes :num-players :timing ;; TODO timing bits
@@ -90,7 +107,7 @@
    :weather :wind])
 
 (defmethod protocol :slc [_]
-  {:key :car-name :length 4 :parser util/->string})
+  [{:key :car-name :length 4 :parser util/->string}])
 
 (defmethod protocol :ver [_]
   [{:key :version :length 8 :parser util/->string}

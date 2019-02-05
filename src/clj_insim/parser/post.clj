@@ -16,6 +16,9 @@
 (defmethod parse :flg [packet]
   (data->player-id packet))
 
+(defmethod parse :lap [packet]
+  (data->player-id packet))
+
 (defmethod parse :ncn [packet]
   (data->uniq-connection-id packet))
 
@@ -26,6 +29,9 @@
   (data->player-id packet))
 
 (defmethod parse :pll [packet]
+  (data->player-id packet))
+
+(defmethod parse :res [packet]
   (data->player-id packet))
 
 (defmethod parse :slc [packet]

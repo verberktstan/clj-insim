@@ -33,11 +33,11 @@
           (if (pos? (.available input-stream))
             (let [bytearray (byte-array (.available input-stream))
                   bytes (.read input-stream bytearray)
-                  data (split-packets [] (map util/->unsigned-byte bytearray))
+                  data (split-packets [] (doall (map util/->unsigned-byte bytearray)))
                   returns (doall (map handler data))]
               (doseq [packet returns]
                 (if (coll? packet)
-                  (doseq [sub-packet packet]
+                  (doseq [sub-packet (remove nil? packet)]
                     (write-flush output-stream sub-packet))
                   (write-flush output-stream packet))))
             (Thread/sleep (or interval INTERVAL))))))
