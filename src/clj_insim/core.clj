@@ -5,7 +5,8 @@
             [clj-insim.player :as player]
             [clj-insim.parser :refer [parse]]
             [clj-insim.socket :as socket]
-            [clj-insim.util :as util]))
+            [clj-insim.util :as util]
+            [clojure.string :refer [upper-case]]))
 
 (defn- check-version
   "Returns a welcome message if LFS version of host is 0.6T and insim-version is 8. Else returns an IS_TINY packet that closes the connection."
@@ -35,11 +36,10 @@
   "Returns a function that parses and dispatches incoming packets from LFS.
   (default-handler {:print-packets? true}) ;; The handler will print all incoming packets to the REPL."
   [{:keys [print-packets?]}]
-  (fn [p]
-    (let [{:keys [type] :as packet} (parse p)]
-      (when print-packets?
-        (newline) (println (str "== Received a " (name type) " from LFS ==")) (prn packet))
-      (or (dispatch packet) (packets/is-tiny)))))
+  (fn [{:keys [type] :as packet}]
+    (when print-packets?
+      (newline) (println (str "== Received a IS_" (upper-case (name type)) " from LFS ==")) (prn packet))
+    (or (dispatch packet) (packets/is-tiny))))
 
 (defn client
   "Creates a new tcp client, returns an atom representing the running state of the client; reset! this atom to false to stop the client. Specify :host, :port and :interval in options, connects to localhost:29999 by default."

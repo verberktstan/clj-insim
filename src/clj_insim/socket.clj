@@ -37,7 +37,7 @@
              (let [bytearray (byte-array (.available input-stream))
                    bytes (.read input-stream bytearray)
                    data (split-packets [] (doall (map util/->unsigned-byte bytearray)))
-                   returns (doall (map handler data))]
+                   returns (doall (map #(handler (parse %)) data))]
                (doseq [packet returns]
                  (if (coll? packet)
                    (doseq [sub-packet (remove nil? packet)]
