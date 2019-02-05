@@ -212,9 +212,9 @@
     (finalize packet)))
 
 (defn is-reo [num-players new-order]
-  (let [header (header {:size 4 :type (enums/isp :reo) :data num-players})
+  (let [header (header {:size 44 :type (enums/isp :reo) :data num-players})
         packet (doto header
-                 (put-string (str new-order) 40))]
+                 (put-string (apply str new-order) 40))]
     (finalize packet)))
 
 (defn- put-object-info [byte-buffer {:keys [x y z-byte flags index heading]}]
