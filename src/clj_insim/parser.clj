@@ -54,7 +54,8 @@
 (defmethod protocol :ncn [_]
   [{:key :user-name :length 24 :parser util/->string}
    {:key :player-name :length 24 :parser util/->string}
-   :admin :total :flags :spare])
+   {:key :admin :length 1 :parser #(-> % first pos?)}
+   :total :flags :spare])
 
 (defmethod protocol :npl [_]
   [:uniq-connection-id
