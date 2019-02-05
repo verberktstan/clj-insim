@@ -22,23 +22,13 @@
 
 
 ;;;;; Registration of connections
-
-(defmethod dispatch :ncn [{:keys [reqi] :as p}]
-  ;; Register the connection and check the total connection count if this is not a response to TINY_NCN
-  (connection/register! p {:check-total-connections? (= reqi 0) :notify-host? true}))
-
-(defmethod dispatch :cnl [p]
-  (connection/unregister! p {:notify-host? true}))
+(defmethod dispatch :ncn [p] (connection/dispatch-ncn p {:notify-host? true}))
+(defmethod dispatch :cnl [p] (connection/dispatch-cnl p {:notify-host? true}))
 
 
 ;;;;; Registration of players
-
-(defmethod dispatch :npl [{:keys [number-player reqi] :as p}]
-  (when (not (zero? number-player)) ;; and this is NOT a join request
-    (player/register! p {:check-total-players? (= reqi 0) :notify-host? true})))
-
-(defmethod dispatch :pll [p]
-  (player/unregister! p {:notify-host? true}))
+(defmethod dispatch :npl [p] (player/dispatch-npl p {:notify-host? true}))
+(defmethod dispatch :pll [p] (player/dispatch-pll p {:notify-host? true}))
 
 
 (defn handler
