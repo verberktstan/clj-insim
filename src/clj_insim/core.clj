@@ -31,16 +31,18 @@
 (defmethod dispatch :pll [p] (player/dispatch-pll p {:notify-host? true}))
 
 
-(defn handler
-  "Parse incoming packets from LFS and dispatch."
-  [p {:keys [print-packets?]}]
-  (let [{:keys [type] :as packet} (parse p)]
-    (when print-packets?
-      (newline) (println (str "== Received a " (name type) " from LFS ==")) (prn packet))
-    (or (dispatch packet) (packets/is-tiny))))
+(defn default-handler
+  "Returns a function that parses and dispatches incoming packets from LFS.
+  (default-handler {:print-packets? true}) ;; The handler will print all incoming packets to the REPL."
+  [{:keys [print-packets?]}]
+  (fn [p]
+    (let [{:keys [type] :as packet} (parse p)]
+      (when print-packets?
+        (newline) (println (str "== Received a " (name type) " from LFS ==")) (prn packet))
+      (or (dispatch packet) (packets/is-tiny)))))
 
 (comment
   ;; Start insim from lfs by typing: "/insim 29999"
-  (def lfs-client (client #(handler % {:print-packets? true})))
+  (def lfs-client (client (default-handler {:print-packets? true})))
   (reset! lfs-client false)
 )
