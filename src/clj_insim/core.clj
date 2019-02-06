@@ -40,9 +40,6 @@
   (when (= 0 number-player)
     [(packets/is-jrr (assoc npl :jrr-action (enums/jrr-action :spawn)))]))
 
-(defmethod dispatch :res [{:keys [player-name result-num]}]
-  (map #(packets/is-msl (str player-name " finished at position " %)) (map (partial + result-num) (range 100))))
-
 (defn default-handler
   "Returns a function that parses and dispatches incoming packets from LFS.
   (default-handler {:print-packets? true}) ;; The handler will print all incoming packets to the REPL."
