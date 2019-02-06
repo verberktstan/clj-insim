@@ -13,8 +13,8 @@
   [{:keys [version insim-version]}]
   (if (and (= version "0.6T")
            (= insim-version 8))
-    (packets/is-msl "Warm welcome from clj-insim!")
-    (packets/is-tiny {:data-key :close})))
+    [(packets/is-msl "Warm welcome from clj-insim!")]
+    [(packets/is-tiny {:data-key :close})]))
 
 (defmulti dispatch :type)
 (defmethod dispatch :default [_] nil)
@@ -31,15 +31,25 @@
 (defmethod dispatch :npl [p] (player/dispatch-npl p {:notify-host? true}))
 (defmethod dispatch :pll [p] (player/dispatch-pll p {:notify-host? true}))
 
+(defmethod dispatch :tiny [{:keys [sub-type]}]
+  (when (= sub-type :none)
+    (println "Sent a IS_TINY packet to maintain connection")
+    [(packets/is-tiny)]))
+
+(defmethod dispatch :npl [{:keys [number-player] :as npl}]
+  (when (= 0 number-player)
+    [(packets/is-jrr (assoc npl :jrr-action (enums/jrr-action :spawn)))]))
 
 (defn default-handler
   "Returns a function that parses and dispatches incoming packets from LFS.
   (default-handler {:print-packets? true}) ;; The handler will print all incoming packets to the REPL."
-  [{:keys [print-packets?]}]
-  (fn [{:keys [type] :as packet}]
-    (when print-packets?
-      (newline) (println (str "== Received a IS_" (upper-case (name type)) " from LFS ==")) (prn packet))
-    (or (dispatch packet) (packets/is-tiny))))
+  ([]
+   (default-handler nil))
+  ([{:keys [print-packets?]}]
+   (fn [{:keys [type] :as packet}]
+     (when print-packets?
+       (newline) (println (str "== Received a IS_" (upper-case (name type)) " from LFS ==")) (prn packet))
+     (seq (dispatch packet)))))
 
 (defn client
   "Creates a new tcp client, returns an atom representing the running state of the client; reset! this atom to false to stop the client. Specify :host, :port and :interval in options, connects to localhost:29999 by default."
@@ -52,6 +62,6 @@
 
 (comment
   ;; Start insim from lfs by typing: "/insim 29999"
-  (def lfs-client (client (default-handler {:print-packets? true})))
+  (def lfs-client (client (default-handler) {:debug true}))
   (reset! lfs-client false)
 )

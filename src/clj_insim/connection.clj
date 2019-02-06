@@ -15,7 +15,7 @@
 
 (defn unregister! [{:keys [uniq-connection-id] :as connection} {:keys [notify-host?]}]
   (swap! connections dissoc uniq-connection-id)
-  (when notify-host? (packets/is-msl (str "clj-insim: connection " uniq-connection-id " UNregistered!"))))
+  (when notify-host? [(packets/is-msl (str "clj-insim: connection " uniq-connection-id " UNregistered!"))]))
 
 (defn dispatch-ncn
   "Basic dispatcher for a IS_NCN packet. Registers a connection.

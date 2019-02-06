@@ -17,7 +17,7 @@
 
 (defn unregister! [{:keys [player-id]} {:keys [notify-host?]}]
   (swap! players dissoc player-id)
-  (when notify-host? (packets/is-msl (str "clj-insim: player " player-id " UNregistered!"))))
+  (when notify-host? [(packets/is-msl (str "clj-insim: player " player-id " UNregistered!"))]))
 
 (defn dispatch-npl
   "Basic dispath fn for a IS_NPL packet. Registers a player.
