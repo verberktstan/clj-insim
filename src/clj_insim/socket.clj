@@ -17,12 +17,16 @@
       (recur (conj result (into [] (doall (take length coll)))) (drop length coll)))))
 
 (defn- write-multi [output-stream packets]
-  (.flush
-   (reduce
-    (fn [os packet]
-      (doto os
-        (.write packet)))
-    output-stream packets)))
+  (if (<= (count packets) 1)
+    (doto output-stream
+      (.write (first packets))
+      .flush)
+    (doto
+      (reduce
+       (fn [os packet]
+         (doto os (.write packet)))
+       output-stream packets)
+      .flush)))
 
 ;;;;; PUBLIC FUNCTIONS ;;;;;
 
@@ -31,7 +35,7 @@
     (future
       (with-open [socket (Socket. (or host "127.0.0.1") (or port 29999))
                   input-stream (io/input-stream socket)
-                  output-stream (write-flush (io/output-stream socket) (packets/is-isi))]
+                  output-stream (write-multi (io/output-stream socket) [(packets/is-isi)])]
         (while @running
           (if (pos? (.available input-stream))
             (let [bytearray (byte-array (.available input-stream))

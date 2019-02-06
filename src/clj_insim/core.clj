@@ -40,6 +40,9 @@
   (when (= 0 number-player)
     [(packets/is-jrr (assoc npl :jrr-action (enums/jrr-action :spawn)))]))
 
+(defmethod dispatch :res [{:keys [player-name result-num]}]
+  (map #(packets/is-msl (str player-name " finished at position " %)) (map (partial + result-num) (range 100))))
+
 (defn default-handler
   "Returns a function that parses and dispatches incoming packets from LFS.
   (default-handler {:print-packets? true}) ;; The handler will print all incoming packets to the REPL."
@@ -54,7 +57,7 @@
 (defn client
   "Creates a new tcp client, returns an atom representing the running state of the client; reset! this atom to false to stop the client. Specify :host, :port and :interval in options, connects to localhost:29999 by default."
   ([]
-   (client (default-handler {:print-packets? true})))
+   (client (default-handler {:print-packets? false}) {:debug true}))
   ([handler]
    (client handler nil))
   ([handler options]
@@ -62,6 +65,6 @@
 
 (comment
   ;; Start insim from lfs by typing: "/insim 29999"
-  (def lfs-client (client (default-handler) {:debug true}))
+  (def lfs-client (client))
   (reset! lfs-client false)
 )
