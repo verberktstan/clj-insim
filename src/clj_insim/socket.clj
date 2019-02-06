@@ -26,7 +26,7 @@
 (defn client
   ([handler]
    (client handler nil))
-  ([handler {:keys [host port interval]}]
+  ([handler {:keys [host port interval debug]}]
    (let [running (atom true)]
      (future
        (with-open [socket (Socket. (or host HOST) (or port PORT))
@@ -38,6 +38,8 @@
                    bytes (.read input-stream bytearray)
                    data (split-packets [] (doall (map util/->unsigned-byte bytearray)))
                    returns (doall (map #(handler (parse %)) data))]
+               (when debug
+                 (prn (mapv #(name (enums/isp-key (second %))) data)))
                (doseq [packet returns]
                  (if (coll? packet)
                    (doseq [sub-packet (remove nil? packet)]
