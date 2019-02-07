@@ -25,8 +25,9 @@ To set up a client with the default handler:
 (def lfs-client (clj-insim/client))
 ```
 
-Start a new server in LFS and add an AI player and a human player. The host machine should be notified of the newly registered players by default. To inspect the players in the clj-insim client:
+Start a new server in LFS and add an AI player and a human player. The host machine should be notified of the newly registered players by default. To inspect the connections/players in the clj-insim client:
 ```
+@clj-insim.connection/connections
 @clj-insim.player/players
 ```
 
@@ -37,8 +38,11 @@ To stop the client:
 
 ### Create your own packet handler
 
-Include the `clj-insim/packets` ns and define a basic multimethod for dispatching packets. You can dispatch based on the :type of packet. Make sure it returns nil by default. A dispatch fn for an {:type :mso} (IS_MSO) packet is defined, which simply prints the incoming packet to the repl.
-The handler accepts a packet from LFS and *must* return a valid packet. Most of the time I make sure the dispatch fns return a valid packet OR nil. This way you can easily fallback on a default `(packets/is-tiny)` packet (the default maintain connection packet).
+Include the `clj-insim/packets` ns and define a basic multimethod for dispatching packets. You can dispatch based on the `:type` of packet. *Make sure it returns nil by default*. If you want to send data back to lfs, always return a seq with packets (even if there is only one packet!).
+Below, a dispatch fn for a `{:type :mso}` (IS_MSO) packet is defined, which simply prints the incoming packet to the repl.
+The handler accepts a packet from LFS and *must* return a valid packet. Note the dispatching of `{:type :tiny}` packets, returning a (coll with a) basic IS_TINY to maintain connection.
+
+Most of the time I make sure the dispatch fns return a valid packet OR nil. This way you can easily fallback on a default `(packets/is-tiny)` packet (the default maintain connection packet).
 ```
 (ns my-project.core
   (:require [clj-insim.core :as clj-insim]
@@ -51,8 +55,13 @@ The handler accepts a packet from LFS and *must* return a valid packet. Most of 
   (newline)
   (prn p))
   
+(defmethod dispatch :tiny [tiny-packet]
+  (when (clj-insim/keep-alive-packet? tiny-packet)
+    ;; Return a IS_TINY packet to maintain connection
+    [(packets/is-tiny)])) ; Note the explicit wrapping in a vector/coll
+  
 (defn handler [{:keys [type] :as packet}]
-  (or (dispatch packet) (packets/is-tiny)))
+  (seq (dispatch packet))) ;; Always return a seq (or nil)
   
 (comment
   (def lfs-client (clj-insim/client handler))
@@ -63,16 +72,20 @@ If you start a client with this handler and type some message in LFS, you'll see
 This is nice, but it would be even nicer if we send something useful back to LFS!
 
 ### Returning a packet from your dispatch fn
+Don't forget that you should always return a coll (or nil) from a dispatch fn.
 Replace the previous :mso dispatch function with this one:
 ```
-(defmethod dispatch :mso [{:keys [user-type text-start message uniq-connection-id player-id]}]
-  (when (= user-type :prefix) ;; Only react to message with the insim prefix (! by default)
+(defn mso-prefix? [{:keys [type user-type]}]
+  (and (= type :mso) (= user-type :prefix)))
+
+(defmethod dispatch :mso [{:keys [text-start message uniq-connection-id] :as mso-packet}]
+  (when (mso-prefix? mso-packet) ;; Only react to message with the insim prefix (! by default)
     (let [command (subs message text-start)] ;; Take a substring (the command)
       (case command
         "!help"
-        (packets/is-mtc uniq-connection-id 0 "You asked for help") ;; Message to connection
+        [(packets/is-mtc uniq-connection-id 0 "You asked for help")] ;; Message to connection
 
-        (packets/is-msl "Unkwown command!")  ;; Message to appear on local computer only
+        [(packets/is-msl "Unkwown command!")] ;; Message to appear on local computer only
 ))))
 ```
 Type `!help` and `!unknown` in LFS and you should get the reaction you expect from clj-insim.
@@ -80,7 +93,7 @@ Type `!help` and `!unknown` in LFS and you should get the reaction you expect fr
 ### Connections & players
 If you want to use the built-in dispatchers for New ConnectioN, ConnectioN Left, New PLayer & PLayer Left packets, specify the dispatchers for these packets like this:
 ```
-(defmethod dispatch :ncn [p] (connection/dispatch-ncn p {:notify-host? true}))
+(defmethod dispatch :ncn [p] (connection/dispatch-ncn p {:notify-host? true})) ; you can omit :notify-host? 
 (defmethod dispatch :cnl [p] (connection/dispatch-cnl p {:notify-host? true}))
 (defmethod dispatch :npl [p] (player/dispatch-npl p {:notify-host? true}))
 (defmethod dispatch :pll [p] (player/dispatch-pll p {:notify-host? true}))
