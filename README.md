@@ -40,7 +40,7 @@ To stop the client:
 
 Include the `clj-insim/packets` ns and define a basic multimethod for dispatching packets. You can dispatch based on the `:type` of packet. *Make sure it returns nil by default*. If you want to send data back to lfs, always return a seq with packets (even if there is only one packet!).
 Below, a dispatch fn for a `{:type :mso}` (IS_MSO) packet is defined, which simply prints the incoming packet to the repl.
-The handler accepts a packet from LFS and *must* return a valid packet. Note the dispatching of `{:type :tiny}` packets, returning a (coll with a) basic IS_TINY to maintain connection.
+The handler accepts a packet from LFS and *must* return a coll of valid packet(s) or nil. Note the dispatching of `{:type :tiny}` packets, returning a coll with a IS_TINY to maintain connection.
 
 Most of the time I make sure the dispatch fns return a valid packet OR nil. This way you can easily fallback on a default `(packets/is-tiny)` packet (the default maintain connection packet).
 ```
