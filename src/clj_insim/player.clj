@@ -7,10 +7,10 @@
 ;; (reset! players nil)
 
 (defn register!
-  [{:keys [player-id number-player] :as player} {:keys [notify-host? check-total-players?]}]
+  [{:keys [player-id num-players] :as player} {:keys [notify-host? check-total-players?]}]
   (when (not (contains? @players player-id)) ;; when player NOT already registered
     (swap! players assoc player-id (dissoc player :size :type :reqi))
-    [(when (and check-total-players? (not= (count @players) number-player)) ;; When not in sync
+    [(when (and check-total-players? (not= (count @players) num-players)) ;; When not in sync
        (reset! players nil)              ;; Reset player map
        (packets/is-tiny {:data-key :npl})) ;; Request all players
      (when notify-host? (packets/is-msl (str "clj-insim: player " player-id " registered!")))]))
@@ -21,11 +21,11 @@
 
 (defn dispatch-npl
   "Basic dispath fn for a IS_NPL packet. Registers a player.
-  (dispatch-npl {:type :npl :number-player 2 :reqi 1 :player-id 1} :notify-host? true)"
+  (dispatch-npl {:type :npl :num-players 2 :reqi 1 :player-id 1} :notify-host? true)"
   ([npl-packet]
    (dispatch-npl npl-packet nil))
-  ([{:keys [number-player reqi] :as npl-packet} options]
-   (when (not (zero? number-player)) ;; and this is NOT a join request
+  ([{:keys [reqi] :as npl-packet} options]
+   (when (not (clj-insim.core/join-request? npl-packet)) ;; and this is NOT a join request
      (register! npl-packet (merge {:check-total-players? (= reqi 0)} options)))))
 
 (defn dispatch-pll
