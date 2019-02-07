@@ -46,7 +46,8 @@ Most of the time I make sure the dispatch fns return a valid packet OR nil. This
 ```
 (ns my-project.core
   (:require [clj-insim.core :as clj-insim]
-            [clj-insim.packets :as packets]))
+            [clj-insim.packets :as packets]
+            [clj-insim.util :refer [keep-alive-packet?]]))
             
 (defmulti dispatch :type)
 (defmethod dispatch :default [_] nil)
@@ -56,7 +57,7 @@ Most of the time I make sure the dispatch fns return a valid packet OR nil. This
   (prn p))
   
 (defmethod dispatch :tiny [tiny-packet]
-  (when (clj-insim/keep-alive-packet? tiny-packet)
+  (when (keep-alive-packet? tiny-packet)
     ;; Return a IS_TINY packet to maintain connection
     [(packets/is-tiny)])) ; Note the explicit wrapping in a vector/coll
   

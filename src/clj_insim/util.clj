@@ -32,3 +32,9 @@
    (fn [x]
      (let [result (if (neg? x) (+ x 256) x)]
        (when (and (>= result -256) (< result 256)) result)))))
+
+(defn join-request? [{:keys [type num-players]}]
+  (and (= type :npl) (= num-players 0)))
+
+(defn keep-alive-packet? [{:keys [type sub-type]}]
+  (and (= type :tiny) (= sub-type :none)))

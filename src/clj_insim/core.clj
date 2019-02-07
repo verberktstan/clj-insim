@@ -29,19 +29,13 @@
 (defmethod dispatch :npl [p] (player/dispatch-npl p {:notify-host? true}))
 (defmethod dispatch :pll [p] (player/dispatch-pll p {:notify-host? true}))
 
-(defn keep-alive-packet? [{:keys [type sub-type]}]
-  (and (= type :tiny) (= sub-type :none)))
-
 (defmethod dispatch :tiny [tiny-packet]
-  (when (keep-alive-packet? tiny-packet)
+  (when (util/keep-alive-packet? tiny-packet)
     ;; Return a IS_TINY packet to maintain connection
     [(packets/is-tiny)]))
 
-(defn join-request? [{:keys [type num-players]}]
-  (and (= type :npl) (= num-players 0)))
-
 (defmethod dispatch :npl [npl-packet]
-  (when (join-request? npl-packet)
+  (when (util/join-request? npl-packet)
     [(packets/is-jrr (assoc npl-packet :jrr-action (enums/jrr-action :spawn)))]))
 
 (defn default-handler
