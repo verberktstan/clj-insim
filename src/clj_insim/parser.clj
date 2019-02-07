@@ -70,7 +70,7 @@
    :handicap-mass :handicap-restriction :driver-model :passenger
    (util/protocol-node :spare :int)
    {:key :setup-flags :length 1 :parser #(-> % first flags/->setup)}
-   :number-player :spare-2 :spare-3
+   :num-players :spare-2 :spare-3
    ])
 
 (defmethod protocol :res [_]
