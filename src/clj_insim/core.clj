@@ -42,7 +42,7 @@
 
 (defmethod dispatch :npl [npl-packet]
   (when (join-request? npl-packet)
-    [(packets/is-jrr (assoc npl :jrr-action (enums/jrr-action :spawn)))]))
+    [(packets/is-jrr (assoc npl-packet :jrr-action (enums/jrr-action :spawn)))]))
 
 (defn default-handler
   "Returns a function that parses and dispatches incoming packets from LFS.
