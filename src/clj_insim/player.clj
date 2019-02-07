@@ -1,6 +1,6 @@
 (ns clj-insim.player
   (:require [clj-insim.packets :as packets]
-            [clj-insim.util :as util))
+            [clj-insim.util :as util]))
 
 (defonce players (atom {}))
 ;; @players
@@ -27,7 +27,7 @@
    (dispatch-npl npl-packet nil))
   ([{:keys [reqi] :as npl-packet} options]
    (when (not (util/join-request? npl-packet)) ;; and this is NOT a join request
-     (register! npl-packet (merge {:check-total-players? (= reqi 0)} options)))))
+     (register! npl-packet (merge {:check-total-players? (zero? reqi)} options)))))
 
 (defn dispatch-pll
   "Basic dispatcher for a IS_PLL packet. Unregisters a player.

@@ -23,7 +23,7 @@
   ([ncn-packet]
    (dispatch-ncn ncn-packet nil))
   ([{:keys [reqi] :as ncn-packet} options]
-   (register! ncn-packet (merge {:check-total-connections? (= reqi 0)} options))))
+   (register! ncn-packet (merge {:check-total-connections? (zero? reqi)} options))))
 
 (defn dispatch-cnl
   "Basic dispatcher for a IS_CNL packet. Unregisters a connection.
