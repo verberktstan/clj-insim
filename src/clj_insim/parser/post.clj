@@ -44,9 +44,17 @@
   (data->uniq-connection-id packet))
 
 (defmethod parse :small [packet]
-  (-> packet
-      (update :data enums/small-key)
-      (data->sub-type packet)))
+  (let [{:keys [sub-type] :as p}
+        (-> packet
+            (update :data enums/small-key)
+            data->sub-type)]
+    (case sub-type
+      :vta
+      (-> p
+          (rename-keys {:value :action})
+          (update :action enums/vtn-action-key))
+
+      p)))
 
 (defmethod parse :tiny [{:keys [data] :as packet}]
   (-> packet
