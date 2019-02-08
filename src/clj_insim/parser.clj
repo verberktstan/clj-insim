@@ -102,6 +102,9 @@
    (util/protocol-node :split2 :word)
    (util/protocol-node :split3 :word)])
 
+(defmethod protocol :small [_]
+  [(util/protocol-node :value :unsigned)])
+
 (defmethod protocol :sta [_]
   [{:key :replay-speed :length 4 :parser util/->string}
    {:key :flags :length 2 :parser #(-> % util/->word flags/->state)}

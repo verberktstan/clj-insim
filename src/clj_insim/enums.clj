@@ -82,6 +82,14 @@
   {:unknown 0 :admin 1 :wrong-way 2 :false-start 3 :speeding 4 :stop-short 5 :stop-late 6 :num 7})
 (def pen-reason-key (index->key pen-reason))
 
+;; the fourth byte of an IS_SMALL packet is one of these
+(def small
+  {:none 0 :ssp 1 :ssg 2 :vta 3
+   :tms 4 :stp 5 :rtp 6 :nli 7
+   :alc 8 :lcs 9 :num 10})
+
+(def small-key (index->key small))
+
 ;; The fourth byte of an IS_TINY packet is one of these
 (def tiny
   {:none 0 :ver 1 :close 2 :ping 3 :reply 4

@@ -8,6 +8,9 @@
 (defn- data->player-id [p]
   (rename-keys p {:data :player-id}))
 
+(defn- data->sub-type [p]
+  (rename-keys p {:data :sub-type}))
+
 (defmulti parse :type)
 
 (defmethod parse :cnl [packet]
@@ -40,9 +43,14 @@
 (defmethod parse :slc [packet]
   (data->uniq-connection-id packet))
 
+(defmethod parse :small [packet]
+  (-> packet
+      (update :data enums/small-key)
+      (data->sub-type packet)))
+
 (defmethod parse :tiny [{:keys [data] :as packet}]
   (-> packet
       (update :data enums/tiny-key)
-      (rename-keys {:data :sub-type})))
+      data->sub-type))
 
 (defmethod parse :default [packet] (identity packet))
