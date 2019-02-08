@@ -121,6 +121,12 @@
    {:key :product :length 6 :parser util/->string}
    :insim-version :spare])
 
+(defmethod protocol :vtn [_]
+  [:uniq-connection-id
+   {:key :action :length 1 :parser #(-> % first enums/vtn-action-key)}
+   :spare-2
+   :spare-3])
+
 (defmethod protocol :default [_]
   nil)
 
