@@ -28,12 +28,13 @@
 
 ;;;;; PUBLIC FUNCTIONS ;;;;;
 
-(defn client [handler {:keys [host port interval debug]}]
+(defn client
+  [handler {:keys [host port interval debug]}]
   (let [running (atom true)]
     (future
       (with-open [socket (Socket. (or host "127.0.0.1") (or port 29999))
                   input-stream (io/input-stream socket)
-                  output-stream (write-flush (io/output-stream socket) (packets/is-isi))]
+                  output-stream (write-flush (io/output-stream socket) (packets/is-isi {:flags [:con]}))]
         (while @running
           (if (pos? (.available input-stream))
             (let [bytearray (byte-array (.available input-stream))
@@ -45,6 +46,6 @@
               (doseq [nil-or-coll returns] ;; Returns is a coll with handled values (nil or coll)
                 (when-let [packet-colls (seq (remove nil? nil-or-coll))]
                   (write-flush output-stream (apply concat-byte-arrays packet-colls))
-)))
+                  )))
             (Thread/sleep (or interval 150))))))
     running))
