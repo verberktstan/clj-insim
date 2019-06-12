@@ -11,6 +11,12 @@
   [{:key :reason :parser #(-> % first enums/leave-reason-key)}
    :total :spare-2 :spare-3])
 
+(defmethod protocol :con [_]
+  [(util/protocol-node :sp-close :word)
+   (util/protocol-node :time :word)
+   {:key :player-id-a :length 16 :parser first}
+   {:key :player-id-b :length 16 :parser first}])
+
 (defmethod protocol :fin [_]
   [(util/protocol-node :race-time :unsigned)
    (util/protocol-node :best-lap :unsigned)
