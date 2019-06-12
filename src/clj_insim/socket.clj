@@ -29,12 +29,12 @@
 ;;;;; PUBLIC FUNCTIONS ;;;;;
 
 (defn client
-  [handler {:keys [host port interval debug]}]
+  [handler {:keys [host port interval debug isi-options]}]
   (let [running (atom true)]
     (future
       (with-open [socket (Socket. (or host "127.0.0.1") (or port 29999))
                   input-stream (io/input-stream socket)
-                  output-stream (write-flush (io/output-stream socket) (packets/is-isi {:flags [:con]}))]
+                  output-stream (write-flush (io/output-stream socket) (packets/is-isi (or isi-options {:flags (packets/isf [:con])})))]
         (while @running
           (if (pos? (.available input-stream))
             (let [bytearray (byte-array (.available input-stream))

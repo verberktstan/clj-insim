@@ -11,7 +11,7 @@
 (defn check-version
   "Returns a welcome message if LFS version of host is 0.6T and insim-version is 8. Else returns an IS_TINY packet that closes the connection."
   [{:keys [version insim-version]}]
-  (if (and (= version "0.6T")
+  (if (and (= version "0.6U")
            (= insim-version 8))
     [(packets/is-msl "Warm welcome from clj-insim!")]
     [(packets/is-tiny {:data-key :close})]))
@@ -52,7 +52,7 @@
 (defn client
   "Creates a new tcp client, returns an atom representing the running state of the client; reset! this atom to false to stop the client. Specify :host, :port and :interval in options, connects to localhost:29999 by default."
   ([]
-   (client (default-handler {:print-packets? false}) {:debug false}))
+   (client (default-handler {:print-packets? true}) {:debug true}))
   ([handler]
    (client handler nil))
   ([handler options]

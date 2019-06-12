@@ -20,6 +20,11 @@
   [byte-buffer x]
   (.putShort byte-buffer (short x)))
 
+(defn- put-unsigned
+  "Return byte-buffer with x put as unsigned (4-byte int)"
+  [byte-buffer x]
+  (.putInt byte-buffer (int x)))
+
 (defn- put-string
   "Return byte-buffer with x put as series of characters"
   [byte-buffer x n]
@@ -209,6 +214,20 @@
                  (put-byte 0) ;spare
                  (put-byte 0)
                  (put-string msg msg-size))]
+    (finalize packet)))
+
+(defn is-plc
+  "Returns a IS_PLC packet that restricts the allowed cars for a given connection"
+  [uniq-connection-id cars]
+  (let [m {:xfg 1 :xrg 2 :xrt 4 :rb4 8 :fxo 16 :lx4 32 :lx6 64 :mrt 128 :uf1 256 :rac 512 :fz5 1024
+           :fox 2048 :xfr 4096 :ufr 8192 :fo8 16384 :fxr 32768 :xrr 65536 :fzr 131072 :bf1 262144 :fbm 524288}
+        h (header {:size 12 :type (enums/isp :plc)})
+        packet (doto h
+            (put-byte uniq-connection-id)
+            (put-byte 0)
+            (put-byte 0)
+            (put-byte 0)
+            (put-unsigned (apply + (vals (select-keys m cars)))))]
     (finalize packet)))
 
 (defn is-reo [num-players new-order]
