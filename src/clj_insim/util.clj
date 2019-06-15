@@ -38,3 +38,6 @@
 
 (defn keep-alive-packet? [{:keys [type sub-type]}]
   (and (= type :tiny) (= sub-type :none)))
+
+(defn race-end? [{:keys [type sub-type]}]
+  (and (= type :tiny) (= sub-type :ren)))
