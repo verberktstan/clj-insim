@@ -65,8 +65,7 @@
 
 (defmethod protocol :npl [_]
   [:uniq-connection-id
-   :player-type
-;   {:key :player-type :length 1 :parser #(-> % first enums/npl-player-type-key)}
+   {:key :player-type :length 1 :parser #(-> % first enums/npl-player-type-key)}
    {:key :player-flags :length 2 :parser #(-> % util/->word flags/->player)}
    {:key :player-name :length 24 :parser util/->string}
    {:key :plate :length 8 :parser util/->string}

@@ -61,7 +61,10 @@
 
 ;; The sixth byte of an IS_NPL packet is one of these
 (def npl-player-type
-  {:female 0 :ai 1 :remote 2 :num 3 :unknown 4})
+  {:female 0
+   :ai 2
+   :remote-female 4
+   :remote-ai 6})
 
 (def npl-player-type-key (index->key npl-player-type))
 
