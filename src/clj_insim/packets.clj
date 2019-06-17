@@ -61,18 +61,20 @@
                :hlv 256 :axm-load 512 :axm-edit 1024 :req-join 2048}]
     (apply + (vals (select-keys flags keys)))))
 
-(defn is-btn [{:keys [click-id inst-flags button-style type-in left top width heigth]}]
-  (let [header (header {:size (+ 12 40) :type (enums/isp :btn)})
+(defn is-btn [{:keys [click-id inst-flags button-style type-in left top width height uniq-connection-id]} text]
+  (let [t (apply str (take 240 text))
+        text-size (* 4 (int (+ 0.75 (/ (+ (count t) 1) 4.0))))
+        header (header {:size (+ 12 text-size) :type (enums/isp :btn) :data uniq-connection-id})
         packet (doto header
                  (put-byte click-id)
                  (put-byte (or inst-flags 0))
                  (put-byte (or button-style 0))
-                 (put-byte (or type-in 12))
-                 (put-byte (or left 0))
-                 (put-byte (or top 0))
+                 (put-byte (or type-in 0))
+                 (put-byte (or left 50))
+                 (put-byte (or top 50))
                  (put-byte (or width 100))
-                 (put-byte (or heigth 100))
-                 (put-string "test tekst!" 40))]
+                 (put-byte (or height 10))
+                 (put-string t text-size))]
     (finalize packet)))
 
 (defn is-hcp

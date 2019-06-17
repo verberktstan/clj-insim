@@ -13,7 +13,8 @@
   [{:keys [version insim-version]}]
   (if (and (= version "0.6U")
            (= insim-version 8))
-    [(packets/is-msl "Warm welcome from clj-insim!")]
+    [(packets/is-msl "Warm welcome from clj-insim!")
+     #_(packets/is-btn {:uniq-connection-id 0 :click-id 2} "Test text!")]
     [(packets/is-tiny {:data-key :close})]))
 
 (defmulti dispatch :type)
