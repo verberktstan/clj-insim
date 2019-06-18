@@ -110,6 +110,13 @@
 (defmethod protocol :small [_]
   [(util/protocol-node :value :unsigned)])
 
+(defmethod protocol :spx [p]
+  [(util/protocol-node :split-time :unsigned)
+   (util/protocol-node :total-time :unsigned)
+   :split
+   {:key :penalty :length 1 :parser #(-> % first enums/penalty-key)}
+   :num-stops :spare-3])
+
 (defmethod protocol :sta [_]
   [{:key :replay-speed :length 4 :parser util/->string}
    {:key :flags :length 2 :parser #(-> % util/->word flags/->state)}

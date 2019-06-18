@@ -19,6 +19,9 @@
 (defmethod parse :flg [packet]
   (data->player-id packet))
 
+(defmethod parse :fin [packet]
+  (data->player-id packet))
+
 (defmethod parse :lap [packet]
   (data->player-id packet))
 
@@ -38,7 +41,7 @@
   (data->player-id packet))
 
 (defmethod parse :reo [packet]
-  (rename-keys packet {:date :num-players}))
+  (rename-keys packet {:data :num-players}))
 
 (defmethod parse :slc [packet]
   (data->uniq-connection-id packet))
@@ -55,6 +58,9 @@
           (update :action enums/vtn-action-key))
 
       p)))
+
+(defmethod parse :spx [{:keys [data] :as packet}]
+  (data->player-id packet))
 
 (defmethod parse :tiny [{:keys [data] :as packet}]
   (-> packet

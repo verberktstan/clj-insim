@@ -294,7 +294,7 @@
         ucid (if join-request? uniq-connection-id 0)
         header (header {:size 16
                         :type (enums/isp :jrr)
-                        :reqi 1
+                        :reqi 0
                         :data data})
         partial-packet (doto header
                          (put-byte ucid)
