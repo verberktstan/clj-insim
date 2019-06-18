@@ -9,7 +9,7 @@
             [clojure.string :refer [upper-case]]))
 
 (defn check-version
-  "Returns a welcome message if LFS version of host is 0.6T and insim-version is 8. Else returns an IS_TINY packet that closes the connection."
+  "Returns a welcome message if LFS version of host is 0.6U and insim-version is 8. Else returns an IS_TINY packet that closes the connection."
   [{:keys [version insim-version]}]
   (if (and (= version "0.6U")
            (= insim-version 8))
