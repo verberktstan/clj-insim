@@ -49,13 +49,13 @@
 (defmethod parse :small [packet]
   (let [{:keys [sub-type] :as p}
         (-> packet
-            (update :data enums/small-key)
+            (update :data enums/small)
             data->sub-type)]
     (case sub-type
       :vta
       (-> p
           (rename-keys {:value :action})
-          (update :action enums/vtn-action-key))
+          (update :action enums/vote))
 
       p)))
 
@@ -64,7 +64,7 @@
 
 (defmethod parse :tiny [{:keys [data] :as packet}]
   (-> packet
-      (update :data enums/tiny-key)
+      (update :data enums/tiny)
       data->sub-type))
 
 (defmethod parse :default [packet] (identity packet))

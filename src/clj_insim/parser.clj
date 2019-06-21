@@ -8,7 +8,7 @@
 (defmulti protocol :type)
 
 (defmethod protocol :cnl [_]
-  [{:key :reason :parser #(-> % first enums/leave-reason-key)}
+  [{:key :reason :parser #(-> % first enums/leavr)}
    :total :spare-2 :spare-3])
 
 (defmethod protocol :con [_]
@@ -27,7 +27,8 @@
    {:key :flags :length 2 :parser #(-> % util/->word flags/->player)}])
 
 (defmethod protocol :flg [_]
-  [:off-on {:key :flag :length 1 :parser #(-> % first enums/flg-flag-key)}
+  [{:keys :off-on :length 1 :parser #(-> % first zero? (if :off :on))}
+   {:key :flag :length 1 :parser #(-> % first (= 1) (if :given-blue :causing-yellow))}
    :car-behind :spare-3])
 
 (defmethod protocol :ism [_]
@@ -40,19 +41,19 @@
    (util/protocol-node :laps-done :word)
    (util/protocol-node :flags :word)
    :spare-0
-   {:key :penalty :length 1 :parser #(-> % first enums/penalty-key)}
+   {:key :penalty :length 1 :parser #(-> % first enums/penalty)}
    :penlalty
    :num-stops :spare-3
    ])
 
 (defmethod protocol :mso [header]
   [:uniq-connection-id :player-id
-   {:key :user-type :length 1 :parser #(-> % first enums/mso-user-key)}
+   {:key :user-type :length 1 :parser #(-> % first enums/mso)}
    :text-start
    {:key :message :length (- (:size header) 8) :parser util/->string}])
 
 (defmethod protocol :nci [_]
-  [{:key :language :parser #(-> % first enums/language-key)}
+  [{:key :language :parser #(-> % first enums/language)}
    :spare-1 :spare-2 :spare-3
    (util/protocol-node :user-id :unsigned)
    (util/protocol-node :ip-address :unsigned)])
@@ -65,13 +66,13 @@
 
 (defmethod protocol :npl [_]
   [:uniq-connection-id
-   {:key :player-type :length 1 :parser #(-> % first enums/npl-player-type-key)}
+   {:key :player-type :length 1 :parser #(-> % first enums/npl)}
    {:key :player-flags :length 2 :parser #(-> % util/->word flags/->player)}
    {:key :player-name :length 24 :parser util/->string}
    {:key :plate :length 8 :parser util/->string}
    {:key :car-name :length 4 :parser util/->string}
    {:key :skin-name :length 16 :parser util/->string}
-   {:key :tyres :length 4 :parser #(map enums/tyre-compounds-key %)}
+   {:key :tyres :length 4 :parser #(mapv enums/tyre %)}
    :handicap-mass :handicap-restriction :driver-model :passenger
    (util/protocol-node :spare :int)
    {:key :setup-flags :length 1 :parser #(-> % first flags/->setup)}
@@ -114,7 +115,7 @@
   [(util/protocol-node :split-time :unsigned)
    (util/protocol-node :total-time :unsigned)
    :split
-   {:key :penalty :length 1 :parser #(-> % first enums/penalty-key)}
+   {:key :penalty :length 1 :parser #(-> % first enums/penalty)}
    :num-stops :spare-3])
 
 (defmethod protocol :sta [_]
@@ -135,7 +136,7 @@
 
 (defmethod protocol :vtn [_]
   [:uniq-connection-id
-   {:key :action :length 1 :parser #(-> % first enums/vtn-action-key)}
+   {:key :action :length 1 :parser #(-> % first enums/vote)}
    :spare-2
    :spare-3])
 

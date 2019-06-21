@@ -176,7 +176,7 @@
    (let [packet (header {:size 4
                          :type :tiny
                          :reqi (or reqi 1)
-                         :data (or (enums/tiny data-key) (enums/tiny :none))})]
+                         :data (enums/tiny (or data-key :none))})]
      (finalize packet))))
 
 (defn is-mst
@@ -288,8 +288,8 @@
 
 (defn is-jrr
   [{:keys [player-id uniq-connection-id jrr-action]}]
-  (let [join-request? (or (= jrr-action (enums/jrr-action :spawn))
-                          (= jrr-action (enums/jrr-action :reject)))
+  (let [join-request? (or (= jrr-action (enums/jrr :spawn))
+                          (= jrr-action (enums/jrr :reject)))
         data (if join-request? 0 player-id)
         ucid (if join-request? uniq-connection-id 0)
         header (header {:size 16
@@ -298,7 +298,7 @@
                         :data data})
         partial-packet (doto header
                          (put-byte ucid)
-                         (put-byte (or jrr-action (enums/jrr-action :spawn)))
+                         (put-byte (enums/jrr (or jrr-action :spawn)))
                          (put-byte 0) ; spare
                          (put-byte 0))
         packet (doto partial-packet

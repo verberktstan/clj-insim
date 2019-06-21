@@ -1,141 +1,75 @@
 (ns clj-insim.enums)
 
-(defn index->key [m]
-  (fn [i]
-    (->>
-     m
-     (filter #(= (val %) i))
-     first
-     key)))
-
-(def cch-camera
-  {:follow 0 :heli 1 :cam 2 :driver 3 :custom 4 :num 5})
-(def cch-camera-key (index->key cch-camera))
-
-(def csc-action
-  {:stop 0 :start 1})
-(def csc-action-key (index->key csc-action))
-
-;; The sixth byte of a IS_FLG packet is one of these
-(def flg-flag
-  {:none 0 :blue-given 1 :yellow-caused 2})
-(def flg-flag-key (index->key flg-flag))
-
-;; The second byte of any packet is one of these
-(def ISP
-  [:none :isi :ver :tiny :small :sta :sch :sfp :scc :cpp 
-   :ism :mso :iii :mst :mtc :mod :vtn :rst :ncn :cnl
-   :cpr :npl :plp :pll :lap :spx :pit :psf :pla :cch
-   :pen :toc :flg :pfl :fin :res :reo :nlp :mci :msx
-   :msl :crs :bfn :axi :axo :btn :btc :btt :rip :ssh
-   :con :obh :hlv :plc :axm :acr :hcp :nci :jrr :uco
-   :oco :ttc :slc :csc :cim])
-
-(defn enum [enum k]
+(defn- enum [enum k]
   (->> enum
        (keep-indexed #(when (= %2 k) %1))
        (first)))
 
-(defn make-enum-fn [v]
+(defn- make-enum-fn [v]
   (fn [x]
     (cond
-      (keyword? x) (enum ISP x)
-      (number? x) (nth ISP x)
+      (keyword? x) (enum v x)
+      (number? x) (nth v x)
       :else nil)))
 
-(def isp (make-enum-fn ISP))
+(def view (make-enum-fn [:follow :heli :cam :driver :custom :num]))
+
+(def csc (make-enum-fn [:stop :start]))
+
+;; The second byte of any packet is one of these
+(def isp
+  (make-enum-fn
+   [:none :isi :ver :tiny :small :sta :sch :sfp :scc :cpp 
+    :ism :mso :iii :mst :mtc :mod :vtn :rst :ncn :cnl
+    :cpr :npl :plp :pll :lap :spx :pit :psf :pla :cch
+    :pen :toc :flg :pfl :fin :res :reo :nlp :mci :msx
+    :msl :crs :bfn :axi :axo :btn :btc :btt :rip :ssh
+    :con :obh :hlv :plc :axm :acr :hcp :nci :jrr :uco
+    :oco :ttc :slc :csc :cim]))
 
 #_(isp 43)
 #_(isp :axi)
 
 (def language
-  {:english 0 :deutsch 1 :portuguese 2 :french 3
-   :suomi 4 :norsk 5 :nederlands 6 :catalan 7
-   :turkish 8 :castellano 9 :italiano 10 :dansk 11
-   :czech 12 :russian 13 :estionian 14 :serbian 15
-   :greek 16 :polski 17 :croatian 18 :hungarian 19
-   :brazilian 20 :swedish 21 :slovak 22 :galego 23
-   :slovenski 24 :belarussian 25 :latvian 26 :lithuanian 27
-   :traditional-chinese 28 :simplified-chinese 29 :japanese 30 :korean 31
-   :bulgarian 32 :latino 33 :ukrainian 34 :indonesian 35
-   :romanian 36 :num-lang 37})
-
-(def language-key (index->key language))
+  (make-enum-fn
+   [:english :deutsch :portuguese :french :suomi :norsk :nederlands :catalan
+    :turkish :castellano :italiano :dansk :czech :russian :estionian :serbian
+    :greek :polski :croatian :hungarian :brazilian :swedish :slovak :galego
+    :slovenski :belarussian :latvian :lithuanian :traditional-chinese :simplified-chinese :japanese :korean
+    :bulgarian :latino :ukrainian :indonesian :romanian :num-lang]))
 
 ;; The seventh byte of an IS_MSO packets is one of these
-(def mso-user
-  {:system 0 :user 1 :prefix 2 :o 3 :num 4})
-
-(def mso-user-key (index->key mso-user))
+(def mso (make-enum-fn [:system :user :prefix :o :num]))
 
 ;; The sixth byte of an IS_NPL packet is one of these
-(def npl-player-type
-  {:female 0
-   :ai 2
-   :remote-female 4
-   :remote-ai 6})
+(def npl (make-enum-fn [:female :ai :remote-female :remote-ai]))
 
-(def npl-player-type-key (index->key npl-player-type))
-
-(def tyre-compounds
-  {:r1 0 :r2 1 :r3 2 :r4 3
-   :road-super 4 :road-normal 5
-   :hybrid 6 :knobbly 7
-   :num 8})
-(def tyre-compounds-key (index->key tyre-compounds))
+(def tyre (make-enum-fn [:r1 :r2 :r3 :r4 :road-super :road-normal :hybrid :knobbly :num]))
 
 ;; The fifth and sixth byte of an IS_PEN packet are one of these
-(def penalty
-  {:none 0 :drive-through 1 :drive-through-valid 2 :stop-go 3 :stop-go-valid 4 :penalty-30 5 :penalty-45 6 :num 7})
-(def penalty-key (index->key penalty))
+(def penalty (make-enum-fn [:none :drive-through :drive-through-valid :stop-go :stop-go-valid :penalty-30 :penalty-45 :num]))
 
 ;; The seventh byte of an IS_PEN packet is one of these
-(def pen-reason
-  {:unknown 0 :admin 1 :wrong-way 2 :false-start 3 :speeding 4 :stop-short 5 :stop-late 6 :num 7})
-(def pen-reason-key (index->key pen-reason))
+(def penr (make-enum-fn [:unknown :admin :wrong-way :false-start :speeding :stop-short :stop-late :num]))
 
 ;; the fourth byte of an IS_SMALL packet is one of these
-(def small
-  {:none 0 :ssp 1 :ssg 2 :vta 3
-   :tms 4 :stp 5 :rtp 6 :nli 7
-   :alc 8 :lcs 9 :num 10})
-
-(def small-key (index->key small))
+(def small (make-enum-fn [:none :ssp :ssg :vta :tms :stp :rtp :nli :alc :lcs :num]))
 
 ;; The fourth byte of an IS_TINY packet is one of these
 (def tiny
-  {:none 0 :ver 1 :close 2 :ping 3 :reply 4
-   :vtc 5 :scp 6 :sst 7 :gth 8 :mpe 9 
-   :ism 10 :ren 11 :clr 12 :ncn 13 :npl 14
-   :res 15 :nlp 16 :mci 17 :reo 18 :rst 19
-   :axi 20 :axc 21 :rip 22 :nci 23 :alc 24
-   :axm 25 :slc 26})
+  (make-enum-fn
+   [:none :ver :close :ping :reply :vtc :scp :sst :gth :mpe 
+    :ism :ren :clr :ncn :npl :res :nlp :mci :reo :rst
+    :axi :axc :rip :nci :alc :axm :slc]))
 
-(def tiny-key (index->key tiny))
+(def leavr
+  (make-enum-fn
+   [:disconnect :time-out :lost-connection :kicked :banned :security :cpw :oos :joos :hack :leave-reason-num]))
 
-(def leave-reason
-  {:disconnect 0 :time-out 1 :lost-connection 2 :kicked 3
-   :banned 4 :security 5 :cpw 6 :oos 7
-   :joos 8 :hack 9 :leave-reason-num 10})
+(def jrr
+  (make-enum-fn
+   [:reject :spawn :two :three :reset :reset-no-repair :six :seven]))
 
-(def leave-reason-key (index->key leave-reason))
+(def race-in-prog (make-enum-fn [:none :race :qualification]))
 
-(def jrr-action
-  {:reject 0 :spawn 1 :reset 4 :reset-no-repair 5})
-
-(def sta-race-in-progress {:none 0 :race 1 :qualification 2})
-
-(def sta-race-in-progress-key (index->key sta-race-in-progress))
-
-(def vtn-action
-  {:none 0 :end 1 :restart 2 :qualify 3 :num 4})
-
-(def vtn-action-key (index->key vtn-action))
-
-(comment
-  (:none isp) ; Return the index of :none in the isp enum
-  (isp :none) ; Works too!
-
-  (isp-key 21) ; Return the key of index 21 in the isp enum
-  ((index->key isp) 21) ; Works too!
-)
+(def vote (make-enum-fn [:none :end :restart :qualify :num]))
