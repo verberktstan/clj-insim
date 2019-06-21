@@ -37,7 +37,7 @@
 
 (defmethod dispatch :npl [npl-packet]
   (when (util/join-request? npl-packet)
-    [(packets/is-jrr (assoc npl-packet :jrr-action (enums/jrr :spawn)))]))
+    [(packets/is-jrr (assoc npl-packet :jrr-action :spawn))]))
 
 (defn default-handler
   "Returns a function that parses and dispatches incoming packets from LFS.
@@ -53,7 +53,7 @@
 (defn client
   "Creates a new tcp client, returns an atom representing the running state of the client; reset! this atom to false to stop the client. Specify :host, :port and :interval in options, connects to localhost:29999 by default."
   ([]
-   (client (default-handler {:print-packets? true}) {:debug true}))
+   (client (default-handler {:print-packets? false}) {:debug true :isi-options {:flags (packets/isf [:req-join :con])}}))
   ([handler]
    (client handler nil))
   ([handler options]

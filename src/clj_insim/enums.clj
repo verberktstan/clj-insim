@@ -42,7 +42,7 @@
 (def mso (make-enum-fn [:system :user :prefix :o :num]))
 
 ;; The sixth byte of an IS_NPL packet is one of these
-(def npl (make-enum-fn [:female :ai :remote-female :remote-ai]))
+(def npl (make-enum-fn [:female :female :ai :ai :remote-female :remote-female :remote-ai :remote-ai]))
 
 (def tyre (make-enum-fn [:r1 :r2 :r3 :r4 :road-super :road-normal :hybrid :knobbly :num]))
 
