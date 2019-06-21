@@ -145,7 +145,7 @@
 (defn- header
   "Parse the first 4 (header) bytes"
   [[size type reqi data]]
-  {:size size :type (enums/isp-key type) :reqi reqi :data data})
+  {:size size :type (enums/isp type) :reqi reqi :data data})
 
 (defn- assoc-protocol [result protocol colls]
   (let [parser (or (-> protocol first :parser) first)]

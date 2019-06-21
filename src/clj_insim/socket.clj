@@ -42,7 +42,7 @@
                   data (split-packets [] (map util/->unsigned-byte bytearray))
                   returns (map #(handler (parse %)) data)]
               (when debug
-                (println (str "Received: " (clojure.string/join ", " (mapv #(name (enums/isp-key (second %))) data)))))
+                (println (str "Received: " (clojure.string/join ", " (mapv #(name (enums/isp (second %))) data)))))
               (doseq [nil-or-coll returns] ;; Returns is a coll with handled values (nil or coll)
                 (when-let [packet-colls (seq (remove nil? nil-or-coll))]
                   (write-flush output-stream (apply concat-byte-arrays packet-colls))

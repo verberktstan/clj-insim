@@ -39,7 +39,7 @@
                       (.order (ByteOrder/LITTLE_ENDIAN)))]
     (doto byte-buffer
       (put-byte capacity)
-      (put-byte (or type (enums/isp :tiny)))
+      (put-byte (enums/isp (or type :tiny)))
       (put-byte (or reqi 1))
       (put-byte (or data 0)))))
 
@@ -64,7 +64,7 @@
 (defn is-btn [{:keys [click-id inst-flags button-style type-in left top width height uniq-connection-id]} text]
   (let [t (apply str (take 240 text))
         text-size (* 4 (int (+ 0.75 (/ (+ (count t) 1) 4.0))))
-        header (header {:size (+ 12 text-size) :type (enums/isp :btn) :data uniq-connection-id})
+        header (header {:size (+ 12 text-size) :type :btn :data uniq-connection-id})
         packet (doto header
                  (put-byte click-id)
                  (put-byte (or inst-flags 0))
@@ -80,7 +80,7 @@
 (defn is-hcp
   "Enforces restrictions for each car present as key in parameters where the value associated to the key should be a map like: {:mass 20 :restriction 10}"
   [{:keys [xfg xrg fbm xrt rb4 fxo lx4 lx6 mrt uf1 rac fz5 fox xfr ufr fo8 fxr xrr fzr bf1]}]
-  (let [header (header {:size 68 :type (enums/isp :hcp)})
+  (let [header (header {:size 68 :type :hcp})
         packet (doto header
                  (put-byte (or (:mass xfg) 0))
                  (put-byte (or (:restriction xfg) 0))
@@ -157,7 +157,7 @@
    (is-isi {}))
   ([{:keys [admin flags i-name interval prefix udp-port]}]
    (let [header (header {:size 44
-                         :type (enums/isp :isi)
+                         :type :isi
                          :reqi 1})
          packet (doto header
                   (put-word (or udp-port 0))
@@ -174,7 +174,7 @@
    (is-tiny {}))
   ([{:keys [data-key reqi]}]
    (let [packet (header {:size 4
-                         :type (enums/isp :tiny)
+                         :type :tiny
                          :reqi (or reqi 1)
                          :data (or (enums/tiny data-key) (enums/tiny :none))})]
      (finalize packet))))
@@ -182,7 +182,7 @@
 (defn is-mst
   [msg]
   (let [header (header {:size 68
-                        :type (enums/isp :mst)})
+                        :type :mst})
         packet (doto header
                  (put-string msg 64))]
     (finalize packet)))
@@ -190,7 +190,7 @@
 (defn is-msx
   [msg]
   (let [header (header {:size 100
-                        :type (enums/isp :msx)})
+                        :type :msx})
         packet (doto header
                  (put-string msg 96))]
     (finalize packet)))
@@ -198,7 +198,7 @@
 (defn is-msl
   [msg]
   (let [header (header {:size 132
-                        :type (enums/isp :msl)})
+                        :type :msl})
         packet (doto header
                  (put-string msg 128))]
     (finalize packet)))
@@ -209,7 +209,7 @@
         msg-size (min msg-size 128)
         packet-size (+ 8 msg-size)
         header (header {:size packet-size
-                        :type (enums/isp :mtc)})
+                        :type :mtc})
         packet (doto header
                  (put-byte uniq-connection-id)
                  (put-byte player-id)
@@ -223,7 +223,7 @@
   [uniq-connection-id cars]
   (let [m {:xfg 1 :xrg 2 :xrt 4 :rb4 8 :fxo 16 :lx4 32 :lx6 64 :mrt 128 :uf1 256 :rac 512 :fz5 1024
            :fox 2048 :xfr 4096 :ufr 8192 :fo8 16384 :fxr 32768 :xrr 65536 :fzr 131072 :bf1 262144 :fbm 524288}
-        h (header {:size 12 :type (enums/isp :plc)})
+        h (header {:size 12 :type :plc})
         packet (doto h
             (put-byte uniq-connection-id)
             (put-byte 0)
@@ -233,7 +233,7 @@
     (finalize packet)))
 
 (defn is-reo [num-players new-order]
-  (let [header (header {:size 44 :type (enums/isp :reo) :data num-players})
+  (let [header (header {:size 44 :type :reo :data num-players})
         packet (doto header
                  (put-byte (if (> num-players 0) (nth new-order 0) 0))
                  (put-byte (if (> num-players 1) (nth new-order 1) 0))
@@ -293,7 +293,7 @@
         data (if join-request? 0 player-id)
         ucid (if join-request? uniq-connection-id 0)
         header (header {:size 16
-                        :type (enums/isp :jrr)
+                        :type :jrr
                         :reqi 0
                         :data data})
         partial-packet (doto header
