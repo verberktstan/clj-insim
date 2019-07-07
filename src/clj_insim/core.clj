@@ -1,82 +1,20 @@
 (ns clj-insim.core
-  (:require [clj-insim.enums :as enums]
+  (:require [clj-insim.decoders :refer [decoders]]
+            [clj-insim.encoders :refer [encoders]]
+            [clj-insim.enums :as enums]
             [clojure.java.io :as io]
             [org.clojars.smee.binary.core :as sb])
   (:import [java.net Socket]))
 
-(def isi-packet
-  {:size 44 :type (:isi enums/ISP) :reqi 1 :zero 0
-   :udp-port 0 :flags 0 :insim-version 8 :prefix (int (char \!))
-   :interval 0 :admin "test" :iname "clj-insim"})
-
-(def encoders
-  {:isi (sb/ordered-map
-         :size :ubyte
-         :type :ubyte
-         :reqi :ubyte
-         :zero :ubyte
-         :udp-port :ushort-le
-         :flags :ushort-le
-         :insim-version :ubyte
-         :prefix :ubyte
-         :interval :ushort-le
-         :admin (sb/padding (sb/c-string "UTF8") :length 16 :padding-byte 0)
-         :iname (sb/padding (sb/c-string "UTF8") :length 16 :padding-byte 0))
-   :tiny (sb/ordered-map :size :ubyte :type (sb/enum :ubyte enums/ISP) :reqi :ubyte :sub-type (sb/enum :ubyte enums/TINY))
-   :msl (sb/ordered-map :size :ubyte :type (sb/enum :ubyte enums/ISP) :reqi :ubyte :sound :ubyte :message (sb/padding (sb/c-string "UTF8") :length 128 :padding-byte 0))})
-
-(defn tiny [sub-type] {:size 4 :type :tiny :reqi 1 :sub-type sub-type})
-(defn msl [message] {:size 132 :type :msl :reqi 1 :sound 0 :message message})
-
-(def decoders
-  {:tiny (sb/ordered-map
-          :sub-type (sb/enum :ubyte enums/TINY))
-
-   :small (sb/ordered-map
-           :sub-type (sb/enum :ubyte enums/SMALL)
-           :value :uint-le)
-
-   :sta (sb/ordered-map
-         :zero :ubyte
-         :replay-speed :float-le
-         :flags :ushort-le
-         :in-game-cam :ubyte
-         :viewed-plid :ubyte
-         :num-players :ubyte
-         :num-connections :ubyte
-         :num-finished :ubyte
-         :race-in-progress (sb/enum :ubyte {:no-race 0 :race 1 :qualifying 2})
-         :qualify-minutes :ubyte
-         :race-laps :ubyte
-         :spare2 :ubyte
-         :spare3 :ubyte
-         :track (sb/string "UTF8" :length 6)
-         :weather :ubyte
-         :wind (sb/enum :ubyte {:off 0 :weak 1 :strong 2}))
-
-   :ttc (sb/ordered-map
-         :sub-type (sb/enum :ubyte enums/TTC)
-         :ucid :ubyte
-         :b1 :ubyte
-         :b2 :ubyte
-         :b3 :ubyte)
-
-   :ver (sb/ordered-map
-         :zero :ubyte
-         :version (sb/padding (sb/c-string "UTF8") :length 8 :padding-byte 0)
-         :product (sb/padding (sb/c-string "UTF8") :length 6 :padding-byte 0)
-         :insim-version :ubyte
-         :spare :ubyte)})
-
-(defn enqueue! [queue packet]
+(defn- enqueue! [queue packet]
   (swap! queue conj packet))
 
-(defn pop! [queue]
+(defn- pop! [queue]
   (when-let [packet (peek @queue)]
     (swap! queue pop)
     packet))
 
-(defn client [running]
+(defn client [running {:keys [debug]}]
   (let [{:keys [in-queue out-queue] :as atoms}
         {:in-queue (atom (clojure.lang.PersistentQueue/EMPTY))
          :out-queue (atom (clojure.lang.PersistentQueue/EMPTY))}]
@@ -84,7 +22,7 @@
       (with-open [socket (Socket. "127.0.0.1" 29999)
                   input-stream (io/input-stream socket)
                   output-stream (io/output-stream socket)
-                  _ (sb/encode (:isi encoders) output-stream isi-packet)
+                  _ (sb/encode (:isi encoders) output-stream (packets/isi))
                   _ (.flush output-stream)]
         (while @running
           (cond
@@ -93,16 +31,19 @@
                   packet (if-let [decoder (get decoders (:type header))]
                            (merge header (sb/decode decoder input-stream))
                            (assoc header :raw (sb/decode (sb/repeated :ubyte :length (- (:size header) 3)) input-stream)))]
-              (newline)
-              (println "*** INCOMING PACKET ***")
-              (enqueue! in-queue (doto packet println)))
+              (when debug
+                (newline)
+                (println "*** INCOMING PACKET ***")
+                (println packet))
+              (enqueue! in-queue packet))
 
             (peek @out-queue)
             (let [packet (pop! out-queue)]
               (when-let [encoder (get encoders (:type packet))]
-                (newline)
-                (println "### OUTGOING PACKET ###")
-                (println packet)
+                (when debug
+                  (newline)
+                  (println "### OUTGOING PACKET ###")
+                  (println packet))
                 (sb/encode encoder output-stream packet)
                 (.flush output-stream)))
 
@@ -110,7 +51,7 @@
             (Thread/sleep 20)))))
     atoms))
 
-(defn handle [running in-queue handler out-queue]
+(defn- handle [running in-queue handler out-queue]
   (future
     (while @running
       (if-let [packet (pop! in-queue)]
@@ -128,15 +69,16 @@
 (defmethod dispatch :ver [packet queue]
   (enqueue! queue (msl "Hello, World!")))
 
-(defn start []
-  (let [running (atom true)
-        {:keys [in-queue out-queue] :as lfs-client} (client running)
-        routine (handle running in-queue dispatch out-queue)]
-    running))
+(defn start
+  ([handler]
+   (start handler {}))
+  ([handler {:keys [debug] :as options}]
+   (let [running (atom true)
+         {:keys [in-queue out-queue] :as lfs-client} (client running options)
+         routine (handle running in-queue handler out-queue)]
+     running)))
 
 (comment
-  (def lfs-client (start))
+  (def lfs-client (start dispatch {:debug true}))
   (reset! lfs-client false)
 )
-
-
