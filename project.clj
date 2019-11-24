@@ -4,5 +4,5 @@
   :license {:name "Unlicense"
             :url "http://unlicense.org"}
   :dependencies [[org.clojure/clojure "1.10.0"]
-                 [smee/binary "0.5.4"]]
+                 [marshal "1.0.0"]]
   :repl-options {:init-ns clj-insim.core})

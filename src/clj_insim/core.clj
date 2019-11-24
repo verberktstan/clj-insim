@@ -1,139 +1,104 @@
 (ns clj-insim.core
-  (:require [clj-insim.codecs :refer [header->body-codec]]
-            [clj-insim.encoders :refer [encoders]]
-            [clj-insim.enums :as enums]
+  (:require [clj-insim.enums :as enums]
+            [clj-insim.codecs :as codecs]
             [clj-insim.packets :as packets]
-            [clojure.java.io :as io]
-            [org.clojars.smee.binary.core :as sb])
+            [marshal.core :as m])
   (:import [java.net Socket]))
 
-(defn- enqueue! [queue packet]
-  (swap! queue conj packet))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Parsers
 
-(defn- pop! [queue]
-  (when-let [packet (peek @queue)]
-    (swap! queue pop)
-    packet))
+(defn- parse-header [[size t request-info subtype]]
+  (let [type (enums/isp t)
+        m {:size size
+           :type type
+           :request-info request-info
+           :subtype subtype}]
+    (condp = type
+      :tiny (update m :subtype enums/tiny)
+      :small (update m :subtype enums/small)
+      :ttc (update m :subtype enums/ttc)
+      m)))
 
-(defn- rename-data-keys [m]
-  (clojure.set/rename-keys m {:sound :data :sub-type :data}))
+(defn- unparse-header [{:keys [type subtype] :as m}]
+  ((juxt :size :type :request-info :subtype)
+   (cond-> m
+     (= type :tiny) (update :subtype enums/tiny)
+     (= type :small) (update :subtype enums/small)
+     (= type :ttc) (update :subtype enums/ttc)
+     true (update :type enums/isp))))
 
-(def ^:private header-codec (sb/compile-codec
-                             (sb/ordered-map :size :ubyte :type (sb/enum :ubyte enums/ISP) :reqi :ubyte :data :ubyte)
-                             rename-data-keys
-                             identity))
-(def ^:private packet-codec (sb/header header-codec header->body-codec nil :keep-header? true))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Reading & writing
 
-(comment
-  (let [baos (java.io.ByteArrayOutputStream.)
-        _ (sb/encode packet-codec baos (packets/isi))]
-    (seq (.toByteArray baos)))
+(defn read-packet [input-stream]
+  (let [{:keys [size] :as header} (parse-header (m/read input-stream codecs/header))
+        body (when (> size 4)
+               (m/read input-stream (codecs/body header)))]
+    {:header header :body body}))
 
-  (let [baos (java.io.ByteArrayOutputStream.)
-        _ (sb/encode packet-codec baos (packets/msl "Hello, world!"))]
-    (seq (.toByteArray baos)))
+(defn write-packets [output-stream packets]
+  (if (not (seq packets))
+    (.flush output-stream)
+    (recur
+     (let [{:keys [header body]} (first packets)]
+       (doto output-stream
+         (m/write codecs/header (unparse-header header))
+         (m/write (codecs/body header) body))) 
+     (rest packets))))
 
-  (let [baos (java.io.ByteArrayOutputStream.)
-        _ (sb/encode (sb/padding (sb/c-string "UTF8") :length 16 :padding-byte 0) baos "abcdefghijklmab")]
-    (seq (.toByteArray baos)))
-)
+(defn- dispatch [packet {:keys [out-queue]}]
+  (swap! out-queue conj (packets/tiny))
+  (println "Maintained connection...."))
 
-(defn- print-debug [s packet]
-  (newline)
-  (println (str "DEBUG :: " s " :: DEBUG"))
-  (prn packet))
-
-(defn test-client [running {:keys [debug]}]
-  (let [{:keys [in-queue out-queue] :as atoms} {:in-queue (atom (clojure.lang.PersistentQueue/EMPTY))
-                                                :out-queue (atom (conj clojure.lang.PersistentQueue/EMPTY (packets/isi)))}]
-    (future
-      (with-open [socket (Socket. "127.0.0.1" 29999)
-                  input-stream (io/input-stream socket)
-                  output-stream (io/output-stream socket)]
-        (while @running
-          (cond
-            (pos? (.available input-stream))
-            (while (pos? (.available input-stream))
-              (let [packet (try (sb/decode packet-codec input-stream)
-                                (catch Exception e (doto (str "caught exception: " (.getMessage e)) println)))]
-                (when debug (print-debug "Incoming packet" packet))
-                (enqueue! in-queue packet)))
-
-            (peek @out-queue)
-            (while (peek @out-queue)
-              (let [packet (pop! out-queue)]
-                (when debug (print-debug "Outgoing packet" packet))
-                (try (do (sb/encode packet-codec output-stream packet)
-                         (.flush output-stream))
-                     (catch Exception e (doto (str "Encode exception: " (.getMessage e)) println)))))
-
-            :else
-            (Thread/sleep 20)))))
-    atoms))
-
-(comment
-  (def lfs-client (test-client running {:debug true}))
-  (pop! (:in-queue lfs-client))
-  (reset! (:running lfs-client) false)
-  (enqueue! (:out-queue lfs-client) (packets/isi))
-  (enqueue! (:out-queue lfs-client) (packets/msl "Test met de queues"))
-
-
-  (let [baos (java.io.ByteArrayOutputStream.)
-        _ (sb/encode packet-codec baos {:header {:size 8 :type :isi :reqi 2 :data 1}
-                                        :body [0 1 2 3]})]
-    (seq (.toByteArray baos)))
-
-  (let [codec (sb/header (sb/ordered-map :size :ubyte :type :ubyte :reqi :ubyte :data :ubyte)
-                         (fn header->body-codec [{:keys [size] :as x}] (println x)
-                                                         (sb/repeated :ubyte :length (- size 4)))
-                         nil
-                         :keep-header? true)
-        baos (java.io.ByteArrayOutputStream.)
-        _ (sb/encode codec baos {:header {:size 8 :type 7 :reqi 6 :data 5}
-                                 :body [4 3 2 1]})
-        arr (.toByteArray baos)
-        decoded (sb/decode codec (java.io.ByteArrayInputStream. (byte-array [8 7 6 5 4 3 2 1])))
-        ]
-    (seq arr))
-
-)
-
-(defn- handle [running in-queue handler out-queue]
+(defn- process
+  "Pops packets from in-queue and dispatches them."
+  [running {:keys [in-queue out-queue] :as queues}]
   (future
     (while @running
-      (if-let [packet (pop! in-queue)]
-        (handler packet out-queue)
-        (Thread/sleep 20)))))
+      (while (seq @in-queue)
+        (let [packet (peek @in-queue)]
+          (swap! in-queue pop)
+          (dispatch packet queues)))
+      (Thread/sleep 500))))
 
-(defmulti dispatch #(get-in % [:header :type]))
-(defmethod dispatch :default [p out-queue]
-  (prn "DISPATCHING >> " p))
+(defn- connect
+  "Opens a tcp socket and reads packets from input stream to in-queue,
+  and writes packets from out-queue to output stream."
+  [running {:keys [in-queue out-queue] :as queues}]
+  (future
+    (with-open [socket (Socket. "127.0.0.1" 29999)
+                output-stream (clojure.java.io/output-stream socket)
+                input-stream (clojure.java.io/input-stream socket)]
+      (while @running
+        (while (pos? (.available input-stream))
+          (let [p (read-packet input-stream)]
+            (swap! in-queue conj p)))
+        (when-let [packets (seq @out-queue)]
+          (reset! out-queue (clojure.lang.PersistentQueue/EMPTY))
+          (write-packets output-stream packets))
+        (Thread/sleep 1000)))))
 
-(defmethod dispatch :tiny [p out-queue]
-  (enqueue! out-queue (packets/tiny :none)))
-
-(defn start
-  ([handler]
-   (start handler {}))
-  ([handler {:keys [debug] :as options}]
-   (let [running (atom true)
-         {:keys [in-queue out-queue] :as lfs-client} (test-client running options)
-         _ (handle running in-queue handler out-queue)]
-     running)))
+(defn client [{:keys [out-queue] :as queues}]
+  (swap! out-queue conj (packets/insim-init))
+  (let [running (atom true)]
+    (connect running queues)
+    (process running queues)
+    running))
 
 (comment
-  (def lfs-client (start dispatch {:debug true}))
+  (seq @(:out-queue queues))
+
+  (swap! (:out-queue queues) conj (packets/mst "Hallo!"))
+
+  (swap! (:out-queue queues) concat [(packets/mst "Hallo") (packets/mst "...") (packets/mst "Wereld")])
+
+  (def queues {:in-queue (atom (clojure.lang.PersistentQueue/EMPTY))
+               :out-queue (atom (clojure.lang.PersistentQueue/EMPTY))})
+
+  (def lfs-client (client queues))
   (reset! lfs-client false)
 
-  (def header-codec (sb/ordered-map :size :ubyte :type :ubyte :reqi :ubyte :data :ubyte))
-  (defn header->body-codec [{:keys [type]}]
-    (if (= type 2)
-      (sb/ordered-map :one :ubyte :two :ubyte :three :ubyte :four :ubyte)
-      (sb/blob :length 4)))
-  (def body->header identity)
-
-  (let [baos (java.io.ByteArrayOutputStream.)
-        decoded (sb/decode (sb/header header-codec header->body-codec body->header :keep-header? true) (java.io.ByteArrayInputStream. (byte-array [4 2 1 0 1 2 3 4])))]
-    decoded)
+  (def processor (process queues))
+  (reset! processor false)
 )

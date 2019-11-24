@@ -1,22 +1,28 @@
-(ns clj-insim.packets
-  (:require [clj-insim.enums :as enums]))
+(ns clj-insim.packets)
 
-(defn isi
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Packets
+
+(defn insim-init
   ([]
-   (isi {}))
-  ([{:keys [admin flags iname insim-version interval prefix]}]
-   {:header {:size 44 :type :isi :reqi 1 :data 0}
-    :body {:udp-port 0 :flags (or flags 0) :insim-version (or insim-version 8) :prefix (int (char (or prefix \!)))
-           :interval (or interval 0) :admin (or admin "") :iname (or iname "clj-insim")}}))
+   (insim-init {}))
+  ([{:keys [admin iname]}]
+   {:header
+    {:size 44 :type :isi :request-info 1 :subtype 0}
+    :body
+    {:udp-port 0 :flags 0 :insim-version 8 :prefix (int \!) :interval 0
+     :admin (apply str (take 16 (or admin "pwd")))
+     :iname (apply str (concat (take 15 (or iname "clj-insim")) [(char 0)]))}}))
 
-(defn tiny [sub-type]
-  {:header
-   {:size 4 :type :tiny :reqi 1 :sub-type sub-type}
-   :body
-   {}})
+(defn tiny
+  ([]
+   (tiny {}))
+  ([{:keys [request-info subtype]}]
+   {:header
+    {:size 4 :type :tiny :request-info (or request-info 0) :subtype (or subtype :none)}}))
 
-(defn msl [message]
+(defn mst [message]
   {:header
-   {:size 132 :type :msl :reqi 1 :sound 0}
+   {:size 68 :type :mst :request-info 0 :subtype 0}
    :body
    {:message message}})
