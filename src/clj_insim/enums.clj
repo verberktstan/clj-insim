@@ -23,15 +23,29 @@
 (def ^:private TTC
   {:none 0 :sel 1 :sel-start 2 :sel-stop 3})
 
-(defn- make-two-way-enum [enum]
-  (fn [x]
-    (if (nat-int? x)
-      (-> (sort-by val (seq enum))
-          (nth x)
-          first)
-      (get enum x))))
+(def ^:private USER-TYPE {0 :system 1 :user 2 :prefix 3 :o 4 :num})
 
-(def isp (make-two-way-enum ISP))
-(def tiny (make-two-way-enum TINY))
-(def small (make-two-way-enum SMALL))
-(def ttc (make-two-way-enum TTC))
+(defn- parse [m]
+  (fn [b]
+    (get
+     (reduce #(assoc %1 (val %2) (key %2)) {} m)
+     b)))
+
+(defn- unparse [m]
+  (fn [k]
+    (get m k)))
+
+(def parse-isp (parse ISP))
+(def unparse-isp (unparse ISP))
+
+(def parse-tiny (parse TINY))
+(def unparse-tiny (unparse TINY))
+
+(def parse-small (parse SMALL))
+(def unparse-small (unparse SMALL))
+
+(def parse-ttc (parse TTC))
+(def unparse-ttc (unparse TTC))
+
+(def parse-user-type (parse USER-TYPE))
+(def unparse-user-type (unparse USER-TYPE))

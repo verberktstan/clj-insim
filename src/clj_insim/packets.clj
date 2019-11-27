@@ -21,6 +21,12 @@
    {:header
     {:size 4 :type :tiny :request-info (or request-info 0) :subtype (or subtype :none)}}))
 
+(defn- c-stringify [s]
+  (let [new-s (str s (char 0))]
+    (if (zero? (-> new-s count (mod 4)))
+      new-s
+      (recur new-s))))
+
 (defn mst [message]
   {:header
    {:size 68 :type :mst :request-info 0 :subtype 0}

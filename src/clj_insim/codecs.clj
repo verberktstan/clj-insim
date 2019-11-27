@@ -5,7 +5,7 @@
 ;;; Codecs
 
 (def header
-  (m/array m/ubyte 4))
+  (m/array m/ubyte 4)) ; make this a struct (size, type, reqi and subtype)
 
 (defmulti body :type)
 
@@ -21,6 +21,14 @@
    :interval m/ushort
    :admin (m/ascii-string 16)
    :iname (m/ascii-string 16)))
+
+(defmethod body :mso [{:keys [size]}]
+  (m/struct
+   :ucid m/ubyte
+   :plid m/ubyte
+   :user-type m/ubyte
+   :text-start m/ubyte
+   :message (m/ascii-string (- size 4 4))))
 
 (defmethod body :mst [_]
   (m/struct
