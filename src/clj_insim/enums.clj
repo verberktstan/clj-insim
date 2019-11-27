@@ -25,27 +25,28 @@
 
 (def ^:private USER-TYPE {0 :system 1 :user 2 :prefix 3 :o 4 :num})
 
-(defn- parse [m]
-  (fn [b]
-    (get
-     (reduce #(assoc %1 (val %2) (key %2)) {} m)
-     b)))
+(defn- parser [m]
+  (memoize
+   (fn [b]
+     (get
+      (reduce #(assoc %1 (val %2) (key %2)) {} m) ; TODO use transducer!
+      b))))
 
-(defn- unparse [m]
+(defn- unparser [m]
   (fn [k]
     (get m k)))
 
-(def parse-isp (parse ISP))
-(def unparse-isp (unparse ISP))
+(def parse-isp (parser ISP))
+(def unparse-isp (unparser ISP))
 
-(def parse-tiny (parse TINY))
-(def unparse-tiny (unparse TINY))
+(def parse-tiny (parser TINY))
+(def unparse-tiny (unparser TINY))
 
-(def parse-small (parse SMALL))
-(def unparse-small (unparse SMALL))
+(def parse-small (parser SMALL))
+(def unparse-small (unparser SMALL))
 
-(def parse-ttc (parse TTC))
-(def unparse-ttc (unparse TTC))
+(def parse-ttc (parser TTC))
+(def unparse-ttc (unparser TTC))
 
-(def parse-user-type (parse USER-TYPE))
-(def unparse-user-type (unparse USER-TYPE))
+(def parse-user-type (parser USER-TYPE))
+(def unparse-user-type (unparser USER-TYPE))
