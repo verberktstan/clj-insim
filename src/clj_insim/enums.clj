@@ -25,28 +25,29 @@
 
 (def ^:private USER-TYPE {0 :system 1 :user 2 :prefix 3 :o 4 :num})
 
-(defn- parser [m]
-  (memoize
-   (fn [b]
-     (get
-      (reduce #(assoc %1 (val %2) (key %2)) {} m) ; TODO use transducer!
-      b))))
+(defn- parser
+  [map byte]
+  (when (seq map)
+    (let [[key value] (first map)]
+      (if (= byte value)
+        key
+        (recur (rest map) byte)))))
 
 (defn- unparser [m]
   (fn [k]
     (get m k)))
 
-(def parse-isp (parser ISP))
+(def parse-isp (memoize (partial parser ISP)))
 (def unparse-isp (unparser ISP))
 
-(def parse-tiny (parser TINY))
+(def parse-tiny (memoize (partial parser TINY)))
 (def unparse-tiny (unparser TINY))
 
-(def parse-small (parser SMALL))
+(def parse-small (memoize (partial parser SMALL)))
 (def unparse-small (unparser SMALL))
 
-(def parse-ttc (parser TTC))
+(def parse-ttc (memoize (partial parser TTC)))
 (def unparse-ttc (unparser TTC))
 
-(def parse-user-type (parser USER-TYPE))
+(def parse-user-type (memoize (partial parser USER-TYPE)))
 (def unparse-user-type (unparser USER-TYPE))
