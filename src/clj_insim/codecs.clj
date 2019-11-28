@@ -5,7 +5,7 @@
 ;;; Codecs
 
 (def header
-  (m/array m/ubyte 4)) ; make this a struct (size, type, reqi and subtype)
+  (m/array m/ubyte 4))
 
 (defmulti body :type)
 

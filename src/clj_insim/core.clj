@@ -23,19 +23,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Parsers
 
-(defn parse-subtype [type subtype]
-  ((get {:tiny enums/parse-tiny
-         :small enums/parse-small
-         :ttc enums/parse-ttc} type identity) subtype))
-
-(defn- parse-header [[size t request-info subtype]]
-  (let [type (enums/parse-isp t)]
-    (update
-     {:size size
-      :type type
-      :request-info request-info
-      :subtype subtype}
-     :subtype #(parse-subtype type %))))
+(defn parse-header [[size type request-info subtype]]
+  (enums/parse-header
+   {:size size
+    :type (enums/parse-isp type)
+    :request-info request-info
+    :subtype subtype}))
 
 (defn- unparse-header [{:keys [type subtype] :as m}]
   ((juxt :size :type :request-info :subtype)

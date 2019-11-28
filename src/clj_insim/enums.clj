@@ -34,14 +34,25 @@
 (def parse-isp (memoize (parser ISP)))
 (def unparse-isp (unparser ISP))
 
-(def parse-tiny (memoize (parser TINY)))
 (def unparse-tiny (unparser TINY))
 
-(def parse-small (memoize (parser SMALL)))
 (def unparse-small (unparser SMALL))
 
-(def parse-ttc (memoize (parser TTC)))
 (def unparse-ttc (unparser TTC))
 
 (def parse-user-type (memoize (parser USER-TYPE)))
 (def unparse-user-type (unparser USER-TYPE))
+
+(defmulti parse-header :type)
+
+(defmethod parse-header :default [header]
+  header)
+
+(defmethod parse-header :tiny [header]
+  (update header :subtype (memoize (parser TINY))))
+
+(defmethod parse-header :small [header]
+  (update header :subtype (memoize (parser SMALL))))
+
+(defmethod parse-header :ttc [header]
+  (update header :subtype (memoize (parser TTC))))
