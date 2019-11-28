@@ -46,13 +46,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Reading & writing
 
-(defn read-packet [input-stream]
+(defn- read-packet [input-stream]
   (let [{:keys [size] :as header} (parse-header (m/read input-stream codecs/header))]
     {:header header
      :body (when (> size 4)
              (parse-body header (m/read input-stream (codecs/body header))))}))
 
-(defn write-packets [output-stream packets]
+(defn- write-packets [output-stream packets]
   (if (not (seq packets))
     (.flush output-stream)
     (recur
@@ -69,11 +69,10 @@
     (newline)
     (println "Default dispatch: " packet)))
 
-(defmethod dispatch :ver [packet]
-  (packets/mst "Dispatching a VER packet"))
-
-(defmethod dispatch :tiny [packet]
-  [(packets/tiny) (packets/mst "Maintaining..") (packets/mst "..connection!")])
+(defmethod dispatch :tiny [{:keys [header]}]
+  (when (and (zero? (:request-info header))
+           (= (:subtype header) :none))
+    (packets/tiny {:subtype :none})))
 
 (defn client
   "Opens a tcp socket and reads packets from input stream to in-queue,
@@ -107,9 +106,9 @@
      running)))
 
 (comment
-  (enqueue! (packets/mst "Hallo!"))
-
   (enqueue! [(packets/mst "Hallo") (packets/mst "...") (packets/mst "Wereld")])
+
+  (enqueue! (packets/tiny {:subtype :close}))
 
   (def lfs-client (client))
   (reset! lfs-client false)
