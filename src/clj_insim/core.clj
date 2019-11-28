@@ -1,5 +1,5 @@
 (ns clj-insim.core
-  (:require [clj-insim.enums :as enums]
+  (:require [clj-insim.parse :as parse]
             [clj-insim.codecs :as codecs]
             [clj-insim.packets :as packets]
             [marshal.core :as m])
@@ -24,19 +24,19 @@
 ;;; Parsers
 
 (defn parse-header [[size type request-info subtype]]
-  (enums/parse-header
+  (parse/header
    {:size size
-    :type (enums/parse-isp type)
+    :type (parse/isp type)
     :request-info request-info
     :subtype subtype}))
 
 (defn- unparse-header [{:keys [type subtype] :as m}]
   ((juxt :size :type :request-info :subtype)
    (update (cond-> m
-             (= type :tiny) (update :subtype enums/unparse-tiny)
-             (= type :small) (update :subtype enums/unparse-small)
-             (= type :ttc) (update :subtype enums/unparse-ttc))
-           :type enums/unparse-isp)))
+             (= type :tiny) (update :subtype parse/unparse-tiny)
+             (= type :small) (update :subtype parse/unparse-small)
+             (= type :ttc) (update :subtype parse/unparse-ttc))
+           :type parse/unparse-isp)))
 
 
 (defmulti parse-body :type)
