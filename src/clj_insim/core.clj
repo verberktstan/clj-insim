@@ -77,11 +77,10 @@
     (println "Default dispatch: " packet)))
 
 (defmethod dispatch :ver [packet]
-  (enqueue! (packets/mst "Dispatching a VER packet")))
+  (packets/mst "Dispatching a VER packet"))
 
 (defmethod dispatch :tiny [packet]
-  (enqueue! [(packets/mst "Maintaining..") (packets/mst "..connection!")])
-  (enqueue! (packets/tiny)))
+  [(packets/tiny) (packets/mst "Maintaining..") (packets/mst "..connection!")])
 
 (defn client
   "Opens a tcp socket and reads packets from input stream to in-queue,
@@ -92,7 +91,7 @@
    (let [{:keys [in-queue out-queue] :as queues} QUEUES
          running (atom true)]
      (reset! out-queue (clojure.lang.PersistentQueue/EMPTY))
-     (enqueue! (packets/insim-init))
+     (enqueue! out-queue (packets/insim-init))
      (future
        (with-open [socket (Socket. (or host "127.0.0.1") (or port 29999))
                    output-stream (clojure.java.io/output-stream socket)
@@ -105,7 +104,8 @@
            (while (seq @in-queue)
              (let [packet (peek @in-queue)]
                (swap! in-queue pop)
-               (dispatch packet)))
+               (when-let [p (dispatch packet)]
+                 (enqueue! out-queue p))))
 
            (when-let [packets (seq @out-queue)]
              (reset! out-queue (clojure.lang.PersistentQueue/EMPTY))
