@@ -7,7 +7,7 @@
 (defn- unparser [m]
   (fn [k] (get m k)))
 
-(def isp (memoize (parser enums/ISP)))
+(def isp (parser enums/ISP))
 (def unparse-isp (unparser enums/ISP))
 
 (def unparse-tiny (unparser enums/TINY))
@@ -16,7 +16,7 @@
 
 (def unparse-ttc (unparser enums/TTC))
 
-(def user-type (memoize (parser enums/USER-TYPE)))
+(def user-type (parser enums/USER-TYPE))
 (def unparse-user-type (unparser enums/USER-TYPE))
 
 (defmulti header :type)
@@ -25,10 +25,10 @@
   header)
 
 (defmethod header :tiny [header]
-  (update header :subtype (memoize (parser enums/TINY))))
+  (update header :data (parser enums/TINY)))
 
 (defmethod header :small [header]
-  (update header :subtype (memoize (parser enums/SMALL))))
+  (update header :data (parser enums/SMALL)))
 
 (defmethod header :ttc [header]
-  (update header :subtype (memoize (parser enums/TTC))))
+  (update header :data (parser enums/TTC)))
