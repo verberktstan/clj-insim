@@ -11,9 +11,9 @@
       (recur new-s))))
 
 (defn- ->c-string [s max-length]
-  (if (>= (count s) max-length)
-    (str (subs s 0 (dec max-length)) (char 0))
-    s))
+  (-> (apply str s (repeat max-length (char 0)))
+      (subs 0 (dec max-length))
+      (str (char 0))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Packets
@@ -21,24 +21,31 @@
 (defn insim-init
   ([]
    (insim-init {}))
-  ([{:keys [admin iname]}]
+  ([params]
    {::packet/header
     {:size 44 :type :isi :request-info 1 :data 0}
     ::packet/body
-    {:udp-port 0 :flags 0 :insim-version 8 :prefix (int \!) :interval 0
-     :admin (apply str (take 16 (or admin "pwd")))
-     :iname (apply str (concat (take 15 (or iname "clj-insim")) [(char 0)]))}}))
+    (-> (merge
+         {:udp-port 0 :flags 0 :insim-version 8 :prefix (int \!) :interval 0
+          :admin "pwd"
+          :iname "clj-insim"}
+         params)
+        (update :admin ->c-string 16)
+        (update :iname ->c-string 16))}))
 
 (defn tiny
   ([]
    (tiny {}))
-  ([{:keys [request-info data]}]
+  ([params]
    {::packet/header
-    {:size 4 :type :tiny :request-info (or request-info 1) :data (or data :none)}}))
+    (merge
+     {:size 4 :type :tiny :request-info 1 :data :none}
+     params)}))
 
-(def request-ncn #(tiny {:data :ncn}))
-(def request-npl #(tiny {:data :npl}))
-(def close #(tiny {:request-info 0 :data :close}))
+(comment
+  (tiny {:request-info 0 :data :close})
+  (tiny {:data :ncn})
+)
 
 (defn mst [message]
   {::packet/header

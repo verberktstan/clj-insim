@@ -27,13 +27,10 @@
 (defn- read-body [header input-stream]
   (m/read input-stream (codecs/body header)))
 
-(defn- make [header body]
-  ;{:post [(s/valid? ::model %)]}
-  (merge {::header header} (when body {::body body})))
-
 (defn read [input-stream]
-  (let [{:keys [size] :as header} (read-header input-stream)]
-    (make header (when (> size 4) (read-body header input-stream)))))
+  (let [{:keys [size] :as header} (read-header input-stream)
+        body (when (> size 4) (read-body header input-stream))]
+    (merge {::header header} (when body {::body body}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Writing packets

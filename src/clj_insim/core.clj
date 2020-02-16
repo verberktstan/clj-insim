@@ -2,7 +2,6 @@
 (ns clj-insim.core
   (:require [clj-insim.parse :as parse]
             [clj-insim.codecs :as codecs]
-            [clj-insim.connections :refer [ncn->connection]]
             [clj-insim.packets :as packets]
             [clj-insim.models.packet :as packet]
             [clj-insim.queues :refer [enqueue!] :as queues]
@@ -28,40 +27,7 @@
 (defmethod dispatch :tiny [packet]
   (when (packet/tiny-none? packet)
     [(when DEBUG (packets/mst "Maintaining connection..!"))
-     (packets/tiny {:data :none})]))
-
-(defmethod dispatch :ncn [packet]
-  (let [{:connection/keys [id] :as connection} (ncn->connection packet)]
-    (swap! connections assoc id connection)
-    (packets/mst (str "New connection: " connection))))
-
-(defmethod dispatch :cnl [packet]
-  (newline)
-  (println "--== CNL packet ==--")
-  (println packet))
-
-#_(defn npl->player [{::packet/keys [header body]}]
-  #:player{:id (:data header)
-           :connection-id (:connection-id body)
-           :type (:player-type body)
-           :flags (:flags body)
-           :name (:player-name body)
-           :plate (:plate body)
-           :car-name (:car-name body)
-           :skin-name (:skin-name body)
-           :tyres (:tyres body)
-           :handicap #:handicap{:mass (:handicap-mass body)
-                                :restriction (:handicap-restriction body)}
-           :model (:model body)
-           :passengers (:passengers body)
-           :setup-flags {:setup-flags body}
-           :num-player (:num-player body)})
-
-#_(defmethod dispatch :npl [packet]
-  (println "Dispatching NPL: " packet)
-  (let [{:player/keys [id] :as player} (npl->player packet)]
-    (swap! players assoc id player)
-    (packets/mst (str "New player: " player))))
+     (packets/tiny)]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -87,17 +53,10 @@
      running)))
 
 (comment
-  (enqueue! (packets/mst "Hello world!"))
-
-  (enqueue! (packets/request-ncn))
-  (enqueue! (packets/request-npl))
-
-  @connections
-  @players
-
   (def lfs-client (client {:dispatch-fn dispatch
                            :sleep-interval 100}))
-  (enqueue! (packets/close))
+  (enqueue! (packets/mst "Hello world!"))
+  (enqueue! (packets/tiny {:request-info 0 :data :close}))
   (reset! lfs-client false)
 
   (remove-all-methods dispatch)
