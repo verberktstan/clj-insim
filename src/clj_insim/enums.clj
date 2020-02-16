@@ -15,39 +15,45 @@
 
 (def ISP-INV (map-invert ISP))
 
-(def TINY
+(def ^:private TINY
   {:none 0  :ver 1 :close 2 :ping 3 :reply 4 :vtc 5 :scp 6 :sst 7 :gth 8 :mpe 9
    :ism 10 :ren 11 :clr 12 :ncn 13 :npl 14 :res 15 :nlp 16 :mci 17 :reo 18 :rst 19
    :axi 20 :axc 21 :rip 22 :nci 23 :alc 24 :axm 25 :slc 26})
 
-(def TINY-INV (map-invert TINY))
-
-(def SMALL
+(def ^:private SMALL
   {:none 0 :ssp 1 :ssg 2 :vta 3 :tms 4 :stp 5 :rtp 6 :nli 7 :alc 8 :lcs 9})
 
-(def SMALL-INV (map-invert SMALL))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Packet body enums
-
-(def TTC
+(def ^:private TTC
   {:none 0 :sel 1 :sel-start 2 :sel-stop 3})
 
-(def TTC-INV (map-invert TTC))
+(def type-enum
+  {:tiny TINY
+   :small SMALL
+   :ttc TTC})
+
+(def type-num->key-enum
+  {(get ISP :tiny) (map-invert TINY)
+   (get ISP :small) (map-invert SMALL)
+   (get ISP :ttc) (map-invert TTC)})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MISC
 
 (def USER-TYPE {0 :system 1 :user 2 :prefix 3 :o 4 :num})
 
 (def USER-TYPE-INV (map-invert USER-TYPE))
 
-(def VIEW-IDENTIFIERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Packet body enums
+
+(def ^:private VIEW_IDENTIFIERS
   {:follow 0 :heli 1 :cam 2 :driver 3 :custom 4 :max 5})
 
-(def VIEW-IDENTIFIERS-INV (map-invert VIEW-IDENTIFIERS))
+(def ^:private RACE_IN_PROGRESS {:no-race 0 :race 1 :qualifying 2})
 
-(def RACE-IN-PROGRESS
-  {:no-race 0 :race 1 :qualifying 2})
+(def ^:private WIND {:off 0 :weak 1 :strong 2})
 
-(def RACE-IN-PROGRESS-INV (map-invert VIEW-IDENTIFIERS))
-
-(def WIND {:off 0 :weak 1 :strong 2})
-(def WIND-INV (map-invert WIND))
+(def body-key-enum
+  {:in-game-cam (map-invert VIEW_IDENTIFIERS)
+   :race-in-progress (map-invert RACE_IN_PROGRESS)
+   :wind (map-invert WIND)})
