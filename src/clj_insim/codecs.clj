@@ -73,7 +73,7 @@
 (defmethod body :sta [_]
   (m/struct
    :replay-speed m/float
-   :flags m/ushort
+   :iss-state-flags m/ushort
    :in-game-cam m/ubyte
    :view-player-id m/ubyte
    :num-players m/ubyte

@@ -4,12 +4,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Helpers
 
-(defn- c-stringify [s]
-  (let [new-s (str s (char 0))]
-    (if (zero? (-> new-s count (mod 4)))
-      new-s
-      (recur new-s))))
-
 (defn- ->c-string [s max-length]
   (-> (apply str s (repeat max-length (char 0)))
       (subs 0 (dec max-length))
