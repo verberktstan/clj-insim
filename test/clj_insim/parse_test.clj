@@ -13,3 +13,11 @@
     (t/is
      (= {:type 3 :data 0}
         (sut/unparse packet)))))
+
+(t/deftest body-test
+  (let [packet {:in-game-cam 3
+                :race-laps 1}]
+    (t/is
+     (= {:in-game-cam :driver
+         :race-laps 1}
+        (sut/body packet)))))

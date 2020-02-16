@@ -12,6 +12,7 @@
 (def DEBUG true)
 
 (defonce version (atom nil))
+(defonce state (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Dispatching packets
@@ -33,6 +34,10 @@
     [(when DEBUG (packets/mst "Maintaining connection..!"))
      (packets/tiny)]))
 
+(defmethod dispatch :sta [{::packet/keys [body]}]
+  (reset! state (dissoc body :spare2 :spare3))
+  (when DEBUG (packets/mst (str @state))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn client
@@ -43,7 +48,6 @@
   ([{:keys [host port sleep-interval dispatch-fn]}]
    (let [running (atom true)]
      (queues/reset!)
-     (reset! connections nil)
      (enqueue! (packets/insim-init))
      (future
        (with-open [socket (Socket. (or host "127.0.0.1") (or port 29999))
@@ -63,4 +67,7 @@
   (reset! lfs-client false)
 
   (remove-all-methods dispatch)
+
+  @version
+  @state
 )

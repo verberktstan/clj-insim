@@ -25,7 +25,9 @@
       parse/header))
 
 (defn- read-body [header input-stream]
-  (m/read input-stream (codecs/body header)))
+  (-> input-stream
+      (m/read (codecs/body header))
+      parse/body))
 
 (defn read [input-stream]
   (let [{:keys [size] :as header} (read-header input-stream)

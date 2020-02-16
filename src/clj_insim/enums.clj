@@ -1,6 +1,9 @@
 (ns clj-insim.enums
   (:require [clojure.set :refer [map-invert]]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Packet header enums
+
 (def ISP
   {:none 0 :isi 1 :ver 2 :tiny 3 :small 4 :sta 5 :sch 6 :sfp 7 :scc 8 :cpp 9
    :ism 10 :mso 11 :iii 12 :mst 13 :mtc 14 :mod 15 :vtn 16 :rst 17 :ncn 18 :cnl 19
@@ -24,6 +27,9 @@
 
 (def SMALL-INV (map-invert SMALL))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Packet body enums
+
 (def TTC
   {:none 0 :sel 1 :sel-start 2 :sel-stop 3})
 
@@ -31,4 +37,17 @@
 
 (def USER-TYPE {0 :system 1 :user 2 :prefix 3 :o 4 :num})
 
-(def USER-TYPE-INV (map-indexed USER-TYPE))
+(def USER-TYPE-INV (map-invert USER-TYPE))
+
+(def VIEW-IDENTIFIERS
+  {:follow 0 :heli 1 :cam 2 :driver 3 :custom 4 :max 5})
+
+(def VIEW-IDENTIFIERS-INV (map-invert VIEW-IDENTIFIERS))
+
+(def RACE-IN-PROGRESS
+  {:no-race 0 :race 1 :qualifying 2})
+
+(def RACE-IN-PROGRESS-INV (map-invert VIEW-IDENTIFIERS))
+
+(def WIND {:off 0 :weak 1 :strong 2})
+(def WIND-INV (map-invert WIND))
