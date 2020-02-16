@@ -62,3 +62,10 @@
       (write-header packet)
       (write-body packet)))
   (.flush output-stream))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Checks
+
+(defn tiny-none? [{::keys [header]}]
+  (and (zero? (:request-info header))
+       (#{:none} (:data header))))

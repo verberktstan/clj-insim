@@ -43,6 +43,13 @@
    :flags m/ubyte
    :spare3 m/ubyte))
 
+(defmethod body :ncl [_]
+  (m/struct
+   :reason m/ubyte
+   :total m/ubyte
+   :spare2 m/ubyte
+   :spare3 m/ubyte))
+
 (defmethod body :npl [_]
   (m/struct
    :connection-id m/ubyte
