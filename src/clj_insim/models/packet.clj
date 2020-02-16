@@ -45,7 +45,10 @@
      (parse/unparse header))))
 
 (defn- write-body [output-stream {::keys [header body]}]
-  (m/write output-stream (codecs/body header) body))
+  (m/write
+   output-stream
+   (codecs/body header)
+   (parse/unparse-body body)))
 
 (defn write [output-stream packets]
   (doseq [packet packets]

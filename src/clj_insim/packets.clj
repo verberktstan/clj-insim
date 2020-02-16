@@ -20,7 +20,7 @@
     {:size 44 :type :isi :request-info 1 :data 0}
     ::packet/body
     (-> (merge
-         {:udp-port 0 :flags 0 :insim-version 8 :prefix (int \!) :interval 0
+         {:udp-port 0 :is-flags #{} :insim-version 8 :prefix (int \!) :interval 0
           :admin "pwd"
           :iname "clj-insim"}
          params)

@@ -1,4 +1,5 @@
-(ns clj-insim.parsers)
+(ns clj-insim.parsers
+  (:require [clojure.set :as set]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data
@@ -8,6 +9,11 @@
    32 :shift-u-follow 64 :shift-u-no-opt 128 :show-2d 256 :front-end 512 :multi
    1024 :mspeedup 2048 :windowed 4096 :sound-mute 8192 :view-override 16834 :visible
    32768 :text-entry})
+
+(def ^:private IS_FLAGS
+  {1 :res0 2 :res1 4 :local 8 :mso-cols 16 :nlp
+   32 :mci 64 :con 128 :obh 256 :hlv 512 :axm-load
+   1024 :axm-edit 2048 :req-join})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper functions
@@ -50,3 +56,13 @@
 (def body-key-parser
   {:race-laps parse-race-laps
    :iss-state-flags (partial flags ISS_STATE_FLAGS)})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Unparse functions
+
+(defn- unparse-flags [data-map flags]
+  (let [m (set/map-invert data-map)]
+    (reduce + (map (partial get m) flags))))
+
+(def body-key-unparser
+  {:is-flags (partial unparse-flags IS_FLAGS)})

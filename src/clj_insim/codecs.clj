@@ -15,7 +15,7 @@
 (defmethod body :isi [_]
   (m/struct
    :udp-port m/ushort
-   :flags m/ushort
+   :is-flags m/ushort
    :insim-version m/ubyte
    :prefix m/ubyte
    :interval m/ushort

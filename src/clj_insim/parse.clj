@@ -10,6 +10,15 @@
       enum (update :data #(get enum %))
       true (update :type #(get enums/ISP %)))))
 
+(defn unparse-body [data]
+  (reduce
+   (fn [result [k v]]
+     (if-let [parser (get parsers/body-key-unparser k)]
+       (assoc result k (parser v))
+       (assoc result k v)))
+   {}
+   (seq data)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn header [{:keys [type] :as header}]
