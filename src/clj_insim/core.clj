@@ -11,8 +11,7 @@
 
 (def DEBUG true)
 
-(defonce connections (atom nil))
-(defonce players (atom nil))
+(defonce version (atom nil))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Dispatching packets
@@ -23,6 +22,11 @@
   (when DEBUG
         (newline)
         (println "Default dispatch: " packet)))
+
+(defmethod dispatch :ver [{::packet/keys [header body]}]
+  (when (#{1} (:request-info header))
+    (reset! version (dissoc body :spare))
+    (when DEBUG (packets/mst (str @version)))))
 
 (defmethod dispatch :tiny [packet]
   (when (packet/tiny-none? packet)
@@ -49,12 +53,11 @@
            (queues/read input-stream)
            (queues/dispatch dispatch-fn)
            (queues/write output-stream)
-           (Thread/sleep (or sleep-interval 1000)))))
+           (Thread/sleep (or sleep-interval 100)))))
      running)))
 
 (comment
-  (def lfs-client (client {:dispatch-fn dispatch
-                           :sleep-interval 100}))
+  (def lfs-client (client {:dispatch-fn dispatch}))
   (enqueue! (packets/mst "Hello world!"))
   (enqueue! (packets/tiny {:request-info 0 :data :close}))
   (reset! lfs-client false)
