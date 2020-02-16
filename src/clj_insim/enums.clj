@@ -1,4 +1,5 @@
-(ns clj-insim.enums)
+(ns clj-insim.enums
+  (:require [clojure.set :refer [map-invert]]))
 
 (def ISP
   {:none 0 :isi 1 :ver 2 :tiny 3 :small 4 :sta 5 :sch 6 :sfp 7 :scc 8 :cpp 9
@@ -9,15 +10,25 @@
    :con 50 :obh 51 :hlv 52 :plc 53 :axm 54 :acr 55 :hcp 56 :nci 57 :jrr 58 :uco 59
    :oco 60 :ttc 61 :slc 62 :csc 63 :cim 64})
 
+(def ISP-INV (map-invert ISP))
+
 (def TINY
   {:none 0  :ver 1 :close 2 :ping 3 :reply 4 :vtc 5 :scp 6 :sst 7 :gth 8 :mpe 9
    :ism 10 :ren 11 :clr 12 :ncn 13 :npl 14 :res 15 :nlp 16 :mci 17 :reo 18 :rst 19
    :axi 20 :axc 21 :rip 22 :nci 23 :alc 24 :axm 25 :slc 26})
 
+(def TINY-INV (map-invert TINY))
+
 (def SMALL
   {:none 0 :ssp 1 :ssg 2 :vta 3 :tms 4 :stp 5 :rtp 6 :nli 7 :alc 8 :lcs 9})
+
+(def SMALL-INV (map-invert SMALL))
 
 (def TTC
   {:none 0 :sel 1 :sel-start 2 :sel-stop 3})
 
+(def TTC-INV (map-invert TTC))
+
 (def USER-TYPE {0 :system 1 :user 2 :prefix 3 :o 4 :num})
+
+(def USER-TYPE-INV (map-indexed USER-TYPE))

@@ -1,34 +1,28 @@
 (ns clj-insim.parse
   (:require [clj-insim.enums :as enums]))
 
-(defn- parser [m]
-  (fn [n] (some #(when (= (val %) n) (key %)) m)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- unparser [m]
-  (fn [k] (get m k)))
+(def ^:private data->enum
+  {:tiny enums/TINY
+   :small enums/SMALL
+   :ttc enums/TTC})
 
-(def isp (parser enums/ISP))
-(def unparse-isp (unparser enums/ISP))
+(defn unparse [{:keys [type] :as header}]
+  (let [enum (get data->enum type)]
+    (cond-> header
+      enum (update :data #(get enum %))
+      true (update :type #(get enums/ISP %)))))
 
-(def unparse-tiny (unparser enums/TINY))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def unparse-small (unparser enums/SMALL))
+(def ^:private data->inv-enum
+  {(get enums/ISP :tiny) enums/TINY-INV
+   (get enums/ISP :small) enums/SMALL-INV
+   (get enums/ISP :ttc) enums/TTC-INV})
 
-(def unparse-ttc (unparser enums/TTC))
-
-(def user-type (parser enums/USER-TYPE))
-(def unparse-user-type (unparser enums/USER-TYPE))
-
-(defmulti header :type)
-
-(defmethod header :default [header]
-  header)
-
-(defmethod header :tiny [header]
-  (update header :data (parser enums/TINY)))
-
-(defmethod header :small [header]
-  (update header :data (parser enums/SMALL)))
-
-(defmethod header :ttc [header]
-  (update header :data (parser enums/TTC)))
+(defn header [{:keys [type] :as header}]
+  (let [enum (get data->inv-enum type)]
+    (cond-> header
+      enum (update :data #(get enum %))
+      true (update :type #(get enums/ISP-INV %)))))

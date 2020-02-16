@@ -45,13 +45,7 @@
     (m/write
      output-stream
      codecs/header
-     (-> header
-         (update :type parse/unparse-isp)
-         (update :data (case type
-                         :tiny parse/unparse-tiny
-                         :small parse/unparse-small
-                         :ttc parse/unparse-ttc
-                         identity))))))
+     (parse/unparse header))))
 
 (defn- write-body [output-stream {::keys [header body]}]
   (m/write output-stream (codecs/body header) body))
