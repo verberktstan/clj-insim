@@ -20,11 +20,9 @@
 ;;; Reading packets
 
 (defn- read-header [input-stream]
-  (let [{:keys [type] :as header}
-        (-> input-stream
-            (m/read codecs/header)
-            (update :type parse/isp))]
-    (parse/header header)))
+  (-> input-stream
+      (m/read codecs/header)
+      parse/header))
 
 (defn- read-body [header input-stream]
   (m/read input-stream (codecs/body header)))

@@ -70,6 +70,24 @@
    :spare2 m/ubyte
    :spare3 m/ubyte))
 
+(defmethod body :sta [_]
+  (m/struct
+   :replay-speed m/float
+   :flags m/ushort
+   :in-game-cam m/ubyte
+   :view-player-id m/ubyte
+   :num-players m/ubyte
+   :num-connections m/ubyte
+   :num-finished m/ubyte
+   :race-in-progress m/ubyte
+   :qualify-minutes m/ubyte
+   :race-laps m/ubyte
+   :spare2 m/ubyte
+   :spare3 m/ubyte
+   :track (m/ascii-string 6)
+   :weather m/ubyte
+   :wind m/ubyte))
+
 (defmethod body :ver [_]
   (m/struct
    :version (m/ascii-string 8)

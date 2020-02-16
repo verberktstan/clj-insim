@@ -21,7 +21,7 @@
 (defmulti dispatch #(get-in % [::packet/header :type]))
 
 (defmethod dispatch :default [packet]
-  (when false #_DEBUG
+  (when DEBUG
         (newline)
         (println "Default dispatch: " packet)))
 
