@@ -30,7 +30,7 @@
        (swap! queue conj p)
        (apply swap! queue conj p)))))
 
-(defn read
+(defn read!
   "Read a single packet from the input-stream and enqueue it (on the input queue)"
   [input-stream]
   (while (pos? (.available input-stream))
@@ -38,7 +38,7 @@
      (:in-queue QUEUES)
      (packet/read input-stream))))
 
-(defn dispatch
+(defn dispatch!
   "Call dispatch-fn on all packets (in input queue)
   and enqueue the result (on the output queue)"
   [dispatch-fn]
@@ -48,7 +48,7 @@
         (pop! queue)
         (enqueue! (dispatch-fn packet))))))
 
-(defn write
+(defn write!
   "Write all queued packets to the output-stream (if any)."
   [output-stream]
   (let [queue (:out-queue QUEUES)]

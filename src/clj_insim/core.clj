@@ -1,4 +1,3 @@
-
 (ns clj-insim.core
   (:require [clj-insim.parse :as parse]
             [clj-insim.codecs :as codecs]
@@ -54,9 +53,9 @@
                    output-stream (io/output-stream socket)
                    input-stream (io/input-stream socket)]
          (while @running
-           (queues/read input-stream)
-           (queues/dispatch dispatch-fn)
-           (queues/write output-stream)
+           (queues/read! input-stream)
+           (queues/dispatch! dispatch-fn)
+           (queues/write! output-stream)
            (Thread/sleep (or sleep-interval 100)))))
      running)))
 
