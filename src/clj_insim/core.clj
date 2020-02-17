@@ -8,8 +8,6 @@
             [marshal.core :as m])
   (:import [java.net Socket]))
 
-(def DEBUG true)
-
 (defonce version (atom nil))
 (defonce state (atom nil))
 
@@ -19,23 +17,18 @@
 (defmulti dispatch #(get-in % [::packet/header :type]))
 
 (defmethod dispatch :default [packet]
-  (when DEBUG
-        (newline)
-        (println "Default dispatch: " packet)))
+  nil)
 
 (defmethod dispatch :ver [{::packet/keys [header body]}]
   (when (#{1} (:request-info header))
-    (reset! version (dissoc body :spare))
-    (when DEBUG (packets/mst (str @version)))))
+    (reset! version (dissoc body :spare))))
 
 (defmethod dispatch :tiny [packet]
   (when (packet/tiny-none? packet)
-    [(when DEBUG (packets/mst "Maintaining connection..!"))
-     (packets/tiny)]))
+    (packets/tiny)))
 
 (defmethod dispatch :sta [{::packet/keys [body]}]
-  (reset! state (dissoc body :spare2 :spare3))
-  (when DEBUG (packets/mst (str @state))))
+  (reset! state (dissoc body :spare2 :spare3)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -62,6 +55,8 @@
 (comment
   (def lfs-client (client {:dispatch-fn dispatch}))
   (enqueue! (packets/mst "Hello world!"))
+  (enqueue! {:test "packet"})
+  (enqueue! nil)
   (enqueue! (packets/tiny {:request-info 0 :data :close}))
   (reset! lfs-client false)
 
