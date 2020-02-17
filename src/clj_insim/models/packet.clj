@@ -32,7 +32,9 @@
 (defn read [input-stream]
   (let [{:keys [size] :as header} (read-header input-stream)
         body (when (> size 4) (read-body header input-stream))]
-    (merge {::header header} (when body {::body body}))))
+    (merge
+     {::header header}
+     (when body {::body body}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Writing packets
