@@ -34,6 +34,14 @@
   (m/struct
    :message (m/ascii-string (- size 4))))
 
+(defmethod body :mtc [{:keys [size]}]
+  (m/struct
+   :connection-id m/ubyte
+   :player-id m/ubyte
+   :spare2 m/ubyte
+   :spare3 m/ubyte
+   :message (m/ascii-string (- size 8))))
+
 (defmethod body :ncn [_]
   (m/struct
    :user-name (m/ascii-string 24)

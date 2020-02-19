@@ -168,13 +168,10 @@
 (comment
   (def lfs-client (client {:dispatch-fn dispatch
                            :sleep-interval 250}))
-  (enqueue! lfs-client (packets/mst "Hello world!"))
+  (enqueue! lfs-client (packets/mtc "Hello world!"))
   (enqueue! lfs-client {:test "packet"})
   (enqueue! lfs-client nil)
   (stop! lfs-client)
 
   (remove-all-methods dispatch)
-
-  @version
-  @state
 )
