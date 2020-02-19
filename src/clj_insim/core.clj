@@ -11,6 +11,9 @@
 
 (def ^:private DEBUG false)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helper functions
+
 (defn- pop! [queue]
   (let [packet (peek @queue)]
     (swap! queue pop)
@@ -38,6 +41,18 @@
          (or (s/explain-data ::packet/model p)
              (s/explain-data (s/coll-of ::packet/model) p)))))))
 
+(defn- read-packet [input-stream]
+  (let [{:keys [size] :as header} (-> input-stream
+                                      (m/read codecs/header)
+                                      parse/header)
+        body (when (> size 4)
+               (-> input-stream
+                   (m/read (codecs/body header))
+                   parse/body))]
+    (merge
+     {::packet/header header}
+     (when body {::packet/body body}))))
+
 (defn- read-packets
   "Returns packets (based on all available bytes) read from input-stream"
   [input-stream]
@@ -45,14 +60,28 @@
          result []]
     (if (not (pos? available-bytes))
       (seq result)
-      (let [packet (packet/read input-stream)]
+      (let [packet (read-packet input-stream)]
         (recur (.available input-stream) (conj result packet))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; State
+(defn- write-header [output-stream {::packet/keys [header]}]
+  (let [{:keys [type]} header]
+    (m/write
+     output-stream
+     codecs/header
+     (parse/unparse header))))
 
-(defonce version (atom nil))
-(defonce state (atom nil))
+(defn- write-body [output-stream {::packet/keys [header body]}]
+  (m/write
+   output-stream
+   (codecs/body header)
+   (parse/unparse-body body)))
+
+(defn- write-packets [output-stream packets]
+  (doseq [packet packets]
+    (doto output-stream
+      (write-header packet)
+      (write-body packet)))
+  (.flush output-stream))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Dispatching packets
@@ -65,16 +94,9 @@
     (println "--===####===--")
     (println packet)))
 
-(defmethod dispatch :ver [{::packet/keys [header body]}]
-  (when (#{1} (:request-info header))
-    (reset! version (dissoc body :spare))))
-
 (defmethod dispatch :tiny [packet]
   (when (packet/tiny-none? packet)
     (packets/tiny)))
-
-(defmethod dispatch :sta [{::packet/keys [body]}]
-  (reset! state (dissoc body :spare2 :spare3)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialisation
@@ -136,7 +158,7 @@
                                    seq)]
              (reset-queue! out-queue)
              ;; Write the packets to the output stream
-             (packet/write output-stream packets))
+             (write-packets output-stream packets))
 
            (Thread/sleep (or sleep-interval 100)))))
      {:running running
