@@ -10,7 +10,7 @@
 ;;; Specs
 
 (s/def ::header (s/keys :req-un [::size ::type ::request-info ::data]))
-(s/def ::body map?)
+(s/def ::body associative?)
 
 (s/def ::model
   (s/keys :req [::header]
