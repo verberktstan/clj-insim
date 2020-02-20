@@ -42,11 +42,14 @@
 (defn make
   "Encloses the required queues and a function for enqueue'ing packets on the
   output stream. Returns a map containing :in-queue, :out-queue & :enqueue-fn."
-  [init-packet]
-  (let [in-queue (atom (clojure.lang.PersistentQueue/EMPTY))
-        out-queue (atom (clojure.lang.PersistentQueue/EMPTY))
-        enqueue! #(->queue out-queue %)]
-    (enqueue! init-packet)
-    {:in-queue in-queue
-     :out-queue out-queue
-     :enqueue! enqueue!}))
+  ([]
+   (make nil))
+  ([init-packet]
+   (let [in-queue (atom (clojure.lang.PersistentQueue/EMPTY))
+         out-queue (atom (clojure.lang.PersistentQueue/EMPTY))
+         enqueue! #(->queue out-queue %)]
+     (when init-packet
+       (enqueue! init-packet))
+     {:in-queue in-queue
+      :out-queue out-queue
+      :enqueue! enqueue!})))
