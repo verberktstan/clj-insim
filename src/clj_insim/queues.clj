@@ -4,13 +4,18 @@
 
 (def ^:private DEBUG false)
 
+(defn- reset-queue! [queue]
+  (reset! queue (clojure.lang.PersistentQueue/EMPTY)))
+
 (defn peek-and-pop! [queue]
   (let [packet (peek @queue)]
     (swap! queue pop)
     packet))
 
-(defn reset-queue! [queue]
-  (reset! queue (clojure.lang.PersistentQueue/EMPTY)))
+(defn peek-and-pop-all! [queue]
+  (when-let [packets (->> (seq @queue) (filter identity) (seq))]
+    (reset-queue! queue)
+    packets))
 
 (defn ->queue
   "Put packet(s) p on a queue."

@@ -22,8 +22,7 @@
 (defn- write-output-packets!
   "Take packets from output queue and write to output stream"
   [out-queue output-stream]
-  (when-let [packets (->> (seq @out-queue) (keep identity) seq)]
-    (queues/reset-queue! out-queue)
+  (when-let [packets (queues/peek-and-pop-all! out-queue)]
     (write/packets output-stream packets)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
