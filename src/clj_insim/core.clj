@@ -1,58 +1,10 @@
 (ns clj-insim.core
   (:require [clj-insim.packets :as packets]
-            [clj-insim.models.packet :as packet]
+            [clj-insim.queues :as queues]
             [clj-insim.read :as read]
             [clj-insim.write :as write]
-            [clojure.java.io :as io]
-            [clojure.spec.alpha :as s])
-  (:refer-clojure :exclude [pop! read])
+            [clojure.java.io :as io])
   (:import [java.net Socket]))
-
-(def ^:private DEBUG false)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helper functions
-
-(defn- pop! [queue]
-  (let [packet (peek @queue)]
-    (swap! queue pop)
-    packet))
-
-(defn- reset-queue! [queue]
-  (reset! queue (clojure.lang.PersistentQueue/EMPTY)))
-
-(defn- ->queue
-  "Put packet(s) p on a queue."
-  [queue p]
-  (cond
-    (s/valid? ::packet/model p)
-    (swap! queue conj p)
-
-    (s/valid? (s/coll-of ::packet/model) p)
-    (apply swap! queue conj p)
-
-    :else
-    (when DEBUG
-      (do
-        (newline)
-        (println "Invalid packet enqueued!")
-        (println
-         (or (s/explain-data ::packet/model p)
-             (s/explain-data (s/coll-of ::packet/model) p)))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Initialisation
-
-(defn- make-queues
-  "Encloses the required queues and a function for enqueue'ing packets on the
-  output stream. Returns a map containing :in-queue, :out-queue & :enqueue-fn."
-  []
-  (let [in-queue (atom (clojure.lang.PersistentQueue/EMPTY))
-        out-queue (atom (clojure.lang.PersistentQueue/EMPTY))
-        enqueue-fn #(->queue out-queue %)]
-    {:in-queue in-queue
-     :out-queue out-queue
-     :enqueue-fn enqueue-fn}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public funtions
@@ -73,11 +25,13 @@
   stream. Returns a map representing the client (containing :running, :enqueue!
   and :sleep-interval)"
   ([]
-   (client nil))
-  ([{:keys [host port sleep-interval dispatch-fn]}]
+   (client println))
+  ([dispatch-fn]
+   (client {} (packets/insim-init) dispatch-fn))
+  ([{:keys [host port sleep-interval]} init-packet dispatch-fn]
    (let [running (atom true)
-         {:keys [in-queue out-queue enqueue-fn] :as queues} (make-queues)]
-     (enqueue-fn (packets/insim-init))
+         {:keys [in-queue out-queue enqueue!] :as queues} (queues/make)]
+     (enqueue! init-packet)
      (future
        (with-open [socket (Socket. (or host "127.0.0.1") (or port 29999))
                    output-stream (io/output-stream socket)
@@ -85,26 +39,25 @@
          (while @running
            ;; Read packets from input stream and put them on input queue
            (when-let [packets (read/packets input-stream)]
-             (->queue in-queue packets))
+             (queues/->queue in-queue packets))
 
-           ;; Call dispatch-fn on all queue'd packets
+           ;; Call dispatch-fn on packets on input queue, put result on output queue
            (while (seq @in-queue)
-             (when-let [packet (pop! in-queue)]
-               ;; Enqueue the packets to the output queue
-               (->queue out-queue (dispatch-fn packet))))
+             (when-let [packet (queues/peek-and-pop! in-queue)]
+               (queues/->queue out-queue (dispatch-fn packet))))
 
            ;; Take packets from output queue and write to output stream
            (when-let [packets (->> (seq @out-queue) (keep identity) seq)]
-             (reset-queue! out-queue)
+             (queues/reset-queue! out-queue)
              (write/packets output-stream packets))
 
            (Thread/sleep (or sleep-interval 100)))))
      {:running running
-      :enqueue! enqueue-fn
+      :enqueue! enqueue!
       :sleep-interval (or sleep-interval 100)})))
 
 (comment
-  (def lfs-client (client {:dispatch-fn println}))
+  (def lfs-client (client))
   (enqueue! lfs-client (packets/mtc "Hello world!"))
   (stop! lfs-client)
 )
