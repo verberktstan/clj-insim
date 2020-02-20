@@ -19,5 +19,5 @@
                 :race-laps 1}]
     (t/is
      (= {:in-game-cam :driver
-         :race-laps 1}
+         :race-laps {:laps 1}}
         (sut/body packet)))))
