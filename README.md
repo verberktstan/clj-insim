@@ -15,7 +15,8 @@ Require the clj-insim.core and clj-insim.packets ns:
 ```
 (ns my-project.core
   (:require [clj-insim.core :as clj-insim]
-            [clj-insim.packets :as packets]))
+            [clj-insim.packets :as packets]
+            [clj-insim.models.packet :as packet]))
 ```
 
 ### Very basic default client
