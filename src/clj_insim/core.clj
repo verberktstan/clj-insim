@@ -1,13 +1,11 @@
 (ns clj-insim.core
-  (:require [clj-insim.parse :as parse]
-            [clj-insim.codecs :as codecs]
-            [clj-insim.packets :as packets]
+  (:require [clj-insim.packets :as packets]
             [clj-insim.models.packet :as packet]
             [clj-insim.read :as read]
+            [clj-insim.write :as write]
             [clojure.java.io :as io]
-            [clojure.spec.alpha :as s]
-            [marshal.core :as m])
-  (:refer-clojure :exclude [pop!])
+            [clojure.spec.alpha :as s])
+  (:refer-clojure :exclude [pop! read])
   (:import [java.net Socket]))
 
 (def ^:private DEBUG false)
@@ -41,26 +39,6 @@
         (println
          (or (s/explain-data ::packet/model p)
              (s/explain-data (s/coll-of ::packet/model) p)))))))
-
-(defn- write-header [output-stream {::packet/keys [header]}]
-  (let [{:keys [type]} header]
-    (m/write
-     output-stream
-     codecs/header
-     (parse/unparse header))))
-
-(defn- write-body [output-stream {::packet/keys [header body]}]
-  (m/write
-   output-stream
-   (codecs/body header)
-   (parse/unparse-body body)))
-
-(defn- write-packets [output-stream packets]
-  (doseq [packet packets]
-    (doto output-stream
-      (write-header packet)
-      (write-body packet)))
-  (.flush output-stream))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialisation
@@ -115,13 +93,10 @@
                ;; Enqueue the packets to the output queue
                (->queue out-queue (dispatch-fn packet))))
 
-           ;; Take all packets from the output queue
-           (when-let [packets (->> (seq @out-queue)
-                                   (keep identity)
-                                   seq)]
+           ;; Take packets from output queue and write to output stream
+           (when-let [packets (->> (seq @out-queue) (keep identity) seq)]
              (reset-queue! out-queue)
-             ;; Write the packets to the output stream
-             (write-packets output-stream packets))
+             (write/packets output-stream packets))
 
            (Thread/sleep (or sleep-interval 100)))))
      {:running running
