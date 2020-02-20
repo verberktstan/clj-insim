@@ -8,7 +8,7 @@ You can find it on Clojars: https://clojars.org/clj-insim/
 
 Add clj-insim to your project.clj:
 ```
-[clj-insim "0.1.5-SNAPSHOT"]
+[clj-insim "0.1.9-SNAPSHOT"]
 ```
 
 Require the clj-insim.core and clj-insim.packets ns:
