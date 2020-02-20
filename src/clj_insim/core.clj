@@ -6,6 +6,26 @@
             [clojure.java.io :as io])
   (:import [java.net Socket]))
 
+(defn- read-input-packets!
+  "Read packets from input stream and put them on queue"
+  [input-stream queue]
+  (when-let [packets (read/packets input-stream)]
+    (queues/->queue queue packets)))
+
+(defn- dispatch!
+  "Call dispatch-fn on packets on input queue, put result on output queue"
+  [in-queue dispatch-fn out-queue]
+  (while (seq @in-queue)
+    (when-let [packet (queues/peek-and-pop! in-queue)]
+      (queues/->queue out-queue (dispatch-fn packet)))))
+
+(defn- write-output-packets!
+  "Take packets from output queue and write to output stream"
+  [out-queue output-stream]
+  (when-let [packets (->> (seq @out-queue) (keep identity) seq)]
+    (queues/reset-queue! out-queue)
+    (write/packets output-stream packets)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public funtions
 
@@ -37,20 +57,9 @@
                    output-stream (io/output-stream socket)
                    input-stream (io/input-stream socket)]
          (while @running
-           ;; Read packets from input stream and put them on input queue
-           (when-let [packets (read/packets input-stream)]
-             (queues/->queue in-queue packets))
-
-           ;; Call dispatch-fn on packets on input queue, put result on output queue
-           (while (seq @in-queue)
-             (when-let [packet (queues/peek-and-pop! in-queue)]
-               (queues/->queue out-queue (dispatch-fn packet))))
-
-           ;; Take packets from output queue and write to output stream
-           (when-let [packets (->> (seq @out-queue) (keep identity) seq)]
-             (queues/reset-queue! out-queue)
-             (write/packets output-stream packets))
-
+           (read-input-packets! input-stream in-queue)
+           (dispatch! in-queue dispatch-fn out-queue)
+           (write-output-packets! out-queue output-stream)
            (Thread/sleep (or sleep-interval 100)))))
      {:running running
       :enqueue! enqueue!
