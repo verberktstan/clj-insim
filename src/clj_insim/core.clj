@@ -3,6 +3,7 @@
             [clj-insim.codecs :as codecs]
             [clj-insim.packets :as packets]
             [clj-insim.models.packet :as packet]
+            [clj-insim.read :as read]
             [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
             [marshal.core :as m])
@@ -41,28 +42,6 @@
          (or (s/explain-data ::packet/model p)
              (s/explain-data (s/coll-of ::packet/model) p)))))))
 
-(defn- read-packet [input-stream]
-  (let [{:keys [size] :as header} (-> input-stream
-                                      (m/read codecs/header)
-                                      parse/header)
-        body (when (> size 4)
-               (-> input-stream
-                   (m/read (codecs/body header))
-                   parse/body))]
-    (merge
-     {::packet/header header}
-     (when body {::packet/body body}))))
-
-(defn- read-packets
-  "Returns packets (based on all available bytes) read from input-stream"
-  [input-stream]
-  (loop [available-bytes (.available input-stream)
-         result []]
-    (if (not (pos? available-bytes))
-      (seq result)
-      (let [packet (read-packet input-stream)]
-        (recur (.available input-stream) (conj result packet))))))
-
 (defn- write-header [output-stream {::packet/keys [header]}]
   (let [{:keys [type]} header]
     (m/write
@@ -82,21 +61,6 @@
       (write-header packet)
       (write-body packet)))
   (.flush output-stream))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Dispatching packets
-
-(defmulti dispatch #(get-in % [::packet/header :type]))
-
-(defmethod dispatch :default [packet]
-  (when DEBUG
-    (newline)
-    (println "--===####===--")
-    (println packet)))
-
-(defmethod dispatch :tiny [packet]
-  (when (packet/tiny-none? packet)
-    (packets/tiny)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Initialisation
@@ -141,9 +105,8 @@
                    output-stream (io/output-stream socket)
                    input-stream (io/input-stream socket)]
          (while @running
-           ;; Read packets from the input stream
-           (when-let [packets (read-packets input-stream)]
-             ;; Enqueue the packets to the input queue
+           ;; Read packets from input stream and put them on input queue
+           (when-let [packets (read/packets input-stream)]
              (->queue in-queue packets))
 
            ;; Call dispatch-fn on all queue'd packets
@@ -166,12 +129,7 @@
       :sleep-interval (or sleep-interval 100)})))
 
 (comment
-  (def lfs-client (client {:dispatch-fn dispatch
-                           :sleep-interval 250}))
+  (def lfs-client (client {:dispatch-fn println}))
   (enqueue! lfs-client (packets/mtc "Hello world!"))
-  (enqueue! lfs-client {:test "packet"})
-  (enqueue! lfs-client nil)
   (stop! lfs-client)
-
-  (remove-all-methods dispatch)
 )

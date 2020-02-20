@@ -12,6 +12,9 @@
   (s/keys :req [::header]
           :opt [::body]))
 
+(defn make [header body]
+  (merge {::header header} (when body {::body body})))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Checks
 
