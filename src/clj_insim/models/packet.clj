@@ -19,7 +19,3 @@
   (and (#{:tiny} (:type header))
        (zero?    (:request-info header))
        (#{:none} (:data header))))
-
-(defn join-request? [{::keys [header body]}]
-  (and (#{:npl} (:type header))
-       (#{0} (:npl/num-players body))))

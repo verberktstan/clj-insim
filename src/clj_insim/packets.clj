@@ -20,12 +20,12 @@
     {:size 44 :type :isi :request-info 1 :data 0}
     ::packet/body
     (-> (merge
-         {:isi/udp-port 0 :isi/flags #{} :isi/insim-version 8 :isi/prefix (int \!) :isi/interval 0
-          :isi/admin "pwd"
-          :isi/iname "clj-insim"}
+         {:udp-port 0 :is-flags #{} :insim-version 8 :prefix (int \!) :interval 0
+          :admin "pwd"
+          :iname "clj-insim"}
          params)
-        (update :isi/admin ->c-string 16)
-        (update :isi/iname ->c-string 16))}))
+        (update :admin ->c-string 16)
+        (update :iname ->c-string 16))}))
 
 (defn tiny
   ([]
@@ -45,14 +45,14 @@
   {::packet/header
    {:size 68 :type :mst :request-info 0 :data 0}
    ::packet/body
-   {:mst/message (->c-string message 64)}})
+   {:message (->c-string message 64)}})
 
 (defn mtc [message]
   {::packet/header
    {:size (+ 8 128) :type :mtc :request-info 0 :data 0}
    ::packet/body
-   {:mtc/connection-id 255
-    :mtc/player-id 0
+   {:connection-id 255
+    :player-id 0
     :spare2 0
     :spare3 0
-    :mtc/message (->c-string message 128)}})
+    :message (->c-string message 128)}})

@@ -31,7 +31,7 @@
    :small SMALL
    :ttc TTC})
 
-(def header-data
+(def type-num->key-enum
   {(get ISP :tiny) (map-invert TINY)
    (get ISP :small) (map-invert SMALL)
    (get ISP :ttc) (map-invert TTC)})
@@ -54,9 +54,6 @@
 (def ^:private WIND {:off 0 :weak 1 :strong 2})
 
 (def body-key-enum
-  {:sta/in-game-cam (map-invert VIEW_IDENTIFIERS)
-   :sta/race-in-progress (map-invert RACE_IN_PROGRESS)
-   :rst/wind (map-invert WIND)
-   :sta/wind (map-invert WIND)
-   :flg/off-on {0 :off 1 :on}
-   :flg/flag {1 :given-blue 2 :causing-yellow}})
+  {:in-game-cam (map-invert VIEW_IDENTIFIERS)
+   :race-in-progress (map-invert RACE_IN_PROGRESS)
+   :wind (map-invert WIND)})
