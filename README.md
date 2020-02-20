@@ -43,13 +43,15 @@ To stop the client:
 You can supply a dispatch function. It should accept a packet and return something (nil, a packet or a collection of packets).
 
 ```
-(defmulti dispatch (get-in % [::packet/header :type]))
+(defmulti dispatch #(get-in % [::packet/header :type]))
 
 (defmethod dispatch :default [packet]
   (println packet)) ;; Print incoming packets
 
 (defmethod dispatch :tiny [_]
   (packets/tiny)) ;; Return a tiny packet as a response to an incoming tiny packet
+  
+(def lfs-client (clj-insim/client dispatch))
 ```
 
 ## License
