@@ -55,13 +55,8 @@
 
 (def ^:private PLAYER_TYPE {0 :female 1 :ai 2 :remote})
 
-(def ^:private COMPOUNDS
-  {0 :r1 1 :r2 2 :r3 3 :r4 4 :road-super 5 :road-normal
-   6 :hybrid 7 :knobbly 8 :num})
-
 (def body-key-enum
   {:in-game-cam VIEW_IDENTIFIERS
    :race-in-progress RACE_IN_PROGRESS
    :wind WIND
-   :player-type PLAYER_TYPE
-   :tyres #(map (partial get COMPOUNDS) %)})
+   :player-type PLAYER_TYPE})

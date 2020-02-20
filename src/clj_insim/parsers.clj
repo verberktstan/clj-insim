@@ -1,5 +1,6 @@
 (ns clj-insim.parsers
-  (:require [clojure.set :as set]))
+  (:require [clj-insim.enums :as enums]
+            [clojure.set :as set]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data
@@ -46,14 +47,15 @@
 (defn- flags
   "Returns a set of flags deduced from data-map based on input x."
   [data-map x]
-  (let [maxx (->> (keys data-map) (apply max) (* 2))]
-    (loop [data-map data-map, maxx maxx, x x]
-      (if (<= 1 x (dec maxx))
-        (find-flags data-map x)
-        (recur
-         data-map
-         maxx
-         (if (pos? x) (- x maxx) (+ x maxx)))))))
+  (when (pos? x)
+    (let [maxx (->> (keys data-map) (apply max) (* 2))]
+      (loop [data-map data-map, maxx maxx, x x]
+        (if (<= 1 x (dec maxx))
+          (find-flags data-map x)
+          (recur
+           data-map
+           maxx
+           (- x maxx)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parse functions
@@ -65,12 +67,20 @@
     (<= 191 rl 238) {:hours (- rl 190)}
     :else {:laps rl}))
 
+(defn- parse-tyre-compounds [compounds]
+  (let [compound {0 :r1 1 :r2 2 :r3 3 :r4 4 :road-super 5 :road-normal
+                  6 :hybrid 7 :knobbly 8 :num}
+        [rl rr fl fr] (map (partial get compound) compounds)]
+    {:rear-left rl :rear-right rr
+     :front-left fl :front-right fr}))
+
 (def body-key-parser
   {:race-laps parse-race-laps
    :iss-state-flags (partial flags ISS_STATE_FLAGS)
    :player-flags (partial flags PLAYER_FLAGS)
    :passengers (partial flags PASSENGERS_FLAGS)
-   :setup-flags (partial flags SETUP_FLAGS)})
+   :setup-flags (partial flags SETUP_FLAGS)
+   :tyres parse-tyre-compounds})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Unparse functions
