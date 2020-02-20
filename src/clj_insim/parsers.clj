@@ -15,6 +15,18 @@
    32 :mci 64 :con 128 :obh 256 :hlv 512 :axm-load
    1024 :axm-edit 2048 :req-join})
 
+(def ^:private PLAYER_FLAGS
+  {1 :swapside 2 :reserved-2 4 :reserved-4 8 :autogears 16 :shifter
+   32 :reserved-32 64 :help-b 128 :axis-clutch 256 :inputs 512 :autoclutch
+   1024 :mouse 2048 :kb-no-help 4096 :kb-stabilized 8192 :custom-view})
+
+(def ^:private PASSENGERS_FLAGS
+  {1 :female 2 :front 4 :female 8 :rear-left 16 :female
+   32 :rear-middle 64 :female 128 :rear-right})
+
+(def ^:private SETUP_FLAGS
+  {1 :symm-wheels 2 :tc-enable 4 :abs-enable})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper functions
 
@@ -55,7 +67,10 @@
 
 (def body-key-parser
   {:race-laps parse-race-laps
-   :iss-state-flags (partial flags ISS_STATE_FLAGS)})
+   :iss-state-flags (partial flags ISS_STATE_FLAGS)
+   :player-flags (partial flags PLAYER_FLAGS)
+   :passengers (partial flags PASSENGERS_FLAGS)
+   :setup-flags (partial flags SETUP_FLAGS)})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Unparse functions

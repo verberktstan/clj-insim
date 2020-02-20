@@ -47,13 +47,21 @@
 ;; Packet body enums
 
 (def ^:private VIEW_IDENTIFIERS
-  {:follow 0 :heli 1 :cam 2 :driver 3 :custom 4 :max 5})
+  {0 :follow 1 :heli 2 :cam 3 :driver 4 :custom 5 :max})
 
-(def ^:private RACE_IN_PROGRESS {:no-race 0 :race 1 :qualifying 2})
+(def ^:private RACE_IN_PROGRESS {0 :no-race 1 :race 2 :qualifying})
 
-(def ^:private WIND {:off 0 :weak 1 :strong 2})
+(def ^:private WIND {0 :off 1 :weak 2 :strong})
+
+(def ^:private PLAYER_TYPE {0 :female 1 :ai 2 :remote})
+
+(def ^:private COMPOUNDS
+  {0 :r1 1 :r2 2 :r3 3 :r4 4 :road-super 5 :road-normal
+   6 :hybrid 7 :knobbly 8 :num})
 
 (def body-key-enum
-  {:in-game-cam (map-invert VIEW_IDENTIFIERS)
-   :race-in-progress (map-invert RACE_IN_PROGRESS)
-   :wind (map-invert WIND)})
+  {:in-game-cam VIEW_IDENTIFIERS
+   :race-in-progress RACE_IN_PROGRESS
+   :wind WIND
+   :player-type PLAYER_TYPE
+   :tyres #(map (partial get COMPOUNDS) %)})

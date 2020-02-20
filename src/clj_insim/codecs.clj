@@ -62,12 +62,12 @@
   (m/struct
    :connection-id m/ubyte
    :player-type m/ubyte
-   :flags m/ushort ; insim word
+   :player-flags m/ushort ; insim word
    :player-name (m/ascii-string 24)
    :plate (m/ascii-string 8)
    :car-name (m/ascii-string 4)
    :skin-name (m/ascii-string 16)
-   :tyres m/ubyte
+   :tyres (m/array m/ubyte 4)
    :handicap-mass m/ubyte
    :handicap-restriction m/ubyte
    :model m/ubyte
