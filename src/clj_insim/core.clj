@@ -50,8 +50,7 @@
    (client {} (packets/insim-init) dispatch-fn))
   ([{:keys [host port sleep-interval]} init-packet dispatch-fn]
    (let [running (atom true)
-         {:keys [in-queue out-queue enqueue!] :as queues} (queues/make)]
-     (enqueue! init-packet)
+         {:keys [in-queue out-queue enqueue!]} (queues/make init-packet)]
      (future
        (with-open [socket (Socket. (or host "127.0.0.1") (or port 29999))
                    output-stream (io/output-stream socket)
