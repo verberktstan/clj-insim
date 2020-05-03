@@ -53,7 +53,7 @@
 
 (def ^:private WIND {0 :off 1 :weak 2 :strong})
 
-(def ^:private PLAYER_TYPE {0 :female 1 :ai 2 :remote})
+(def ^:private PLAYER_TYPE {1 :female 2 :ai 4 :remote})
 
 (def body-key-enum
   {:in-game-cam VIEW_IDENTIFIERS

@@ -1,10 +1,56 @@
 (ns clj-insim.core
-  (:require [clj-insim.packets :as packets]
+  (:require [clj-insim.models.packet :as packet]
+            [clj-insim.packets :as packets]
             [clj-insim.queues :as queues]
             [clj-insim.read :as read]
             [clj-insim.write :as write]
             [clojure.java.io :as io])
   (:import [java.net Socket]))
+
+(defonce connections (atom {}))
+(defonce players (atom {}))
+
+(defn- register! [map-atom k v]
+  (swap! map-atom assoc k v))
+
+(defn- unregister! [map-atom k]
+  (swap! map-atom dissoc k))
+
+(defn- init! [atm out-queue  tiny-key]
+  (reset! atm {})
+  (queues/->queue out-queue (packets/tiny {:data tiny-key})))
+
+(defn- manage-connections! [out-queue packet]
+  (cond
+    (packet/ncn? packet)
+    (if (packet/reply? packet)
+      (let [{:keys [connection-id] :as connection} (packet/ncn->connection packet)]
+        (register! connections connection-id connection))
+      (queues/->queue out-queue (packets/tiny {:data :ncn})))
+
+    (packet/cnl? packet)
+    (let [{:keys [connection-id]} (packet/cnl->connection packet)]
+      (unregister! connections connection-id))))
+
+(defn- manage-players! [out-queue packet]
+  (cond
+    (packet/npl? packet)
+    (if (packet/reply? packet)
+      (let [{:keys [player-id] :as player} (packet/npl->player packet)]
+        (register! players player-id player))
+      (queues/->queue out-queue (packets/tiny {:data :npl})))
+
+    (packet/pll? packet)
+    (let [{:keys [player-id]} (packet/pll->player packet)]
+      (unregister! players player-id))))
+
+(defn- init-connections-and-players! [out-queue]
+  (init! connections out-queue :ncn)
+  (init! players out-queue :npl))
+
+(defn- maintain-connection! [out-queue packet]
+  (when (packet/tiny-none? packet)
+    (packets/tiny)))
 
 (defn- read-input-packets!
   "Read packets from input stream and put them on queue"
@@ -17,6 +63,9 @@
   [in-queue dispatch-fn out-queue]
   (while (seq @in-queue)
     (when-let [packet (queues/peek-and-pop! in-queue)]
+      (maintain-connection! out-queue packet)
+      (manage-connections! out-queue packet)
+      (manage-players! out-queue packet)
       (queues/->queue out-queue (dispatch-fn packet)))))
 
 (defn- write-output-packets!
@@ -50,6 +99,7 @@
   ([{:keys [host port sleep-interval]} init-packet dispatch-fn]
    (let [running (atom true)
          {:keys [in-queue out-queue enqueue!]} (queues/make init-packet)]
+     (init-connections-and-players! out-queue)
      (future
        (with-open [socket (Socket. (or host "127.0.0.1") (or port 29999))
                    output-stream (io/output-stream socket)
@@ -65,6 +115,11 @@
 
 (comment
   (def lfs-client (client))
+  (enqueue! lfs-client (packets/mst "Hello world!"))
   (enqueue! lfs-client (packets/mtc "Hello world!"))
+  (enqueue! lfs-client (packets/tiny))
   (stop! lfs-client)
+
+  @connections
+  @players
 )

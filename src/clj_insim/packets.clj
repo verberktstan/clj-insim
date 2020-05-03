@@ -56,3 +56,21 @@
     :spare2 0
     :spare3 0
     :message (->c-string message 128)}})
+
+(defn jrr [ucid action]
+  {::packet/header
+   {:size 16 :type :jrr :request-info 0 :data 0}
+   ::packet/body
+   {:ucid ucid
+    :jrr-action (get {:allow 1} action 0)
+    :spare2 0
+    :spare3 0
+
+    :x 0, :y 0, :z-byte 0, :flags 0, :index 0 :heading 0}})
+
+(defn plc [ucid cars]
+  {::packet/header
+   {:size 12 :type :plc :request-info 0 :data 0}
+   ::packet/body
+   {:ucid ucid :spare1 0 :spare2 0 :spare3 0
+    :cars cars}})

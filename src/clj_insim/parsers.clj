@@ -21,6 +21,13 @@
    32 :reserved-32 64 :help-b 128 :axis-clutch 256 :inputs 512 :autoclutch
    1024 :mouse 2048 :kb-no-help 4096 :kb-stabilized 8192 :custom-view})
 
+(def ^:private PLC_CARS
+  {1 "XFG" 2 "XRG" 4 "XRT" 8 "RB4" 16 "FXO"
+   32 "LX4" 64 "LX6" 128 "MRT" 256 "UF1"
+   512 "RAC" 1024 "FZ5" 2048 "FOX" 4096 "XFR"
+   8192 "UFR" 16384 "FO8" 32766 "FXR" 65532 "XRR"
+   131064 "FZR" 262128 "BF1" 524256 "FBM"})
+
 (def ^:private PASSENGERS_FLAGS
   {1 :female 2 :front 4 :female 8 :rear-left 16 :female
    32 :rear-middle 64 :female 128 :rear-right})
@@ -79,6 +86,7 @@
    :iss-state-flags (partial flags ISS_STATE_FLAGS)
    :player-flags (partial flags PLAYER_FLAGS)
    :passengers (partial flags PASSENGERS_FLAGS)
+   :cars (partial flags PLC_CARS)
    :setup-flags (partial flags SETUP_FLAGS)
    :tyres parse-tyre-compounds})
 
@@ -90,4 +98,5 @@
     (reduce + (map (partial get m) flags))))
 
 (def body-key-unparser
-  {:is-flags (partial unparse-flags IS_FLAGS)})
+  {:is-flags (partial unparse-flags IS_FLAGS)
+   :cars (partial unparse-flags PLC_CARS)})

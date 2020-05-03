@@ -51,7 +51,7 @@
    :flags m/ubyte
    :spare3 m/ubyte))
 
-(defmethod body :ncl [_]
+(defmethod body :cnl [_]
   (m/struct
    :reason m/ubyte
    :total m/ubyte
@@ -102,3 +102,45 @@
    :product (m/ascii-string 6)
    :insim-version m/ubyte
    :spare m/ubyte))
+
+(defmethod body :jrr [_]
+  (m/struct
+   :ucid m/ubyte
+   :jrr-action m/ubyte
+   :spare2 m/ubyte
+   :spare3 m/ubyte
+
+   ;; ObjectInfo
+   :x m/sshort ; insim short
+   :y m/sshort
+   :z-byte m/ubyte
+   :flags m/ubyte
+   :index m/ubyte
+   :heading m/ubyte))
+
+(defmethod body :plc [_]
+  (m/struct
+   :ucid m/ubyte
+   :spare1 m/ubyte
+   :spare2 m/ubyte
+   :spare3 m/ubyte
+   :cars m/uint32 ; insim unsigned
+   ))
+
+(defmethod body :res [_]
+  (m/struct
+   :user-name (m/ascii-string 24)
+   :player-name (m/ascii-string 24)
+   :plate (m/ascii-string 8)
+   :skin-prefix (m/ascii-string 4)
+   :race-time m/uint32
+   :best-lap-time m/uint32
+   :spare-a m/ubyte
+   :num-stops m/ubyte
+   :confirmation-flags m/ubyte
+   :spare-b m/ubyte
+   :laps-done m/ushort ; insim word
+   :flags m/ushort
+   :result-num m/ubyte
+   :num-results m/ubyte
+   :penalty-seconds m/ushort))
