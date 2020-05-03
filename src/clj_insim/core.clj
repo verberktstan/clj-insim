@@ -7,8 +7,8 @@
             [clojure.java.io :as io])
   (:import [java.net Socket]))
 
-(defonce connections (atom {}))
-(defonce players (atom {}))
+(defonce ^:private connections (atom {}))
+(defonce ^:private players (atom {}))
 
 (defn- register! [map-atom k v]
   (swap! map-atom assoc k v))
@@ -86,6 +86,17 @@
   (enqueue! client (packets/tiny {:request-info 0 :data :close}))
   (Thread/sleep (* sleep-interval 2))
   (reset! running false))
+
+(defn get-connection
+  ([] @connections)
+  ([ucid] (get @connections ucid)))
+
+(defn get-player
+  ([] @players)
+  ([plid] (get @players plid)))
+
+(defn packet-type [{::packet/keys [header]}]
+  (:type header))
 
 (defn client
   "Opens a socket and reads packets from input stream to in-queue, calls
