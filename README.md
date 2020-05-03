@@ -2,7 +2,7 @@
 
 A Clojure library designed to interface with [Live For Speed](https://www.lfs.net/) via the [InSim protocol](https://en.lfsmanual.net/wiki/InSim).
 
-You can find it on Clojars: https://clojars.org/clj-insim/
+You can find it on Clojars: [![Clojars Project](https://img.shields.io/clojars/v/clj-insim.svg)](https://clojars.org/clj-insim)
 
 ## Usage
 
