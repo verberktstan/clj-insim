@@ -2,7 +2,7 @@
 
 A Clojure library designed to interface with [Live For Speed](https://www.lfs.net/) via the [InSim protocol](https://en.lfsmanual.net/wiki/InSim).
 
-You can find it on Clojars: https://clojars.org/clj-insim/
+You can find it on Clojars: [![Clojars Project](https://img.shields.io/clojars/v/clj-insim.svg)](https://clojars.org/clj-insim)
 
 ## Usage
 
@@ -40,7 +40,7 @@ To stop the client:
 (clj-insim/stop! lfs-client)
 ```
 
-### Managed connection, connections and players
+### Maintained connection
 
 clj-insim automatically maintains the connection for you as long as the client isn't stopped.
 
@@ -72,8 +72,7 @@ The following dispatcher returns an MTC packet reporting the player's nickname a
   (println packet)) ;; Print incoming packets
 
 (defmethod dispatch :res [{::packet/keys [header body]}]
-  (let [plid (:data header)
-        {:keys [user-name player-name result-num]} body]
+  (let [{:keys [user-name player-name result-num]} body]
     (packets/mtc (str player-name " (" user-name ") got a result: " (inc result-num)))))
   
 (def lfs-client (clj-insim/client dispatch))
