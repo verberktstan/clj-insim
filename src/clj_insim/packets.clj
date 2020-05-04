@@ -47,15 +47,18 @@
    ::packet/body
    {:message (->c-string message 64)}})
 
-(defn mtc [message]
-  {::packet/header
-   {:size (+ 8 128) :type :mtc :request-info 0 :data 0}
-   ::packet/body
-   {:connection-id 255
-    :player-id 0
-    :spare2 0
-    :spare3 0
-    :message (->c-string message 128)}})
+(defn mtc
+  ([message]
+   (mtc 255 message))
+  ([ucid message]
+   {::packet/header
+    {:size (+ 8 128) :type :mtc :request-info 0 :data 0}
+    ::packet/body
+    {:connection-id ucid
+     :player-id 0
+     :spare2 0
+     :spare3 0
+     :message (->c-string message 128)}}))
 
 (defn jrr [ucid action]
   {::packet/header
