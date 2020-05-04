@@ -4,6 +4,10 @@ A Clojure library designed to interface with [Live For Speed](https://www.lfs.ne
 
 You can find it on Clojars: [![Clojars Project](https://img.shields.io/clojars/v/clj-insim.svg)](https://clojars.org/clj-insim)
 
+## Example project
+
+Check out [multiclass-racing](https://github.com/verberktstan/multiclass-racing), an example project using the clj-insim library!
+
 ## Usage
 
 Add clj-insim to your project.clj:
