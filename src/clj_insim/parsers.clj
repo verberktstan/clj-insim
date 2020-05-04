@@ -5,6 +5,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data
 
+(def ^:private CONFIRMATION_FLAGS
+  {1 :mentioned 2 :confirmed 4 :penalty-dt 8 :penalty-sg 16 :penalty-30
+   32 :penalty-45 64 :did-not-pit})
+
 (def ^:private ISS_STATE_FLAGS
   {1 :game 2 :replay 4 :paused 8 :shift-u 16 :dialog
    32 :shift-u-follow 64 :shift-u-no-opt 128 :show-2d 256 :front-end 512 :multi
@@ -82,11 +86,12 @@
      :front-left fl :front-right fr}))
 
 (def body-key-parser
-  {:race-laps parse-race-laps
+  {:cars (partial flags PLC_CARS)
+   :confirmation-flags (partial flags CONFIRMATION_FLAGS)
    :iss-state-flags (partial flags ISS_STATE_FLAGS)
    :player-flags (partial flags PLAYER_FLAGS)
    :passengers (partial flags PASSENGERS_FLAGS)
-   :cars (partial flags PLC_CARS)
+   :race-laps parse-race-laps
    :setup-flags (partial flags SETUP_FLAGS)
    :tyres parse-tyre-compounds})
 
