@@ -66,7 +66,11 @@
       (maintain-connection! out-queue packet)
       (manage-connections! out-queue packet)
       (manage-players! out-queue packet)
-      (queues/->queue out-queue (dispatch-fn packet)))))
+      (queues/->queue
+       out-queue
+       (try
+         (dispatch-fn packet)
+         (catch Exception e (println e)))))))
 
 (defn- write-output-packets!
   "Take packets from output queue and write to output stream"
