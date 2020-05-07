@@ -32,9 +32,7 @@
 (defn unparse-body [data]
   (reduce
    (fn [result [k v]]
-     (if-let [parser (get parsers/body-key-unparser k)]
-       (assoc result k (parser v))
-       (assoc result k v)))
+     (assoc result k (or (parsers/unparse k v) v)))
    {}
    (seq data)))
 

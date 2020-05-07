@@ -116,6 +116,12 @@
   (let [m (set/map-invert data-map)]
     (reduce + (map (partial get m) flags))))
 
-(def body-key-unparser
+(def ^:private body-key-unparser
   {:is-flags (partial unparse-flags IS_FLAGS)
    :cars (partial unparse-flags PLC_CARS)})
+
+(defn unparse
+  "Calls unparser associated with k, with v as argument"
+  [k v]
+  (when-let [unparser (get body-key-unparser k)]
+    (unparser v)))
