@@ -2,7 +2,10 @@
   (:require [clj-insim.models.packet :as packet]
             [clj-insim.packets :as packets]
             [clj-insim.queues :as queues]
-            [clj-insim.register :refer [register! unregister!]]))
+            [clj-insim.register :as register :refer [register! unregister!]]))
+
+(defn init! [connections]
+  (register/init! connections))
 
 (defmulti manage! (fn [{:keys [packet]}] (packet/type packet)))
 

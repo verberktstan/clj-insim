@@ -3,7 +3,7 @@
             [clj-insim.packets :as packets]
             [clj-insim.queues :as queues]
             [clj-insim.read :as read]
-            [clj-insim.register :refer [register! unregister! init!]]
+            [clj-insim.register :refer [register! unregister!]]
             [clj-insim.write :as write]
             [clj-insim.manage.connections :as connections]
             [clj-insim.manage.players :as players]
@@ -14,10 +14,9 @@
 (defonce ^:private players (atom {}))
 
 (defn- init-connections-and-players! [out-queue]
-  (init! connections)
-  (queues/->queue out-queue (packets/tiny {:data :ncn}))
-  (init! players)
-  (queues/->queue out-queue (packets/tiny {:data :npl})))
+  (connections/init! connections)
+  (players/init! players)
+  (queues/->queue out-queue [(packets/tiny {:data :ncn}) (packets/tiny {:data :npl})]))
 
 (defn- maintain-connection! [out-queue packet]
   (when (packet/tiny-none? packet)
