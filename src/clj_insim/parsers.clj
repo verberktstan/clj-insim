@@ -95,6 +95,12 @@
    :setup-flags (partial flags SETUP_FLAGS)
    :tyres parse-tyre-compounds})
 
+(defn parse
+  "Calls parser associated with k, with v as argument"
+  [k v]
+  (when-let [parser (get body-key-parser k)]
+    (parser v)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Unparse functions
 

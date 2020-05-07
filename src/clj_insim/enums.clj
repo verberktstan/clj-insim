@@ -55,8 +55,14 @@
 
 (def ^:private PLAYER_TYPE {1 :female 2 :ai 4 :remote})
 
-(def body-key-enum
+(def ^:private body-key-enum
   {:in-game-cam VIEW_IDENTIFIERS
    :race-in-progress RACE_IN_PROGRESS
    :wind WIND
    :player-type PLAYER_TYPE})
+
+(defn parse
+  "Calls enum associated with k, with v as argument"
+  [k v]
+  (when-let [enum (get body-key-enum k)]
+    (get enum v)))

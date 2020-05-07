@@ -33,13 +33,15 @@
 (defn- parse-body [data]
   (reduce
    (fn [result [k v]]
-     (if-let [enum (get enums/body-key-enum k)]
-       (assoc result k (get enum v))
-       (if-let [parser (get parsers/body-key-parser k)]
-         (assoc result k (parser v))
-         (assoc result k v))))
+     (assoc
+         result
+       k
+       (or (enums/parse k v) (parsers/parse k v) v)))
    {}
    (seq data)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; The public parse/body function
 
 (defn body [data]
   (if (map? data)
