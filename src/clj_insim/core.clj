@@ -18,7 +18,7 @@
   (players/init! players)
   (queues/->queue out-queue [(packets/tiny {:data :ncn}) (packets/tiny {:data :npl})]))
 
-(defn- maintain-connection! [out-queue packet]
+(defn- maintain-connection! [{:keys [out-queue packet]}]
   (when (packet/tiny-none? packet)
     (queues/->queue out-queue (packets/tiny))))
 
@@ -36,7 +36,7 @@
                      :connections connections
                      :players players
                      :out-queue out-queue}]
-      (maintain-connection! (:out-queue data) (:packet data))
+      (maintain-connection! data)
       (connections/manage! data)
       (players/manage! data)
       (queues/->queue (:out-queue data) (dispatch-fn (:packet data))))))

@@ -5,6 +5,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data
 
+(def ^:private COMPCAR_INFO
+  {1 :blue-flag 2 :yellow-flag 32 :lag 64 :first 128 :last})
+
 (def ^:private CONFIRMATION_FLAGS
   {1 :mentioned 2 :confirmed 4 :penalty-dt 8 :penalty-sg 16 :penalty-30
    32 :penalty-45 64 :did-not-pit})
@@ -91,6 +94,44 @@
     (pos? steer) {:right steer}
     :else {:left (* -1 steer)}))
 
+(defn- parse-4-high-low-bits [data]
+  (let [high-bits (bit-shift-right data 4)]
+    (if (pos? high-bits)
+      {:high-bits high-bits}
+      {:low-bits (bit-shift-left data 4)})))
+
+(defn- parse-car-contact-clutch-handbrake [clutch-handbrake]
+  (set/rename-keys
+   (parse-4-high-low-bits clutch-handbrake)
+   {:high-bits :clutch :low-bits :handbrake}))
+
+(defn- parse-car-contact-direction [direction]
+  (int (* (/ direction 256) 360)))
+
+(defn- parse-car-contact-gear-spare [gear-spare]
+  (let [{:keys [high-bits]} (parse-4-high-low-bits gear-spare)]
+    {:gear (if (#{15} high-bits) :reverse high-bits)}))
+
+(defn- parse-car-contact-throttle-brake [throttle-brake]
+  (set/rename-keys
+   (parse-4-high-low-bits throttle-brake)
+   {:high-bits :throttle :low-bits :brake}))
+
+(defn- parse-car-contact-acceleration-f [acc]
+  (cond
+    (= 0 acc) {:none 0}
+    (pos? acc) {:forward acc}
+    :else {:backward (* -1 acc)}))
+
+(defn- parse-car-contact-acceleration-r [acc]
+  (cond
+    (= 0 acc) {:none 0}
+    (pos? acc) {:right acc}
+    :else {:left (* -1 acc)}))
+
+(defn- parse-car-contact-position [x]
+  (float (/ x 16)))
+
 (def ^:private body-key-parser
   {:cars (partial flags PLC_CARS)
    :confirmation-flags (partial flags CONFIRMATION_FLAGS)
@@ -99,8 +140,31 @@
    :passengers (partial flags PASSENGERS_FLAGS)
    :race-laps parse-race-laps
    :setup-flags (partial flags SETUP_FLAGS)
+
+   ;; CarContact data
+   :acceleration-f-a parse-car-contact-acceleration-f
+   :acceleration-f-b parse-car-contact-acceleration-f
+   :acceleration-r-a parse-car-contact-acceleration-r
+   :acceleration-r-b parse-car-contact-acceleration-r
+   :clutch-handbrake-a parse-car-contact-clutch-handbrake
+   :clutch-handbrake-b parse-car-contact-clutch-handbrake
+   :direction-a parse-car-contact-direction
+   :direction-b parse-car-contact-direction
+   :gear-spare-a parse-car-contact-gear-spare
+   :gear-spare-b parse-car-contact-gear-spare
+   :heading-a parse-car-contact-direction ;; Same as direction!
+   :heading-b parse-car-contact-direction ;; Idem
+   :info-a (partial flags COMPCAR_INFO)
+   :info-b (partial flags COMPCAR_INFO)
    :steer-a parse-car-contact-steer
    :steer-b parse-car-contact-steer
+   :throttle-brake-a parse-car-contact-throttle-brake
+   :throttle-brake-b parse-car-contact-throttle-brake
+   :x-a parse-car-contact-position
+   :x-b parse-car-contact-position
+   :y-a parse-car-contact-position
+   :y-b parse-car-contact-position
+
    :tyres parse-tyre-compounds})
 
 (defn parse

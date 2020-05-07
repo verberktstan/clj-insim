@@ -1,6 +1,7 @@
 (ns clj-insim.parse
   (:require [clj-insim.enums :as enums]
-            [clj-insim.parsers :as parsers]))
+            [clj-insim.parsers :as parsers]
+            [clojure.set :as set]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Post-parse to restructure data after it's been parsed
@@ -15,9 +16,39 @@
 
 ;; E.g. with the IS_CON packet;
 ;; Instead of {:plid-a 1, :plid-b 2} => {:players [{:plid 1} {:plid 2}]}
-(defmethod post-parse :con [header-data {:keys [plid-a steer-a plid-b steer-b] :as body-data}]
-  {:players [{:plid plid-a, :steer steer-a}
-             {:plid plid-b, :steer steer-b}]})
+(defmethod post-parse :con [header-data body-data]
+  {:players [(merge {:plid (:plid-a body-data)
+                     :steer (:steer-a body-data)
+                     :speed (:speed-a body-data)
+                     :direction (:direction-a body-data)
+                     :acceleration-f (:acceleration-f-a body-data)
+                     :acceleration-r (:acceleration-r-a body-data)
+                     :x (:x-a body-data)
+                     :y (:y-a body-data)
+                     :info (:info-a body-data)}
+                    (reduce
+                     merge
+                     (-> body-data
+                         (select-keys [:throttle-brake-a
+                                       :clutch-handbrake-a
+                                       :gear-spare-a])
+                         vals)))
+             (merge {:plid (:plid-b body-data)
+                     :steer (:steer-b body-data)
+                     :speed (:speed-b body-data)
+                     :direction (:direction-b body-data)
+                     :acceleration-f (:acceleration-f-b body-data)
+                     :acceleration-r (:acceleration-r-b body-data)
+                     :x (:x-a body-data)
+                     :y (:y-a body-data)
+                     :info (:info-b body-data)}
+                    (reduce
+                     merge
+                     (-> body-data
+                         (select-keys [:throttle-brake-b
+                                       :clutch-handbrake-b
+                                       :gear-spare-b])
+                         vals)))]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Unparsing - Transform data from clj-insim spec to data thats ready to feed
