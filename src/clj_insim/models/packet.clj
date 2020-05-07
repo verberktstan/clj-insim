@@ -29,14 +29,8 @@
 (defn data [{::keys [header]}]
   (:data header))
 
-(defn ncn? [{::keys [header]}]
-  (boolean (#{:ncn} (:type header))))
-
 (defn npl? [{::keys [header]}]
   (boolean (#{:npl} (:type header))))
-
-(defn cnl? [{::keys [header]}]
-  (boolean (#{:cnl} (:type header))))
 
 (defn pll? [{::keys [header]}]
   (boolean (#{:pll} (:type header))))
@@ -45,14 +39,14 @@
   #(dissoc % :spare0 :spare1 :spare2 :spare3))
 
 (defn ncn->connection [{::keys [body] :as packet}]
-  (when (ncn? packet)
+  (when true #_(ncn? packet) ;; TODO: Fix this!
     (let [connection-id (data packet)]
       (-> body
           (dissoc-spares)
           (assoc :connection-id connection-id)))))
 
 (defn cnl->connection [{::keys [body] :as packet}]
-  (when (cnl? packet)
+  (when true #_(cnl? packet) ;; TODO: Fix this!
     (let [connection-id (data packet)]
       (-> body
           (dissoc-spares)
@@ -68,3 +62,6 @@
 (defn pll->player [{::keys [header] :as packet}]
   (when (pll? packet)
     {:player-id (data packet)}))
+
+(defn type [{::keys [header]}]
+  (:type header))

@@ -5,23 +5,12 @@
             [clj-insim.read :as read]
             [clj-insim.register :refer [register! unregister! init!]]
             [clj-insim.write :as write]
+            [clj-insim.manage.connections :as connections]
             [clojure.java.io :as io])
   (:import [java.net Socket]))
 
 (defonce ^:private connections (atom {}))
 (defonce ^:private players (atom {}))
-
-(defn- manage-connections! [out-queue packet]
-  (cond
-    (packet/ncn? packet)
-    (if (packet/reply? packet)
-      (let [{:keys [connection-id] :as connection} (packet/ncn->connection packet)]
-        (register! connections connection-id connection))
-      (queues/->queue out-queue (packets/tiny {:data :ncn})))
-
-    (packet/cnl? packet)
-    (let [{:keys [connection-id]} (packet/cnl->connection packet)]
-      (unregister! connections connection-id))))
 
 (defn- manage-players! [out-queue packet]
   (cond
@@ -55,11 +44,13 @@
   "Call dispatch-fn on packets on input queue, put result on output queue"
   [in-queue dispatch-fn out-queue]
   (while (seq @in-queue)
-    (when-let [packet (queues/peek-and-pop! in-queue)]
-      (maintain-connection! out-queue packet)
-      (manage-connections! out-queue packet)
-      (manage-players! out-queue packet)
-      (queues/->queue out-queue (dispatch-fn packet)))))
+    (when-let [data {:packet (queues/peek-and-pop! in-queue)
+                     :connections connections
+                     :out-queue out-queue}]
+      (maintain-connection! (:out-queue data) (:packet data))
+      (connections/manage! data)
+      (manage-players! (:out-queue data) (:packet data))
+      (queues/->queue (:out-queue data) (dispatch-fn (:packet data))))))
 
 (defn- write-output-packets!
   "Take packets from output queue and write to output stream"
@@ -88,8 +79,7 @@
   ([] @players)
   ([plid] (get @players plid)))
 
-(defn packet-type [{::packet/keys [header]}]
-  (:type header))
+(def packet-type packet/type)
 
 (defn client
   "Opens a socket and reads packets from input stream to in-queue, calls
