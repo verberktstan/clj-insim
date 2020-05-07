@@ -3,22 +3,13 @@
             [clj-insim.packets :as packets]
             [clj-insim.queues :as queues]
             [clj-insim.read :as read]
+            [clj-insim.register :refer [register! unregister! init!]]
             [clj-insim.write :as write]
             [clojure.java.io :as io])
   (:import [java.net Socket]))
 
 (defonce ^:private connections (atom {}))
 (defonce ^:private players (atom {}))
-
-(defn- register! [map-atom k v]
-  (swap! map-atom assoc k v))
-
-(defn- unregister! [map-atom k]
-  (swap! map-atom dissoc k))
-
-(defn- init! [atm out-queue  tiny-key]
-  (reset! atm {})
-  (queues/->queue out-queue (packets/tiny {:data tiny-key})))
 
 (defn- manage-connections! [out-queue packet]
   (cond
@@ -45,8 +36,10 @@
       (unregister! players player-id))))
 
 (defn- init-connections-and-players! [out-queue]
-  (init! connections out-queue :ncn)
-  (init! players out-queue :npl))
+  (init! connections)
+  (queues/->queue out-queue (packets/tiny {:data :ncn}))
+  (init! players)
+  (queues/->queue out-queue (packets/tiny {:data :npl})))
 
 (defn- maintain-connection! [out-queue packet]
   (when (packet/tiny-none? packet)
