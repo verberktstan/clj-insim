@@ -6,23 +6,12 @@
             [clj-insim.register :refer [register! unregister! init!]]
             [clj-insim.write :as write]
             [clj-insim.manage.connections :as connections]
+            [clj-insim.manage.players :as players]
             [clojure.java.io :as io])
   (:import [java.net Socket]))
 
 (defonce ^:private connections (atom {}))
 (defonce ^:private players (atom {}))
-
-(defn- manage-players! [out-queue packet]
-  (cond
-    (packet/npl? packet)
-    (if (packet/reply? packet)
-      (let [{:keys [player-id] :as player} (packet/npl->player packet)]
-        (register! players player-id player))
-      (queues/->queue out-queue (packets/tiny {:data :npl})))
-
-    (packet/pll? packet)
-    (let [{:keys [player-id]} (packet/pll->player packet)]
-      (unregister! players player-id))))
 
 (defn- init-connections-and-players! [out-queue]
   (init! connections)
@@ -46,10 +35,11 @@
   (while (seq @in-queue)
     (when-let [data {:packet (queues/peek-and-pop! in-queue)
                      :connections connections
+                     :players players
                      :out-queue out-queue}]
       (maintain-connection! (:out-queue data) (:packet data))
       (connections/manage! data)
-      (manage-players! (:out-queue data) (:packet data))
+      (players/manage! data)
       (queues/->queue (:out-queue data) (dispatch-fn (:packet data))))))
 
 (defn- write-output-packets!

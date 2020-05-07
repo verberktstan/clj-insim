@@ -1,6 +1,7 @@
 (ns clj-insim.models.packet
-  (:refer-clojure :exclude [read])
-  (:require [clojure.spec.alpha :as s]))
+  (:refer-clojure :exclude [read type])
+  (:require [clj-insim.utils :as u]
+            [clojure.spec.alpha :as s]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Specs
@@ -18,10 +19,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Checks
 
-(defn tiny-none? [{::keys [header]}]
-  (and (#{:tiny} (:type header))
-       (zero?    (:request-info header))
-       (#{:none} (:data header))))
+(defn tiny? [{::keys [header] :as p}]
+  (when (#{:tiny} (:type header))
+    p))
+
+(defn none? [{::keys [header] :as p}]
+  (when (u/equal-keys? {:request-info 0, :data :none} header)
+    p))
+
+(defn clear? [{::keys [header] :as p}]
+  (when (u/equal-keys? {:data :clr} header)
+    p))
+
+(def tiny-none? (comp none? tiny?))
+
+(def tiny-clear? (comp clear? tiny?))
 
 (defn reply? [{::keys [header]}]
   (not= 0 (:request-info header)))
@@ -29,38 +41,32 @@
 (defn data [{::keys [header]}]
   (:data header))
 
-(defn npl? [{::keys [header]}]
-  (boolean (#{:npl} (:type header))))
-
-(defn pll? [{::keys [header]}]
-  (boolean (#{:pll} (:type header))))
-
 (def ^:private dissoc-spares
   #(dissoc % :spare0 :spare1 :spare2 :spare3))
 
-(defn ncn->connection [{::keys [body] :as packet}]
-  (when true #_(ncn? packet) ;; TODO: Fix this!
+(defn ncn->connection [{::keys [header body] :as packet}]
+  (when (u/equal-keys? {:type :ncn} header)
     (let [connection-id (data packet)]
       (-> body
           (dissoc-spares)
           (assoc :connection-id connection-id)))))
 
-(defn cnl->connection [{::keys [body] :as packet}]
-  (when true #_(cnl? packet) ;; TODO: Fix this!
+(defn cnl->connection [{::keys [header body] :as packet}]
+  (when (u/equal-keys? {:type :cnl} header)
     (let [connection-id (data packet)]
       (-> body
           (dissoc-spares)
           (assoc :connection-id connection-id)))))
 
-(defn npl->player [{::keys [body] :as packet}]
-  (when (npl? packet)
+(defn npl->player [{::keys [header body] :as packet}]
+  (when (u/equal-keys? {:type :npl} header)
     (let [player-id (data packet)]
       (-> body
           (dissoc-spares)
           (assoc :player-id player-id)))))
 
 (defn pll->player [{::keys [header] :as packet}]
-  (when (pll? packet)
+  (when (u/equal-keys? {:type :pll} header)
     {:player-id (data packet)}))
 
 (defn type [{::keys [header]}]
