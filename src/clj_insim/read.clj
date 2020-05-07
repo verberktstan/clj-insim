@@ -9,7 +9,7 @@
     (packet/make
      header
      (when (> (:size header) 4)
-       (-> input-stream (m/read (codecs/body header)) parse/body)))))
+       (-> input-stream (m/read (codecs/body header)) (parse/body header))))))
 
 (defn packets
   "Returns packets (based on all available bytes) read from input-stream"

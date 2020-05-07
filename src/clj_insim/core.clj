@@ -50,7 +50,7 @@
 
 (defn- maintain-connection! [out-queue packet]
   (when (packet/tiny-none? packet)
-    (packets/tiny)))
+    (queues/->queue out-queue (packets/tiny))))
 
 (defn- read-input-packets!
   "Read packets from input stream and put them on queue"
@@ -66,11 +66,7 @@
       (maintain-connection! out-queue packet)
       (manage-connections! out-queue packet)
       (manage-players! out-queue packet)
-      (queues/->queue
-       out-queue
-       (try
-         (dispatch-fn packet)
-         (catch Exception e (println e)))))))
+      (queues/->queue out-queue (dispatch-fn packet)))))
 
 (defn- write-output-packets!
   "Take packets from output queue and write to output stream"
@@ -110,7 +106,9 @@
   ([]
    (client println))
   ([dispatch-fn]
-   (client {} (packets/insim-init) dispatch-fn))
+   (client {} dispatch-fn))
+  ([options dispatch-fn]
+   (client options (packets/insim-init) dispatch-fn))
   ([{:keys [host port sleep-interval]} init-packet dispatch-fn]
    (let [running (atom true)
          {:keys [in-queue out-queue enqueue!]} (queues/make init-packet)]
@@ -129,7 +127,7 @@
       :sleep-interval (or sleep-interval 100)})))
 
 (comment
-  (def lfs-client (client))
+  (def lfs-client (client {} (packets/insim-init {:is-flags #{:con}}) println))
   (enqueue! lfs-client (packets/mst "Hello world!"))
   (enqueue! lfs-client (packets/mtc "Hello world!"))
   (enqueue! lfs-client (packets/tiny))

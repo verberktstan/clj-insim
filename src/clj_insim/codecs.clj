@@ -12,6 +12,43 @@
 (defmethod body :default [{:keys [size]}]
   (m/array m/ubyte (- size 4)))
 
+(defmethod body :con [_]
+  (m/struct
+   :sp-close m/ushort
+   :time m/ushort
+
+   ;; CarContact A
+   :plid-a m/ubyte
+   :info-a m/ubyte
+   :spare2-a m/ubyte
+   :steer-a m/sbyte ;; insim char
+   :throttle-brake-a m/ubyte
+   :clutch-handbrake-a m/ubyte
+   :gear-spare-a m/ubyte
+   :speed-a m/ubyte
+   :direction-a m/ubyte
+   :heading-a m/ubyte
+   :acceleration-f-a m/sbyte
+   :acceleration-r-a m/sbyte
+   :x-a m/sshort
+   :y-a m/sshort
+
+   ;; CarContact B
+   :plid-b m/ubyte
+   :info-b m/ubyte
+   :spare2-b m/ubyte
+   :steer-b m/sbyte ;; insim char
+   :throttle-brake-b m/ubyte
+   :clutch-handbrake-b m/ubyte
+   :gear-spare-b m/ubyte
+   :speed-b m/ubyte
+   :direction-b m/ubyte
+   :heading-b m/ubyte
+   :acceleration-f-b m/sbyte
+   :acceleration-r-b m/sbyte
+   :x-b m/sshort
+   :y-b m/sshort))
+
 (defmethod body :isi [_]
   (m/struct
    :udp-port m/ushort

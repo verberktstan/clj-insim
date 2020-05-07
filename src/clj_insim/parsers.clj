@@ -85,7 +85,13 @@
     {:rear-left rl :rear-right rr
      :front-left fl :front-right fr}))
 
-(def body-key-parser
+(defn- parse-car-contact-steer [steer]
+  (cond
+    (= 0 steer) {:straight 0}
+    (pos? steer) {:right steer}
+    :else {:left (* -1 steer)}))
+
+(def ^:private body-key-parser
   {:cars (partial flags PLC_CARS)
    :confirmation-flags (partial flags CONFIRMATION_FLAGS)
    :iss-state-flags (partial flags ISS_STATE_FLAGS)
@@ -93,6 +99,8 @@
    :passengers (partial flags PASSENGERS_FLAGS)
    :race-laps parse-race-laps
    :setup-flags (partial flags SETUP_FLAGS)
+   :steer-a parse-car-contact-steer
+   :steer-b parse-car-contact-steer
    :tyres parse-tyre-compounds})
 
 (defn parse
