@@ -164,6 +164,24 @@
    :cars m/uint32 ; insim unsigned
    ))
 
+(def ^:private node-lap
+  (m/struct
+   :node m/ushort ; insim word
+   :lap m/ushort ; insim word
+   :plid m/ubyte
+   :position m/ubyte))
+
+(defmethod body :nlp [{:keys [size]}]
+  (let [body-size (- size 4)
+        leftover (mod body-size 6)
+        n (int (/ (- body-size leftover) 6))
+        coll (cond->
+                 (interleave
+                  (range n)
+                  (repeat n node-lap))
+               (pos? leftover) (concat [:spares (m/array m/ubyte leftover)]))]
+    (apply m/struct coll)))
+
 (defmethod body :res [_]
   (m/struct
    :user-name (m/ascii-string 24)

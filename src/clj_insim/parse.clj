@@ -50,6 +50,15 @@
                                        :gear-spare-b])
                          vals)))]})
 
+(defmethod post-parse :nlp [_ body-data]
+  (reduce
+   (fn [result [k v]]
+     (if (number? k)
+       (conj result v)
+       result))
+   []
+   body-data))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Unparsing - Transform data from clj-insim spec to data thats ready to feed
 ;; into marshal codec. EG. IS_FLAG #{:req-join} => 2048
