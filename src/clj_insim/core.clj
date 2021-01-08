@@ -91,7 +91,7 @@
                    input-stream (io/input-stream socket)]
          (while @running
            (read-input-packets! input-stream in-queue)
-           (dispatch! in-queue dispatch-fn out-queue)
+           (dispatch! in-queue #(dispatch-fn (assoc % :enqueue! enqueue!)) out-queue)
            (write-output-packets! out-queue output-stream)
            (Thread/sleep (or sleep-interval 100)))))
      {:running running

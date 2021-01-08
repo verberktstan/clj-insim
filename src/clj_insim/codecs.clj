@@ -182,6 +182,26 @@
                (pos? leftover) (concat [:spares (m/array m/ubyte leftover)]))]
     (apply m/struct coll)))
 
+(defmethod body :spx [_]
+  (m/struct
+   :split-time m/uint32 ; insim unsigned
+   :total-time m/uint32 ; insim unsigned
+   :split m/ubyte
+   :penalty m/ubyte
+   :num-stops m/ubyte
+   :spare3 m/ubyte))
+
+(defmethod body :lap [_]
+  (m/struct
+   :lap-time m/uint32 ; insim unsigned
+   :total-time m/uint32 ; insim unsigned
+   :laps-done m/ushort ; insim word
+   :player-flags m/ushort ; insim word
+   :spare0 m/ubyte
+   :penalty m/ubyte
+   :num-stops m/ubyte
+   :spare3 m/ubyte))
+
 (defmethod body :res [_]
   (m/struct
    :user-name (m/ascii-string 24)
@@ -199,3 +219,21 @@
    :result-num m/ubyte
    :num-results m/ubyte
    :penalty-seconds m/ushort))
+
+(defmethod body :rst [_]
+  (m/struct
+   :race-laps m/ubyte
+   :qual-mins m/ubyte
+   :num-players m/ubyte
+   :timing m/ubyte
+
+   :track (m/ascii-string 6)
+   :weather m/ubyte
+   :wind m/ubyte
+
+   :flags m/ushort ; insim word
+   :num-nodes m/ushort ; insim word
+   :finish m/ushort ; insim word
+   :split1 m/ushort ; insim word
+   :split2 m/ushort ; insim word
+   :split3 m/ushort))
