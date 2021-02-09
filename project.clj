@@ -1,4 +1,4 @@
-(defproject clj-insim "0.2.0-SNAPSHOT"
+(defproject clj-insim "0.2.1-SNAPSHOT"
   :description "A Clojure library designed to interface with Live For Speed InSim."
   :url "https://github.com/verberktstan/clj-insim"
   :license {:name "Unlicense"
