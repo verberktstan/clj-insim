@@ -63,7 +63,8 @@
     (let [player-id (data packet)]
       (-> body
           (dissoc-spares)
-          (assoc :player-id player-id)))))
+          (assoc :player-id player-id)
+          (update :plate u/strip-string)))))
 
 (defn pll->player [{::keys [header] :as packet}]
   (when (u/equal-keys? {:type :pll} header)

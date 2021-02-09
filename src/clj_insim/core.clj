@@ -1,5 +1,6 @@
 (ns clj-insim.core
-  (:require [clj-insim.models.packet :as packet]
+  (:require #_[clj-insim.enlive :as enlive]
+            [clj-insim.models.packet :as packet]
             [clj-insim.packets :as packets]
             [clj-insim.queues :as queues]
             [clj-insim.read :as read]
@@ -39,6 +40,7 @@
       (maintain-connection! data)
       (connections/manage! data)
       (players/manage! data)
+      #_(enlive/ai! data)
       (queues/->queue (:out-queue data) (dispatch-fn (:packet data))))))
 
 (defn- write-output-packets!
@@ -98,8 +100,11 @@
       :enqueue! enqueue!
       :sleep-interval (or sleep-interval 100)})))
 
+(defn- default-fn [_]
+  nil)
+
 (comment
-  (def lfs-client (client {} (packets/insim-init {:is-flags #{:con}}) println))
+  (def lfs-client (client {} (packets/insim-init {:is-flags #{:con}}) default-fn))
   (enqueue! lfs-client (packets/mst "Hello world!"))
   (enqueue! lfs-client (packets/mtc "Hello world!"))
   (enqueue! lfs-client (packets/tiny))
@@ -107,4 +112,6 @@
 
   @connections
   @players
+
+  (vals (filter (comp #{:ai} :player-type val) @players))
 )

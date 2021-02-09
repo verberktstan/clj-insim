@@ -1,5 +1,6 @@
 (ns clj-insim.parsers
   (:require [clj-insim.enums :as enums]
+            [clj-insim.utils :as u]
             [clojure.set :as set]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -136,6 +137,7 @@
   {:cars (partial flags PLC_CARS)
    :confirmation-flags (partial flags CONFIRMATION_FLAGS)
    :iss-state-flags (partial flags ISS_STATE_FLAGS)
+   :player-name u/strip-string
    :player-flags (partial flags PLAYER_FLAGS)
    :passengers (partial flags PASSENGERS_FLAGS)
    :race-laps parse-race-laps
