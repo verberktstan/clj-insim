@@ -8,13 +8,19 @@
    :nci :jrr :uco :oco :ttc :slc :csc :cim])
 
 (def ^:private DATA
-  {:tiny
+  {:small
+   [:none :ssp :ssg :vta :tms :stp :rtp :nli :alc :lcs]
+
+   :tiny
    [:none :ver :close :ping :reply
     :vtc  :scp :sst   :gth  :mpe
     :ism  :ren :clr   :ncn  :npl
     :res  :nlp :mci   :reo  :rst
     :axi  :axc :rip   :nci  :alc
-    :axm  :slc]})
+    :axm  :slc]
+
+   :ttc
+   [:none :sel :sel-start :sel-stop]})
 
 (defn- parse-header-data
   "Returns header with `:header/data` parsed.

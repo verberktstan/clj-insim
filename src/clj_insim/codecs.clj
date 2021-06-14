@@ -24,4 +24,8 @@
     :body/version (m/ascii-string 8)
     :body/product (m/ascii-string 6)
     :body/insim-version m/ubyte
-    :body/spare m/ubyte)})
+    :body/spare m/ubyte)
+
+   :small
+   (m/struct
+    :body/update-interval m/uint32)})

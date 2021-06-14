@@ -25,13 +25,3 @@
                       :insim-version 8
                       :spare 0}
                (#'sut/read-body version-is header)))))))
-
-(deftest parse-header-test
-  (testing "parse-header"
-    (testing "returns header with parsed `:header/type` and `:header/data`"
-      (is (= #:header{:size 4 :type :tiny :request-info 0 :data :none}
-             (#'sut/parse-header
-              #:header{:size 4 :type 3 :request-info 0 :data 0})))
-      (is (= #:header{:size 4 :type :tiny :request-info 0 :data :close}
-             (#'sut/parse-header
-              #:header{:size 4 :type 3 :request-info 0 :data 2}))))))
