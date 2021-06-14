@@ -19,32 +19,41 @@
   (when-let [header (read/header input-stream)]
     (merge header (read/body input-stream header))))
 
+(defn- maintain-connection-packet? [{:header/keys [type data]}]
+  (and (#{:tiny} type) (#{:none} data)))
+
 (defn start
   "Opens a socket, streams and async channels to connect with Live For Sspeed via InSim."
-  []
-  (let [running? (atom true)
-        to-lfs-chan (a/chan (a/sliding-buffer 2))
-        from-lfs-chan (a/chan (a/sliding-buffer 2))
-        socket (Socket. "127.0.0.1" 29999) ;; TODO: Pass in host/port as arguments
-        output-stream (io/output-stream socket)
-        input-stream (io/input-stream socket)
-        close! (fn []
-                 (.close input-stream)
-                 (.close output-stream)
-                 (.close socket))]
-    (a/go
-      (a/>! to-lfs-chan (packets/isi)) ;; TODO: Pass in the ISI packet as argument
-      (while @running?
-        (let [packet (a/<! to-lfs-chan)]
-          (write-packet output-stream packet))))
-    (a/go
-      (while @running?
-        (when-let [packet (read-packet input-stream)]
-          (a/>! from-lfs-chan packet))))
-    {::running? running?
-     ::to-lfs-chan to-lfs-chan
-     ::from-lfs-chan from-lfs-chan
-     ::close! close!}))
+  ([]
+   (start nil))
+  ([{:keys [host port]
+      :or {host "127.0.0.1"
+           port 29999}}]
+   (let [running? (atom true)
+         to-lfs-chan (a/chan (a/sliding-buffer 2))
+         from-lfs-chan (a/chan (a/sliding-buffer 2))
+         socket (Socket. host port)
+         output-stream (io/output-stream socket)
+         input-stream (io/input-stream socket)
+         close! (fn []
+                  (.close input-stream)
+                  (.close output-stream)
+                  (.close socket))]
+     (a/go
+       (a/>! to-lfs-chan (packets/isi)) ;; TODO: Pass in the ISI packet as argument
+       (while @running?
+         (let [packet (a/<! to-lfs-chan)]
+           (write-packet output-stream packet))))
+     (a/go
+       (while @running?
+         (when-let [packet (read-packet input-stream)]
+           (when (maintain-connection-packet? packet)
+             (a/>! to-lfs-chan (packets/tiny)))
+           (a/>! from-lfs-chan packet))))
+     {::running? running?
+      ::to-lfs-chan to-lfs-chan
+      ::from-lfs-chan from-lfs-chan
+      ::close! close!})))
 
 (defn stop! [{::keys [close! running?]}]
   (reset! running? false)
