@@ -48,6 +48,13 @@
       :body/insim-version m/ubyte
       :body/spare m/ubyte))
 
+   :sfp
+   (fn [_]
+     (m/struct
+      :body/flag m/ushort
+      :body/off-on m/ubyte
+      :body/spare m/ubyte))
+
    :small
    (fn [{:header/keys [data]}]
      (apply m/struct (get SMALL data [:body/interval m/uint32])))
