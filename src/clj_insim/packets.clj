@@ -1,4 +1,5 @@
-(ns clj-insim.packets)
+(ns clj-insim.packets
+  (:require [clj-insim.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Notice that :body/spare always gets a string. If the codec for a given
@@ -19,6 +20,12 @@
     #:header{:size 44 :type :isi :request-info 1 :data 0}
     #:body{:udp-port 0 :is-flags 0 :insim-version insim-version :prefix prefix
            :interval 0 :admin admin :iname iname})))
+
+(defn mtc [{:keys [ucid player-id text] :or {ucid 0 player-id 0 text "hello"}}]
+  (let [clipped (u/clip-str text 128 4)]
+    (merge
+     #:header{:size (-> clipped count (+ 4 4)) :type :mtc :request-info 0 :data 0}
+     #:body{:ucid ucid :player-id player-id :spare "00" :text clipped})))
 
 (defn scc [{:keys [player-id in-game-cam] :or {player-id 0 in-game-cam :driver}}]
   (merge

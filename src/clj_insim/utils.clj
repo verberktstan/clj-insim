@@ -9,6 +9,12 @@
       (subs 0 (dec length))
       (str (char 0))))
 
+(defn clip-str [s max div]
+  (let [length (min (count s) (dec max))
+        factor (loop [x (inc length)]
+                 (if (zero? (mod x div)) x (recur (inc x))))]
+    (c-str s factor)))
+
 (defn map-kv
   "Returns coll with fns applied to coll. Works for vectors as well.
    `(map-kv {:a inc} {:a 1 :b 10})` => {:a 2 :b 10}

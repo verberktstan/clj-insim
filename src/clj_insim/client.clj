@@ -46,9 +46,7 @@
    this in a go block / loop. Evaluate `::close!` to stop and close the client."
   ([]
    (start nil))
-  ([{:keys [host port]
-      :or {host "127.0.0.1"
-           port 29999}}]
+  ([{:keys [host port] :or {host "127.0.0.1" port 29999}}]
    (let [running? (atom true)
          {::keys [from-lfs-chan to-lfs-chan] :as channels} (make-channels)
          socket (Socket. host port)

@@ -42,6 +42,15 @@
       :body/admin (m/ascii-string 16)
       :body/iname (m/ascii-string 16)))
 
+   :iii
+   (fn [{:header/keys [size]}]
+     (m/struct
+      :body/ucid m/ubyte
+      :body/player-id m/ubyte
+      :body/spare (m/ascii-string 2)
+      ;; Take into account the header and body length
+      :body/message (m/ascii-string (- size 4 4))))
+
    :ism
    (fn [_]
      (m/struct
@@ -51,13 +60,26 @@
 
    :mso
    (fn [{:header/keys [size]}]
-     (let [n (- size 4 4)] ;; Take into account the header and body length
-       (m/struct
-        :body/ucid m/ubyte
-        :body/player-id m/ubyte
-        :body/user-type m/ubyte
-        :body/text-start m/ubyte
-        :body/message (m/ascii-string n))))
+     (m/struct
+      :body/ucid m/ubyte
+      :body/player-id m/ubyte
+      :body/user-type m/ubyte
+      :body/text-start m/ubyte
+      ;; Take into account the header and body length
+      :body/message (m/ascii-string (- size 4 4))))
+
+   :mst
+   (fn [_]
+     (m/struct
+      :body/message (m/ascii-string 64)))
+
+   :mtc
+   (fn [{:header/keys [size]}]
+     (m/struct
+      :body/ucid m/ubyte
+      :body/player-id m/ubyte
+      :body/spare (m/ascii-string 2)
+      :body/text (m/ascii-string (- size 4 4))))
 
    :ver
    (fn [_]
