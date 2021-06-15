@@ -107,6 +107,7 @@
 
 (def ^:private INSTRUCTION_BODY_PARSERS
   {:isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
+   :scc #:body{:in-game-cam (u/index-of VIEW_IDENTIFIERS)}
    :sch #:body{:char int :flag (u/index-of [:shift :ctrl])}
    :sfp #:body{:flag (u/index-of SFP_FLAGS) :on-off (u/index-of [:off :on])}
    :sta #:body{:flags (partial flags/unparse STA_FLAGS)}})
