@@ -98,7 +98,7 @@
                                       (or (get-in BODY_PARSERS [type data]) {}))]
                   parsers
                   (get BODY_PARSERS type))]
-    (cond-> packet
+    (cond->> packet
       parsers (u/map-kv parsers))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -115,7 +115,7 @@
 
 (defn- unparse-body [{:header/keys [type] :as packet}]
   (let [unparsers (get BODY_UNPARSERS type)]
-    (cond-> packet
+    (cond->> packet
       unparsers (u/map-kv unparsers))))
 
 (defn- unparse-header [{:header/keys [type] :as header}]

@@ -9,6 +9,7 @@
            iname "clj-insim"
            insim-version 8
            prefix \!}}]
+   ;; TODO: Implement is-flags
    (merge
     #:header{:size 44 :type :isi :request-info 1 :data 0}
     #:body{:udp-port 0 :is-flags 0 :insim-version insim-version :prefix prefix
