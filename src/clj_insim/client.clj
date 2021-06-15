@@ -1,7 +1,7 @@
 (ns clj-insim.client
   (:require [clj-insim.codecs :as codecs]
             [clj-insim.packets :as packets]
-            [clj-insim.parse :refer [unparse]]
+            [clj-insim.parse :as parse]
             [clj-insim.read :as read]
             [clojure.core.async :as a]
             [clojure.java.io :as io]
@@ -9,11 +9,11 @@
   (:import [java.net Socket]))
 
 (defn- write-packet [output-stream {:header/keys [size type] :as packet}]
-  (let [unparsed (unparse packet)
+  (let [instruction-packet (parse/instruction packet)
         body-codec (get codecs/body type #(m/struct :body/unkown (m/ascii-string (- size 4))))]
-    (m/write output-stream codecs/header unparsed)
+    (m/write output-stream codecs/header instruction-packet)
     (when (> size 4)
-      (m/write output-stream (body-codec packet) unparsed))
+      (m/write output-stream (body-codec packet) instruction-packet))
     (.flush output-stream)))
 
 (defn- read-packet [input-stream]

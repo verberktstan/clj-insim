@@ -33,6 +33,9 @@
    :ttc
    [:none :sel :sel-start :sel-stop]})
 
+(def ^:private SFP_FLAGS
+  [:shift-u-no-opt :show-2d :mspeedup :sound-mute])
+
 (def ^:private STA_FLAGS
   [:game :replay :paused :shift-u :dialog :shift-u-follow :shift-u-no-opt
    :show-2d :front-end :multi :mspeedup :windowed :sound-mute :view-override
@@ -47,16 +50,13 @@
 (def ^:private VIEW_IDENTIFIERS
   [:follow :heli :cam :driver :custom])
 
-(def ^:private BODY_PARSERS
-  {:cch
-   #:body{:camera (partial nth VIEW_IDENTIFIERS)}
-
+(def ^:private INFO_BODY_PARSERS
+  {:cch  #:body{:camera (partial nth VIEW_IDENTIFIERS)}
    :small
    {:alc #:body{:cars (partial flags/parse ALC_CARS)}
     :lcs #:body{:switches (partial flags/parse LCS_SWITCHES)}
     :tms #:body{:stop (partial nth [:carry-on :stop])}
     :vta #:body{:action (partial nth [:none :end :restart :qualify])}}
-
    :sta
    #:body{:flags (partial flags/parse STA_FLAGS)
           :in-game-cam (partial nth VIEW_IDENTIFIERS)
@@ -76,7 +76,8 @@
       data-enum (update :header/data (partial nth data-enum)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Public parse functions
+;; Parse raw info packets to clj-insim packets. This must be done - immediately -
+;; when we receive a packet from LFS.
 
 (defn header
   "Returns header with `:header/type` and `:header/data` parsed. Returns `nil`
@@ -89,38 +90,35 @@
         (parse-header-data))))
 
 (defn body
-  "Returns packet with it's :body/keys parsed, based on BODY_PARSERS
+  "Returns packet with it's :body/keys parsed, based on INFO_BODY_PARSERS
    ```clojure
   (body {:header/type :small :header/data :vta :body/unique-connection-id 1 :body/action 1})
   => {:header/type 4 :body/unique-connection-id 1 :body/action :end}```"
   [{:header/keys [type data] :as packet}]
   (let [parsers (if-let [parsers (and (#{:small} type)
-                                      (or (get-in BODY_PARSERS [type data]) {}))]
+                                      (or (get-in INFO_BODY_PARSERS [type data]) {}))]
                   parsers
-                  (get BODY_PARSERS type))]
+                  (get INFO_BODY_PARSERS type))]
     (cond->> packet
       parsers (u/map-kv parsers))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Unparse
+;; Parse clj-insim packets to raw instruction. This must be done prior to sending
+;; the packet to LFS.
 
-(def ^:private BODY_UNPARSERS
-  {:isi
-   #:body{:admin #(u/c-str % 16)
-          :iname #(u/c-str % 16)
-          :prefix int}
+(def ^:private INSTRUCTION_BODY_PARSERS
+  {:isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
+   :sfp #:body{:flag (partial flags/unparse SFP_FLAGS) :on-off (partial nth [:off :on])}
+   :sta #:body{:flags (partial flags/unparse STA_FLAGS)}})
 
-   :sta
-   #:body{:flags (partial flags/unparse STA_FLAGS)}})
-
-(defn- unparse-body [{:header/keys [type] :as packet}]
-  (let [unparsers (get BODY_UNPARSERS type)]
+(defn- parse-instruction-body [{:header/keys [type] :as packet}]
+  (let [parsers (get INSTRUCTION_BODY_PARSERS type)]
     (cond->> packet
-      unparsers (u/map-kv unparsers))))
+      parsers (u/map-kv parsers))))
 
-(defn- unparse-header [{:header/keys [type] :as header}]
+(defn- parse-instruction-header [{:header/keys [type] :as header}]
   (let [data-enum (get DATA type)]
     (cond-> (update header :header/type #(.indexOf TYPES %))
       data-enum (update :header/data #(.indexOf data-enum %)))))
 
-(def unparse (comp unparse-header unparse-body))
+(def instruction (comp parse-instruction-header parse-instruction-body))

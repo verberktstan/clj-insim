@@ -21,8 +21,8 @@
              (sut/body packet))))))
 
 (deftest pipeline-test
-  (testing "pipe unparse & parse"
+  (testing "pipe instruction & header/body"
     (let [packet (merge #:header{:size 4 :type :small :request-info 1 :data :ssp}
                         #:body{:unsigned-value 500})]
       (is (= packet
-             ((comp sut/body sut/header) (sut/unparse packet)))))))
+             ((comp sut/body sut/header) (sut/instruction packet)))))))

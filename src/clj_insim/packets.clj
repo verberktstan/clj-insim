@@ -15,6 +15,14 @@
     #:body{:udp-port 0 :is-flags 0 :insim-version insim-version :prefix prefix
            :interval 0 :admin admin :iname iname})))
 
+(defn sfp
+  [{:keys [flag on-off]
+    :or {flag :shift-u-no-opt
+         on-off :on}}]
+  (merge
+   #:header{:size 8 :type :sfp :request-info 0 :data 0}
+   #:body{:flag flag :on-off on-off :spare 0}))
+
 (defn tiny
   ([]
    (tiny nil))
