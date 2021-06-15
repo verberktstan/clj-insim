@@ -24,8 +24,8 @@
   (and (#{:tiny} type) (#{:none} data)))
 
 (defn- make-channels []
-  {::to-lfs-chan   (a/chan (a/sliding-buffer 2))
-   ::from-lfs-chan (a/chan (a/sliding-buffer 2))})
+  {::to-lfs-chan   (a/chan (a/sliding-buffer 10))
+   ::from-lfs-chan (a/chan (a/sliding-buffer 10))})
 
 (defn- make-streams [socket]
   {::output-stream (io/output-stream socket)
@@ -83,4 +83,7 @@
   (def lfs-client (start))
   (a/go (println (a/<! (::from-lfs-chan lfs-client))))
   (stop! lfs-client)
+
+  (let [packet (packets/scc {:player-id 0 :in-game-cam :follow})]
+    (a/>!! (::to-lfs-chan lfs-client) packet))
 )
