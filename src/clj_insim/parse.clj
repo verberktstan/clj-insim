@@ -52,6 +52,7 @@
 
 (def ^:private INFO_BODY_PARSERS
   {:cch  #:body{:camera (partial nth VIEW_IDENTIFIERS)}
+   :ism #:body{:host (partial nth [:guest :host])}
    :small
    {:alc #:body{:cars (partial flags/parse ALC_CARS)}
     :lcs #:body{:switches (partial flags/parse LCS_SWITCHES)}

@@ -29,6 +29,8 @@
       :body/camera m/ubyte
       :body/spare (m/ascii-string 3)))
 
+   ;; TODO: Add CPP Codec
+
    :isi
    (fn [_]
      (m/struct
@@ -39,6 +41,13 @@
       :body/interval m/ushort
       :body/admin (m/ascii-string 16)
       :body/iname (m/ascii-string 16)))
+
+   :ism
+   (fn [_]
+     (m/struct
+      :body/host m/ubyte
+      :body/spare (m/ascii-string 3)
+      :body/host-name (m/ascii-string 32)))
 
    :ver
    (fn [_]
