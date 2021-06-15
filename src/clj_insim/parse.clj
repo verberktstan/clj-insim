@@ -108,7 +108,9 @@
 
 (def ^:private INSTRUCTION_BODY_PARSERS
   {:isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
-   :sfp #:body{:flag (partial flags/unparse SFP_FLAGS) :on-off (partial nth [:off :on])}
+   :sch #:body{:flags (u/index-of [:shift :ctrl])}
+   :sfp #:body{:flag (partial flags/unparse SFP_FLAGS)
+               :on-off (u/index-of [:off :on])}
    :sta #:body{:flags (partial flags/unparse STA_FLAGS)}})
 
 (defn- parse-instruction-body [{:header/keys [type] :as packet}]
@@ -118,7 +120,7 @@
 
 (defn- parse-instruction-header [{:header/keys [type] :as header}]
   (let [data-enum (get DATA type)]
-    (cond-> (update header :header/type #(.indexOf TYPES %))
-      data-enum (update :header/data #(.indexOf data-enum %)))))
+    (cond-> (update header :header/type (u/index-of TYPES))
+      data-enum (update :header/data (u/index-of data-enum)))))
 
 (def instruction (comp parse-instruction-header parse-instruction-body))
