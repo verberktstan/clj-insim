@@ -49,6 +49,16 @@
       :body/spare (m/ascii-string 3)
       :body/host-name (m/ascii-string 32)))
 
+   :mso
+   (fn [{:header/keys [size]}]
+     (let [n (- size 4 4)] ;; Take into account the header and body length
+       (m/struct
+        :body/ucid m/ubyte
+        :body/player-id m/ubyte
+        :body/user-type m/ubyte
+        :body/text-start m/ubyte
+        :body/message (m/ascii-string n))))
+
    :ver
    (fn [_]
      (m/struct

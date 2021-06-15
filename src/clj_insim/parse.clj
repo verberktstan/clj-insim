@@ -51,8 +51,9 @@
   [:follow :heli :cam :driver :custom])
 
 (def ^:private INFO_BODY_PARSERS
-  {:cch  #:body{:camera (partial nth VIEW_IDENTIFIERS)}
+  {:cch #:body{:camera (partial nth VIEW_IDENTIFIERS)}
    :ism #:body{:host (partial nth [:guest :host])}
+   :mso #:body{:user-type (partial nth [:system :user :prefix :o])}
    :small
    {:alc #:body{:cars (partial flags/parse ALC_CARS)}
     :lcs #:body{:switches (partial flags/parse LCS_SWITCHES)}
@@ -96,10 +97,9 @@
   (body {:header/type :small :header/data :vta :body/unique-connection-id 1 :body/action 1})
   => {:header/type 4 :body/unique-connection-id 1 :body/action :end}```"
   [{:header/keys [type data] :as packet}]
-  (let [parsers (if-let [parsers (and (#{:small} type)
-                                      (or (get-in INFO_BODY_PARSERS [type data]) {}))]
-                  parsers
-                  (INFO_BODY_PARSERS type {}))]
+  (let [parsers (if (#{:small} type)
+                  (get-in INFO_BODY_PARSERS [type data] {})
+                  (get INFO_BODY_PARSERS type {}))]
     (u/map-kv parsers (dissoc packet :body/spare))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

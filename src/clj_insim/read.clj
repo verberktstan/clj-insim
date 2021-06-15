@@ -28,4 +28,7 @@
   (when (> size 4)
     (m/read input-stream (get-body-codec header))))
 
-(def body (comp parse/body read-body))
+(defn body [input-stream header]
+  (-> (read-body input-stream header)
+      (merge header)
+      (parse/body)))
