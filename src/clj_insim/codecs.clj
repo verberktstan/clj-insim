@@ -48,6 +48,13 @@
       :body/insim-version m/ubyte
       :body/spare m/ubyte))
 
+   :scc
+   (fn [_]
+     (m/struct
+      :body/player-id m/ubyte
+      :body/in-game-cam m/ubyte
+      :body/spare (m/ascii-string 2)))
+
    :sch
    (fn [_]
      (m/struct
