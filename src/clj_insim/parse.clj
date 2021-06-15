@@ -1,5 +1,6 @@
 (ns clj-insim.parse
-  (:require [clj-insim.utils :as u]))
+  (:require [clj-insim.flags :as flags]
+            [clj-insim.utils :as u]))
 
 (def ^:private TYPES
   [:none :isi :ver :tiny :small :sta :sch :sfp :scc :cpp :ism :mso :iii :mst :mtc :mod :vtn :rst :ncn
@@ -21,6 +22,15 @@
 
    :ttc
    [:none :sel :sel-start :sel-stop]})
+
+(def ^:private STA_FLAGS
+  [:game :replay :paused :shift-u :dialog :shift-u-follow
+   :shift-u-no-opt :show-2d :front-end :multi :mspeedup :windowed
+   :sound-mute :view-override :visible :text-entry])
+
+(def ^:private BODY_PARSERS
+  {:sta
+   #:body{:flags (partial flags/parse STA_FLAGS)}})
 
 (defn- parse-header-data
   "Returns header with `:header/data` parsed.
@@ -46,7 +56,12 @@
         (parse-header-data))))
 
 ;; TODO: Implement this
-(def body identity)
+(defn body [{:header/keys [type] :as packet}]
+  (let [parsers (get BODY_PARSERS type)]
+    (println parsers)
+    (println packet)
+    (cond-> packet
+      parsers (u/map-kv parsers))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Unparse
@@ -55,18 +70,15 @@
   {:isi
    #:body{:admin #(u/c-str % 16)
           :iname #(u/c-str % 16)
-          :prefix int}})
+          :prefix int}
 
-(defn- unparse-body* [packet unparsers]
-  (reduce-kv
-   (fn [packet k f]
-     (update packet k f))
-   packet unparsers))
+   :sta
+   #:body{:flags (partial flags/unparse STA_FLAGS)}})
 
 (defn- unparse-body [{:header/keys [type] :as packet}]
   (let [unparsers (get BODY_UNPARSERS type)]
     (cond-> packet
-      unparsers (unparse-body* unparsers))))
+      unparsers (u/map-kv unparsers))))
 
 (defn- unparse-header [{:header/keys [type] :as header}]
   (let [data-enum (get DATA type)]

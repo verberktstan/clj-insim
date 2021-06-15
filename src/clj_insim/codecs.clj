@@ -28,4 +28,22 @@
 
    :small
    (m/struct
-    :body/update-interval m/uint32)})
+    :body/update-interval m/uint32)
+
+   :sta
+   (m/struct
+    :body/replay-speed m/float
+    :body/flags m/ushort
+    :body/in-game-cam m/ubyte
+    :body/view-player-id m/ubyte
+    :body/num-players m/ubyte
+    :body/num-connections m/ubyte
+    :body/num-finished m/ubyte
+    :body/race-in-progress m/ubyte
+    :body/qualify-minutes m/ubyte
+    :body/race-laps m/ubyte
+    :body/spare2 m/ubyte
+    :body/spare3 m/ubyte
+    :body/track (m/ascii-string 6)
+    :body/weather m/ubyte
+    :body/wind m/ubyte)})
