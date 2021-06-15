@@ -48,6 +48,13 @@
       :body/insim-version m/ubyte
       :body/spare m/ubyte))
 
+   :sch
+   (fn [_]
+     (m/struct
+      :body/char m/ubyte
+      :body/flag m/ubyte
+      :body/spare (m/ascii-string 2)))
+
    :sfp
    (fn [_]
      (m/struct

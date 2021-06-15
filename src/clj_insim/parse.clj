@@ -98,9 +98,8 @@
   (let [parsers (if-let [parsers (and (#{:small} type)
                                       (or (get-in INFO_BODY_PARSERS [type data]) {}))]
                   parsers
-                  (get INFO_BODY_PARSERS type))]
-    (cond->> packet
-      parsers (u/map-kv parsers))))
+                  (INFO_BODY_PARSERS type {}))]
+    (u/map-kv parsers (dissoc packet :body/spare))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parse clj-insim packets to raw instruction. This must be done prior to sending
@@ -108,15 +107,12 @@
 
 (def ^:private INSTRUCTION_BODY_PARSERS
   {:isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
-   :sch #:body{:flags (u/index-of [:shift :ctrl])}
-   :sfp #:body{:flag (partial flags/unparse SFP_FLAGS)
-               :on-off (u/index-of [:off :on])}
+   :sch #:body{:char int :flag (u/index-of [:shift :ctrl])}
+   :sfp #:body{:flag (u/index-of SFP_FLAGS) :on-off (u/index-of [:off :on])}
    :sta #:body{:flags (partial flags/unparse STA_FLAGS)}})
 
 (defn- parse-instruction-body [{:header/keys [type] :as packet}]
-  (let [parsers (get INSTRUCTION_BODY_PARSERS type)]
-    (cond->> packet
-      parsers (u/map-kv parsers))))
+  (u/map-kv (INSTRUCTION_BODY_PARSERS type {}) packet))
 
 (defn- parse-instruction-header [{:header/keys [type] :as header}]
   (let [data-enum (get DATA type)]
