@@ -39,17 +39,30 @@
     (a/>!! to-lfs-chan (packets/tiny))))
 
 (defn start
-  "Opens a socket, streams and async channels to connect with Live For Sspeed via InSim."
+  "Opens a socket, streams and async channels to connect with Live For Sspeed via InSim.
+   Returns a map containing `::from-lfs-chan`, `::to-lfs-chan` & `::close!`
+   `(a/>!! to-lfs-chan packet)` makes the client send the packet to lfs.
+   `(a/<!! from-lfs-chan)` returns a packet from lfs if available. Preferrably do
+   this in a go block / loop. Evaluate `::close!` to stop and close the client."
   ([]
    (start nil))
   ([{:keys [host port]
       :or {host "127.0.0.1"
            port 29999}}]
    (let [running? (atom true)
-         {::keys [to-lfs-chan from-lfs-chan] :as channels} (make-channels)
+         {::keys [from-lfs-chan to-lfs-chan] :as channels} (make-channels)
          socket (Socket. host port)
          {::keys [input-stream output-stream] :as streams} (make-streams socket)
-         close! (fn [] (.close input-stream) (.close output-stream) (.close socket))]
+         close! (fn []
+                  (a/>!! to-lfs-chan (packets/tiny {:data :close}))
+                  (reset! running? false)
+                  (a/close! from-lfs-chan)
+                  (a/close! to-lfs-chan)
+                  (Thread/sleep 50)
+                  (.close input-stream)
+                  (.close output-stream)
+                  (.close socket)
+                  (println "clj-insim: client stopped"))]
      (a/go
        (a/>! to-lfs-chan (packets/isi)) ;; TODO: Pass in the ISI packet as argument
        (while @running?
@@ -60,10 +73,10 @@
          (when-let [packet (read-packet input-stream)]
            (dispatch channels packet)
            (a/>! from-lfs-chan packet))))
-     (merge channels {::running? running? ::close! close!}))))
+     (println "clj-insim: client started")
+     (merge channels {::close! close!}))))
 
-(defn stop! [{::keys [close! running?]}]
-  (reset! running? false)
+(defn stop! [{::keys [close!]}]
   (close!))
 
 (comment
