@@ -1,5 +1,6 @@
 (ns clj-insim.parse
-  (:require [clj-insim.flags :as flags]
+  (:require [clj-insim.enum :as enum]
+            [clj-insim.flags :as flags]
             [clj-insim.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,24 +48,35 @@
 (def ^:private LCS_SWITCHES
   [:set-signals :set-flash :headlights :horn :siren])
 
+(def ^:private VTA_ACTION
+  [:none :end :restart :qualify])
+
 (def ^:private VIEW_IDENTIFIERS
   [:follow :heli :cam :driver :custom])
 
+(def ^:private WIND_ENUM
+  [:off :weak :strong])
+
 (def ^:private INFO_BODY_PARSERS
-  {:cch #:body{:camera (partial nth VIEW_IDENTIFIERS)}
-   :ism #:body{:host (partial nth [:guest :host])}
-   :mso #:body{:user-type (partial nth [:system :user :prefix :o])}
+  {:cch #:body{:camera (enum/decode VIEW_IDENTIFIERS)}
+   :ism #:body{:host (enum/decode [:guest :host])}
+   :mso #:body{:user-type (enum/decode [:system :user :prefix :o])}
+   :rst #:body{:race-laps #(if (zero? %) :qualifying %)
+               :qualify-minutes #(if (zero? %) :race %)
+               :wind (enum/decode WIND_ENUM)
+               :flags (partial flags/parse [:can-vote :can-select :mid-race :must-pit :can-reset :fcv :cruise])}
    :small
    {:alc #:body{:cars (partial flags/parse ALC_CARS)}
     :lcs #:body{:switches (partial flags/parse LCS_SWITCHES)}
-    :tms #:body{:stop (partial nth [:carry-on :stop])}
-    :vta #:body{:action (partial nth [:none :end :restart :qualify])}}
+    :tms #:body{:stop (enum/decode [:carry-on :stop])}
+    :vta #:body{:action (enum/decode VTA_ACTION)}}
    :sta
    #:body{:flags (partial flags/parse STA_FLAGS)
-          :in-game-cam (partial nth VIEW_IDENTIFIERS)
-          :race-in-progress (partial nth [:no-race :race :qualifying])
+          :in-game-cam (enum/decode VIEW_IDENTIFIERS)
+          :race-in-progress (enum/decode [:no-race :race :qualifying])
           :race-laps parse-race-laps
-          :wind (partial nth [:off :weak :strong])}})
+          :wind (enum/decode WIND_ENUM)}
+   :vtn #:body{:action (enum/decode VTA_ACTION)}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private parse functions
@@ -75,7 +87,7 @@
   [{:header/keys [type] :as header}]
   (let [data-enum (get DATA type)]
     (cond-> header
-      data-enum (update :header/data (partial nth data-enum)))))
+      data-enum (update :header/data (enum/decode data-enum)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parse raw info packets to clj-insim packets. This must be done - immediately -
@@ -88,7 +100,7 @@
   [{:header/keys [type] :as header}]
   (when (and header type)
     (-> header
-        (update :header/type (partial nth TYPES))
+        (update :header/type (enum/decode TYPES))
         (parse-header-data))))
 
 (defn body
@@ -110,9 +122,9 @@
   {:isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
    :mst #:body{:message #(u/c-str % 64)}
    :mtc #:body{:text #(u/c-str % (count %))}
-   :scc #:body{:in-game-cam (u/index-of VIEW_IDENTIFIERS)}
-   :sch #:body{:char int :flag (u/index-of [:shift :ctrl])}
-   :sfp #:body{:flag (u/index-of SFP_FLAGS) :on-off (u/index-of [:off :on])}
+   :scc #:body{:in-game-cam (enum/encode VIEW_IDENTIFIERS)}
+   :sch #:body{:char int :flag (enum/encode [:shift :ctrl])}
+   :sfp #:body{:flag (enum/encode SFP_FLAGS) :on-off (enum/encode [:off :on])}
    :sta #:body{:flags (partial flags/unparse STA_FLAGS)}})
 
 (defn- parse-instruction-body [{:header/keys [type] :as packet}]
@@ -120,7 +132,7 @@
 
 (defn- parse-instruction-header [{:header/keys [type] :as header}]
   (let [data-enum (get DATA type)]
-    (cond-> (update header :header/type (u/index-of TYPES))
-      data-enum (update :header/data (u/index-of data-enum)))))
+    (cond-> (update header :header/type (enum/encode TYPES))
+      data-enum (update :header/data (enum/encode data-enum)))))
 
 (def instruction (comp parse-instruction-header parse-instruction-body))
