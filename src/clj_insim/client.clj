@@ -1,33 +1,25 @@
 (ns clj-insim.client
-  (:require [clj-insim.codecs :as codecs]
-            [clj-insim.packets :as packets]
-            [clj-insim.parse :as parse]
+  (:require [clj-insim.packets :as packets]
             [clj-insim.read :as read]
+            [clj-insim.write :as write]
             [clojure.core.async :as a]
-            [clojure.java.io :as io]
-            [marshal.core :as m])
+            [clojure.java.io :as io])
   (:import [java.net Socket]))
 
-(defn- write-packet [output-stream {:header/keys [size type] :as packet}]
-  (let [instruction (parse/instruction packet)
-        body-codec (get codecs/body type #(m/struct :body/unkown (m/ascii-string (- size 4))))]
-    (m/write output-stream codecs/header instruction)
-    (when (> size 4)
-      (m/write output-stream (body-codec packet) instruction))
-    (.flush output-stream)))
-
-(defn- read-packet [input-stream]
-  (when-let [header (read/header input-stream)]
-    (merge header (read/body input-stream header))))
-
-(defn- maintain-connection-packet? [{:header/keys [type data]}]
+(defn- maintain-connection-packet?
+  "Returns a truethy value when a TINY/NONE packet is passed in as argument."
+  [{:header/keys [type data]}]
   (and (#{:tiny} type) (#{:none} data)))
 
-(defn- make-channels []
+(defn- make-channels
+  "Returns a map with the channels that convey packets to/from LFS."
+  []
   {::to-lfs-chan   (a/chan (a/sliding-buffer 10))
    ::from-lfs-chan (a/chan (a/sliding-buffer 10))})
 
-(defn- make-streams [socket]
+(defn- make-streams
+  "Returns a map with streams necessary for communication with LFS."
+  [socket]
   {::output-stream (io/output-stream socket)
    ::input-stream  (io/input-stream socket)})
 
@@ -65,10 +57,10 @@
        (a/>! to-lfs-chan isi)
        (while @running?
          (let [packet (a/<! to-lfs-chan)]
-           (write-packet output-stream packet))))
+           (write/packet! output-stream packet))))
      (a/go
        (while @running?
-         (when-let [packet (read-packet input-stream)]
+         (when-let [packet (read/packet input-stream)]
            (dispatch channels packet)
            (a/>! from-lfs-chan packet))))
      (println "clj-insim: client started")
@@ -78,8 +70,11 @@
   (close!))
 
 (comment
+  ;; Start a client
   (def lfs-client (start))
+  ;; Print the first packet that we receive from LFS
   (a/go (println (a/<! (::from-lfs-chan lfs-client))))
+  ;; Stop the client
   (stop! lfs-client)
 
   (let [packet (packets/scc {:player-id 0 :in-game-cam :follow})]

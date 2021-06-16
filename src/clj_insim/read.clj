@@ -11,7 +11,7 @@
   (and (pos? (.available input-stream))
        (m/read input-stream codecs/header)))
 
-(def header (comp parse/header read-header))
+(def ^:private header (comp parse/header read-header))
 
 (defn- get-body-codec
   "Returns the marshal codec for a given header (type).
@@ -28,7 +28,14 @@
   (when (> size 4)
     (m/read input-stream (get-body-codec header))))
 
-(defn body [input-stream header]
+(defn- body [input-stream header]
   (-> (read-body input-stream header)
       (merge header)
       (parse/body)))
+
+(defn packet
+  "Read (info) packet header and body from input-stream and return it. Returns
+   `nil` when no data is present on the input-stream."
+  [input-stream]
+  (when-let [hdr (header input-stream)]
+    (merge hdr (body input-stream hdr))))
