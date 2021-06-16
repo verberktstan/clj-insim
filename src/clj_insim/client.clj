@@ -9,11 +9,11 @@
   (:import [java.net Socket]))
 
 (defn- write-packet [output-stream {:header/keys [size type] :as packet}]
-  (let [instruction-packet (parse/instruction packet)
+  (let [instruction (parse/instruction packet)
         body-codec (get codecs/body type #(m/struct :body/unkown (m/ascii-string (- size 4))))]
-    (m/write output-stream codecs/header instruction-packet)
+    (m/write output-stream codecs/header instruction)
     (when (> size 4)
-      (m/write output-stream (body-codec packet) instruction-packet))
+      (m/write output-stream (body-codec packet) instruction))
     (.flush output-stream)))
 
 (defn- read-packet [input-stream]
@@ -46,7 +46,7 @@
    this in a go block / loop. Evaluate `::close!` to stop and close the client."
   ([]
    (start nil))
-  ([{:keys [host port] :or {host "127.0.0.1" port 29999}}]
+  ([{:keys [host port isi] :or {host "127.0.0.1" port 29999 isi (packets/isi)}}]
    (let [running? (atom true)
          {::keys [from-lfs-chan to-lfs-chan] :as channels} (make-channels)
          socket (Socket. host port)
@@ -62,7 +62,7 @@
                   (.close socket)
                   (println "clj-insim: client stopped"))]
      (a/go
-       (a/>! to-lfs-chan (packets/isi)) ;; TODO: Pass in the ISI packet as argument
+       (a/>! to-lfs-chan isi)
        (while @running?
          (let [packet (a/<! to-lfs-chan)]
            (write-packet output-stream packet))))
@@ -83,5 +83,8 @@
   (stop! lfs-client)
 
   (let [packet (packets/scc {:player-id 0 :in-game-cam :follow})]
+    (a/>!! (::to-lfs-chan lfs-client) packet))
+  
+  (let [packet (packets/mtc {:text "Hello world!"})]
     (a/>!! (::to-lfs-chan lfs-client) packet))
 )

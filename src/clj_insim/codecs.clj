@@ -58,6 +58,8 @@
       :body/spare (m/ascii-string 3)
       :body/host-name (m/ascii-string 32)))
 
+   ;; TODO: Add MOD packet
+
    :mso
    (fn [{:header/keys [size]}]
      (m/struct
@@ -88,6 +90,31 @@
       :body/product (m/ascii-string 6)
       :body/insim-version m/ubyte
       :body/spare m/ubyte))
+
+   :vtn
+   (fn [_]
+     (m/struct
+      :body/ucid m/ubyte
+      :body/action m/ubyte
+      :body/spare (m/ascii-string 2)))
+
+   :rst
+   (fn [_]
+     (m/struct
+      :body/race-laps m/ubyte
+      :body/qualify-minutes m/ubyte
+      :body/num-players m/ubyte
+      :body/timing m/ubyte
+      :body/track (m/ascii-string 6)
+      :body/weather m/ubyte
+      :body/wind m/ubyte
+      :body/flags m/ushort ; word
+      :body/num-nodes m/ushort
+      :body/finish m/ushort
+      :body/split1 m/ushort
+      :body/split2 m/ushort
+      :body/split3 m/ushort
+))
 
    :scc
    (fn [_]
