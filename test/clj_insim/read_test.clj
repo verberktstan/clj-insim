@@ -16,8 +16,11 @@
 (def ^:private RAW_VER_BODY
   (byte-array [97 98 99 100 0 0 0 0, 48 49 50 0 0 0, 8, 0]))
 
-(deftest body-test
-  (testing "body"
+(def ^:private RAW_SMALL_ALC_BODY
+  (byte-array [0 0 0 1]))
+
+(deftest read-body-test
+  (testing "read-body"
     (let [header #:header{:size 20 :type :ver :request-info 0, :data 0}]
       (with-open [version-is (io/input-stream RAW_VER_BODY)]
         (is (= #:body{:version "abcd"
@@ -25,3 +28,10 @@
                       :insim-version 8
                       :spare 0}
                (#'sut/read-body version-is header)))))))
+
+(deftest body-test
+  (testing "body"
+    (let [header #:header{:size 8 :type :small :request-info 0 :data :alc}]
+      (with-open [alc-is (io/input-stream  RAW_SMALL_ALC_BODY)]
+        (is (= (merge header #:body{:cars #{"FBM"}})
+               (#'sut/body alc-is header)))))))
