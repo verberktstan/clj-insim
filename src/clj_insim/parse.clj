@@ -30,10 +30,9 @@
                :wind (enum/decode enum/WIND)
                ;; TODO: Next step is to move flags data to flags ns
                :flags (flags/parse flags/RST)}
+   ;; Some of the small packets can be received as info, and need parsing
    :small
    {:alc #:body{:cars (flags/parse flags/CARS)}
-    :lcs #:body{:switches (flags/parse flags/SWITCHES)}
-    :tms #:body{:stop (enum/decode enum/STOP)}
     :vta #:body{:action (enum/decode enum/ACTION)}}
    :sta
    #:body{:flags (flags/parse flags/STA)
@@ -90,10 +89,17 @@
    :scc #:body{:in-game-cam (enum/encode enum/VIEW_IDENTIFIERS)}
    :sch #:body{:char int :flag (enum/encode [:shift :ctrl])}
    :sfp #:body{:flag (enum/encode enum/SFP) :on-off (enum/encode [:off :on])}
-   :sta #:body{:flags (flags/unparse flags/STA)}})
+   ;; Some of the small packets can be send as instructions and need parsing..
+   :small
+   {:alc #:body{:cars (flags/unparse flags/CARS)}
+    :lcs #:body{:switches (flags/unparse flags/SWITCHES)}
+    :tms #:body{:stop (enum/encode enum/STOP)}}})
 
-(defn- parse-instruction-body [{:header/keys [type] :as packet}]
-  (u/map-kv (INSTRUCTION_BODY_PARSERS type {}) packet))
+(defn- parse-instruction-body [{:header/keys [type data] :as packet}]
+  (let [parsers (if (#{:small} type)
+                  (get-in INSTRUCTION_BODY_PARSERS [type data] {})
+                  (get INSTRUCTION_BODY_PARSERS type {}))]
+    (u/map-kv parsers packet)))
 
 (defn- parse-instruction-header [{:header/keys [type] :as header}]
   (let [data-enum (get HEADER_DATA type)]
