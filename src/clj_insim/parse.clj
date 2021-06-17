@@ -16,23 +16,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private parsing data
 
-(def ^:private TYPES
-  [:none :isi :ver :tiny :small :sta :sch :sfp :scc :cpp :ism :mso :iii :mst :mtc
-   :mod :vtn :rst :ncn :cnl :cpr :npl :plp :pll :lap :spx :pit :psf :pla :cch
-   :pen :toc :flg :pfl :fin :res :reo :nlp :mci :msx :msl :crs :bfn :axi :axo
-   :btn :btc :btt :rip :ssh :con :obh :hlv :plc :axm :acr :hcp :nci :jrr :uco :oco
-   :ttc :slc :csc :cim])
-
-(def ^:private DATA
-  {:small
-   [:none :ssp :ssg :vta :tms :stp :rtp :nli :alc :lcs]
-
-   :tiny
-   [:none :ver :close :ping :reply :vtc :scp :sst :gth :mpe :ism :ren :clr :ncn
-    :npl :res :nlp :mci :reo :rst :axi :axc :rip :nci :alc :axm :slc]
-
-   :ttc
-   [:none :sel :sel-start :sel-stop]})
+(def ^:private HEADER_DATA
+  {:small enum/SMALL_HEADER_DATA
+   :tiny enum/TINY_HEADER_DATA
+   :ttc enum/TTC_HEADER_DATA})
 
 (def ^:private SFP_FLAGS
   [:shift-u-no-opt :show-2d :mspeedup :sound-mute])
@@ -48,35 +35,27 @@
 (def ^:private LCS_SWITCHES
   [:set-signals :set-flash :headlights :horn :siren])
 
-(def ^:private VTA_ACTION
-  [:none :end :restart :qualify])
-
-(def ^:private VIEW_IDENTIFIERS
-  [:follow :heli :cam :driver :custom])
-
-(def ^:private WIND_ENUM
-  [:off :weak :strong])
-
 (def ^:private INFO_BODY_PARSERS
-  {:cch #:body{:camera (enum/decode VIEW_IDENTIFIERS)}
-   :ism #:body{:host (enum/decode [:guest :host])}
-   :mso #:body{:user-type (enum/decode [:system :user :prefix :o])}
+  {:cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
+   :ism #:body{:host (enum/decode enum/HOST)}
+   :mso #:body{:user-type (enum/decode enum/USER_TYPE)}
    :rst #:body{:race-laps #(if (zero? %) :qualifying %)
                :qualify-minutes #(if (zero? %) :race %)
-               :wind (enum/decode WIND_ENUM)
+               :wind (enum/decode enum/WIND)
+               ;; TODO: Next step is to move flags data to flags ns
                :flags (partial flags/parse [:can-vote :can-select :mid-race :must-pit :can-reset :fcv :cruise])}
    :small
    {:alc #:body{:cars (partial flags/parse ALC_CARS)}
     :lcs #:body{:switches (partial flags/parse LCS_SWITCHES)}
-    :tms #:body{:stop (enum/decode [:carry-on :stop])}
-    :vta #:body{:action (enum/decode VTA_ACTION)}}
+    :tms #:body{:stop (enum/decode enum/STOP)}
+    :vta #:body{:action (enum/decode enum/ACTION)}}
    :sta
    #:body{:flags (partial flags/parse STA_FLAGS)
-          :in-game-cam (enum/decode VIEW_IDENTIFIERS)
-          :race-in-progress (enum/decode [:no-race :race :qualifying])
+          :in-game-cam (enum/decode enum/VIEW_IDENTIFIERS)
+          :race-in-progress (enum/decode enum/RACE_IN_PROGRESS)
           :race-laps parse-race-laps
-          :wind (enum/decode WIND_ENUM)}
-   :vtn #:body{:action (enum/decode VTA_ACTION)}})
+          :wind (enum/decode enum/WIND)}
+   :vtn #:body{:action (enum/decode enum/ACTION)}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private parse functions
@@ -85,7 +64,7 @@
   "Returns header with `:header/data` parsed.
    `(parse-data #:header{:type :tiny :data 2}) => #:header{:type :tiny :data :close}`"
   [{:header/keys [type] :as header}]
-  (let [data-enum (get DATA type)]
+  (let [data-enum (get HEADER_DATA type)]
     (cond-> header
       data-enum (update :header/data (enum/decode data-enum)))))
 
@@ -100,7 +79,7 @@
   [{:header/keys [type] :as header}]
   (when (and header type)
     (-> header
-        (update :header/type (enum/decode TYPES))
+        (update :header/type (enum/decode enum/HEADER_TYPE))
         (parse-header-data))))
 
 (defn body
@@ -122,7 +101,7 @@
   {:isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
    :mst #:body{:message #(u/c-str % 64)}
    :mtc #:body{:text #(u/c-str % (count %))}
-   :scc #:body{:in-game-cam (enum/encode VIEW_IDENTIFIERS)}
+   :scc #:body{:in-game-cam (enum/encode enum/VIEW_IDENTIFIERS)}
    :sch #:body{:char int :flag (enum/encode [:shift :ctrl])}
    :sfp #:body{:flag (enum/encode SFP_FLAGS) :on-off (enum/encode [:off :on])}
    :sta #:body{:flags (partial flags/unparse STA_FLAGS)}})
@@ -131,8 +110,8 @@
   (u/map-kv (INSTRUCTION_BODY_PARSERS type {}) packet))
 
 (defn- parse-instruction-header [{:header/keys [type] :as header}]
-  (let [data-enum (get DATA type)]
-    (cond-> (update header :header/type (enum/encode TYPES))
+  (let [data-enum (get HEADER_DATA type)]
+    (cond-> (update header :header/type (enum/encode enum/HEADER_TYPE))
       data-enum (update :header/data (enum/encode data-enum)))))
 
 (def instruction (comp parse-instruction-header parse-instruction-body))
