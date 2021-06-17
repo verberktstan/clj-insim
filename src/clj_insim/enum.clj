@@ -14,6 +14,8 @@
 
 (def RACE_IN_PROGRESS [:no-race :race :qualifying])
 
+(def SFP [:shift-u-no-opt :show-2d :mspeedup :sound-mute])
+
 (def SMALL_HEADER_DATA [:none :ssp :ssg :vta :tms :stp :rtp :nli :alc :lcs])
 
 (def STOP [:carry-on :stop])

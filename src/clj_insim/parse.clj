@@ -21,20 +21,6 @@
    :tiny enum/TINY_HEADER_DATA
    :ttc enum/TTC_HEADER_DATA})
 
-(def ^:private SFP_FLAGS
-  [:shift-u-no-opt :show-2d :mspeedup :sound-mute])
-
-(def ^:private STA_FLAGS
-  [:game :replay :paused :shift-u :dialog :shift-u-follow :shift-u-no-opt
-   :show-2d :front-end :multi :mspeedup :windowed :sound-mute :view-override
-   :visible :text-entry])
-
-(def ^:private ALC_CARS
-  ["XFG" "XRG" "XRT" "RB4" "FXO" "LX4" "LX6" "MRT" "UF1" "RAC" "FZ5" "FOX" "XFR" "UFR" "FO8" "FXR" "XRR" "FZR" "BF1" "FBM"])
-
-(def ^:private LCS_SWITCHES
-  [:set-signals :set-flash :headlights :horn :siren])
-
 (def ^:private INFO_BODY_PARSERS
   {:cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
    :ism #:body{:host (enum/decode enum/HOST)}
@@ -43,14 +29,14 @@
                :qualify-minutes #(if (zero? %) :race %)
                :wind (enum/decode enum/WIND)
                ;; TODO: Next step is to move flags data to flags ns
-               :flags (partial flags/parse [:can-vote :can-select :mid-race :must-pit :can-reset :fcv :cruise])}
+               :flags (flags/parse flags/RST)}
    :small
-   {:alc #:body{:cars (partial flags/parse ALC_CARS)}
-    :lcs #:body{:switches (partial flags/parse LCS_SWITCHES)}
+   {:alc #:body{:cars (flags/parse flags/CARS)}
+    :lcs #:body{:switches (flags/parse flags/SWITCHES)}
     :tms #:body{:stop (enum/decode enum/STOP)}
     :vta #:body{:action (enum/decode enum/ACTION)}}
    :sta
-   #:body{:flags (partial flags/parse STA_FLAGS)
+   #:body{:flags (flags/parse flags/STA)
           :in-game-cam (enum/decode enum/VIEW_IDENTIFIERS)
           :race-in-progress (enum/decode enum/RACE_IN_PROGRESS)
           :race-laps parse-race-laps
@@ -103,8 +89,8 @@
    :mtc #:body{:text #(u/c-str % (count %))}
    :scc #:body{:in-game-cam (enum/encode enum/VIEW_IDENTIFIERS)}
    :sch #:body{:char int :flag (enum/encode [:shift :ctrl])}
-   :sfp #:body{:flag (enum/encode SFP_FLAGS) :on-off (enum/encode [:off :on])}
-   :sta #:body{:flags (partial flags/unparse STA_FLAGS)}})
+   :sfp #:body{:flag (enum/encode enum/SFP) :on-off (enum/encode [:off :on])}
+   :sta #:body{:flags (flags/unparse flags/STA)}})
 
 (defn- parse-instruction-body [{:header/keys [type] :as packet}]
   (u/map-kv (INSTRUCTION_BODY_PARSERS type {}) packet))
