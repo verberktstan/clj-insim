@@ -27,6 +27,11 @@
      #:header{:size (-> clipped count (+ 4 4)) :type :mtc :request-info 0 :data 0}
      #:body{:ucid ucid :player-id player-id :spare "00" :text clipped})))
 
+(defn mst [{:keys [message] :or {message "Hello world"}}]
+  (merge
+   #:header{:size 68 :type :mst :request-info 0 :data 0}
+   #:body{:message message}))
+
 (defn scc [{:keys [player-id in-game-cam] :or {player-id 0 in-game-cam :driver}}]
   (merge
    #:header{:size 8 :type :scc :request-info 0 :data 0}

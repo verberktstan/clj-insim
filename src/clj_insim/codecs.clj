@@ -37,6 +37,13 @@
       :body/total m/ubyte
       :body/spare (m/ascii-string 2)))
 
+   ;; Connection Player Renamed
+   :cpr
+   (fn [_]
+     (m/struct
+      :body/player-name (m/ascii-string 24)
+      :body/plate (m/ascii-string 8)))
+
    ;; TODO: Add CPP Codec
 
    :isi
