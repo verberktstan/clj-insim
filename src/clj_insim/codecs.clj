@@ -29,6 +29,14 @@
       :body/camera m/ubyte
       :body/spare (m/ascii-string 3)))
 
+   ;; ConnectioN Leave
+   :cnl
+   (fn [_]
+     (m/struct
+      :body/reason m/ubyte
+      :body/total m/ubyte
+      :body/spare (m/ascii-string 2)))
+
    ;; TODO: Add CPP Codec
 
    :isi
@@ -82,6 +90,16 @@
       :body/player-id m/ubyte
       :body/spare (m/ascii-string 2)
       :body/text (m/ascii-string (- size 4 4))))
+
+   :ncn
+   (fn [_]
+     (m/struct
+      :body/user-name (m/ascii-string 24)
+      :body/player-name (m/ascii-string 24)
+      :body/admin m/ubyte
+      :body/total m/ubyte
+      :body/flags m/ubyte
+      :body/spare m/ubyte))
 
    :ver
    (fn [_]

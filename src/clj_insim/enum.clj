@@ -12,6 +12,12 @@
 
 (def HOST [:guest :host])
 
+(def LEAVE_REASONS
+  [:disconnect :timeout :lost-connection :kicked :banned :security :cpw :oos
+   :joos :hack])
+
+(def PLAYER_TYPE [:female :ai :remote])
+
 (def RACE_IN_PROGRESS [:no-race :race :qualifying])
 
 (def SFP [:shift-u-no-opt :show-2d :mspeedup :sound-mute])
@@ -32,11 +38,17 @@
 
 (def WIND [:off :weak :strong])
 
-(defn encode [enum]
+(defn encode
+  "Returns a function that returns the integer value of item in enum.
+   `((encode [:a :b]) :b) => 1`"
+  [enum]
   {:pre [(sequential? enum)]}
   (u/index-of enum))
 
-(defn decode [enum]
+(defn decode
+  "Returns a function that returns the item found at an index in enum.
+   `((decode [:a :b]) 1) => :b`"
+  [enum]
   {:pre [(sequential? enum)]}
   (fn [idx]
     (when (contains? enum idx)
