@@ -23,8 +23,11 @@
 
 (def ^:private INFO_BODY_PARSERS
   {:cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
+   :cnl #:body{:reason (enum/decode enum/LEAVE_REASONS)}
    :ism #:body{:host (enum/decode enum/HOST)}
    :mso #:body{:user-type (enum/decode enum/USER_TYPE)}
+   :ncn #:body{:admin #(when (= 1 %) :admin)
+               :flags (enum/decode enum/PLAYER_TYPE)}
    :rst #:body{:race-laps #(if (zero? %) :qualifying %)
                :qualify-minutes #(if (zero? %) :race %)
                :wind (enum/decode enum/WIND)
