@@ -3,6 +3,8 @@
 
 (def ACTION [:none :end :restart :qualify])
 
+(def COMPOUNDS [:r1 :r2 :r3 :r4 :road-super :road-normal :hybrid :knobbly])
+
 (def HEADER_TYPE
   [:none :isi :ver :tiny :small :sta :sch :sfp :scc :cpp :ism :mso :iii :mst :mtc
    :mod :vtn :rst :ncn :cnl :cpr :npl :plp :pll :lap :spx :pit :psf :pla :cch

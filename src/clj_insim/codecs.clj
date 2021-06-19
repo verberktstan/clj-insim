@@ -108,6 +108,23 @@
       :body/flags m/ubyte
       :body/spare m/ubyte))
 
+   :npl
+   (fn [_]
+     (m/struct
+      :body/ucid m/ubyte
+      :body/player-type m/ubyte
+      :body/flags m/ushort
+      :body/car-name (m/ascii-string 4)
+      :body/skin-name (m/ascii-string 16)
+      :body/tyres (m/array m/ubyte 4)
+      :body/handicap-mass m/ubyte
+      :body/handicap-restriction m/ubyte
+      :body/passenger m/ubyte
+      :body/spare (m/ascii-string 4)
+      :body/setup-flags m/ubyte
+      :body/num-player m/ubyte
+      :body/spare2 (m/ascii-string 2)))
+
    :ver
    (fn [_]
      (m/struct
