@@ -4,7 +4,14 @@
   ["XFG" "XRG" "XRT" "RB4" "FXO" "LX4" "LX6" "MRT" "UF1" "RAC" "FZ5" "FOX" "XFR"
    "UFR" "FO8" "FXR" "XRR" "FZR" "BF1" "FBM"])
 
+(def PLAYER
+  [:swapside :reserved-2 :reserved-4 :autogears :shifter :reserved-32 :help-b
+   :axis-clutch :in-pits :autoclutch :mouse :kb-no-help :kb-stabilised
+   :custom-view])
+
 (def RST [:can-vote :can-select :mid-race :must-pit :can-reset :fcv :cruise])
+
+(def SETUP_FLAGS [:symm-wheels :tc-enable :abs-enable])
 
 (def STA
   [:game :replay :paused :shift-u :dialog :shift-u-follow :shift-u-no-opt

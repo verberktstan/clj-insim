@@ -13,6 +13,12 @@
     (< rl 191) {:laps (-> rl (- 100) (* 10) (+ 100))}
     (> rl 190) {:hours (- rl 190)}))
 
+(defn- parse-tyres [tyres]
+  (let [f (enum/decode enum/COMPOUNDS)]
+    (->> tyres
+      (map #(vector %1 (f %2)) [:rear-left :rear-right :front-left :front-right])
+      (into {}))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private parsing data
 
@@ -28,6 +34,10 @@
    :mso #:body{:user-type (enum/decode enum/USER_TYPE)}
    :ncn #:body{:admin #(when (= 1 %) :admin)
                :flags (enum/decode enum/PLAYER_TYPE)}
+   :npl #:body{:player-type (enum/decode enum/PLAYER_TYPE)
+               :flags (flags/parse flags/PLAYER)
+               :tyres parse-tyres
+               :setup-flags (flags/parse flags/SETUP_FLAGS)}
    :rst #:body{:race-laps #(if (zero? %) :qualifying %)
                :qualify-minutes #(if (zero? %) :race %)
                :wind (enum/decode enum/WIND)
