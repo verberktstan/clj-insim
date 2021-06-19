@@ -38,4 +38,4 @@
    `nil` when no data is present on the input-stream."
   [input-stream]
   (when-let [hdr (header input-stream)]
-    (merge hdr (body input-stream hdr))))
+    (body input-stream hdr)))
