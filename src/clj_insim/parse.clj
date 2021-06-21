@@ -1,7 +1,8 @@
 (ns clj-insim.parse
   (:require [clj-insim.enum :as enum]
             [clj-insim.flags :as flags]
-            [clj-insim.utils :as u]))
+            [clj-insim.utils :as u]
+            [clojure.set :as set]))
 
 (defn- raw?
   "Returns `true` if header/type is an integer value. This means that this
@@ -34,10 +35,22 @@
    :tiny enum/TINY_HEADER_DATA
    :ttc enum/TTC_HEADER_DATA})
 
+(def ^:private data->player-id
+  #:header{:data :player-id})
+
+;; In some cases, the header/data key must be renamed so we provide rename-keys
+;; kmaps per packet type here.
+(def ^:private HEADER_RENAMES
+  {:crs data->player-id
+   :pll data->player-id
+   :plp data->player-id})
+
 (def ^:private INFO_BODY_PARSERS
   {:cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
    :cnl #:body{:reason (enum/decode enum/LEAVE_REASONS)}
    :ism #:body{:host (enum/decode enum/HOST)}
+   :lap #:body{:flags (flags/parse flags/PLAYER)
+               :penalty (enum/decode enum/PENALTY)}
    :mso #:body{:user-type (enum/decode enum/USER_TYPE)}
    :ncn #:body{:admin #(when (= 1 %) :admin)
                :flags (enum/decode enum/PLAYER_TYPE)}
@@ -54,6 +67,7 @@
    :small
    {:alc #:body{:cars (flags/parse flags/CARS)}
     :vta #:body{:action (enum/decode enum/ACTION)}}
+   :spx #:body{:penalty (enum/decode enum/PENALTY)}
    :sta
    #:body{:flags (flags/parse flags/STA)
           :in-game-cam (enum/decode enum/VIEW_IDENTIFIERS)
@@ -69,9 +83,11 @@
   "Returns header with `:header/data` parsed.
    `(parse-data #:header{:type :tiny :data 2}) => #:header{:type :tiny :data :close}`"
   [{:header/keys [type] :as header}]
-  (let [data-enum (get HEADER_DATA type)]
+  (let [data-enum (get HEADER_DATA type)
+        rename-kmap (get HEADER_RENAMES type)]
     (cond-> header
-      data-enum (update :header/data (enum/decode data-enum)))))
+      data-enum (update :header/data (enum/decode data-enum))
+      rename-kmap (set/rename-keys rename-kmap))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parse raw info packets to clj-insim packets. This must be done - immediately -
