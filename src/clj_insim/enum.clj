@@ -18,6 +18,8 @@
   [:disconnect :timeout :lost-connection :kicked :banned :security :cpw :oos
    :joos :hack])
 
+(def PENALTY [:none :drive-through :drive-through-valid :stop-go :stop-go-valid :penalty-30 :penalty-45])
+
 (def PLAYER_TYPE [:female :ai :remote])
 
 (def RACE_IN_PROGRESS [:no-race :race :qualifying])

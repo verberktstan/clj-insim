@@ -75,6 +75,17 @@
 
    ;; TODO: Add MOD packet
 
+   :lap
+   (fn [_]
+     :body/lap-time m/uint32
+     :body/total-time m/uint32
+     :body/laps-done m/ushort
+     :body/flags m/ushort
+     :body/spare0 m/ubyte
+     :body/penalty m/ubyte
+     :body/num-stops m/ubyte
+     :body/spare3 m/ubyte)
+
    :mso
    (fn [{:header/keys [size]}]
      (m/struct
@@ -182,6 +193,16 @@
    :small
    (fn [{:header/keys [data]}]
      (apply m/struct (get SMALL data [:body/interval m/uint32])))
+
+   :spx
+   (fn [_]
+     (m/struct
+      :body/split-time m/uint32 ;; unsigned
+      :body/total-time m/uint32
+      :body/split m/ubyte
+      :body/penalty m/ubyte
+      :body/num-stops m/ubyte
+      :body/spare m/ubyte))
 
    :sta
    (fn [_]
