@@ -34,8 +34,8 @@
       (parse/body)))
 
 (defn packet
-  "Read (info) packet header and body from input-stream and return it. Returns
-   `nil` when no data is present on the input-stream."
+  "Read (info) packet header and body from input-stream, parse and return it.
+   Returns `nil` when no data is present on the input-stream."
   [input-stream]
   (when-let [hdr (header input-stream)]
     (body input-stream hdr)))

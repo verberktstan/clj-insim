@@ -3,6 +3,13 @@
             [clj-insim.flags :as flags]
             [clj-insim.utils :as u]))
 
+(defn- raw?
+  "Returns `true` if header/type is an integer value. This means that this
+   packet's header is a raw packet, received from LFS or prepared instruction
+   for sending to LFS."
+  [{:header/keys [type]}]
+  (int? type))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private parser functions
 
@@ -71,25 +78,24 @@
 ;; when we receive a packet from LFS.
 
 (defn header
-  "Returns header with `:header/type` and `:header/data` parsed. Returns `nil`
-   when header or type are falsey.
+  "Returns header with `:header/type` and `:header/data` parsed. Returns the input
+   header when it is not a 'raw' header.
    `(header #:header{:type 3 :data 2}) => #:header{:type :tiny :data :close}`"
-  [{:header/keys [type] :as header}]
-  (when (and header type)
-    (-> header
-        (update :header/type (enum/decode enum/HEADER_TYPE))
-        (parse-header-data))))
+  [header]
+  (cond-> header
+    (raw? header) (update :header/type (enum/decode enum/HEADER_TYPE))
+    (raw? header) (parse-header-data)))
 
 (defn body
   "Returns packet with it's :body/keys parsed, based on INFO_BODY_PARSERS
    ```clojure
-  (body {:header/type :small :header/data :vta :body/unique-connection-id 1 :body/action 1})
-  => {:header/type 4 :body/unique-connection-id 1 :body/action :end}```"
+  (body {:header/type :small :header/data :vta :body/action 1}) =>
+  {:header/type :small :header/data :vta :body/action :end}```"
   [{:header/keys [type data] :as packet}]
   (let [parsers (if (#{:small} type)
                   (get-in INFO_BODY_PARSERS [type data] {})
                   (get INFO_BODY_PARSERS type {}))]
-    (u/map-kv parsers (dissoc packet :body/spare))))
+    (u/map-kv parsers packet)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parse clj-insim packets to raw instruction. This must be done prior to sending
@@ -116,7 +122,8 @@
 
 (defn- parse-instruction-header [{:header/keys [type] :as header}]
   (let [data-enum (get HEADER_DATA type)]
-    (cond-> (update header :header/type (enum/encode enum/HEADER_TYPE))
-      data-enum (update :header/data (enum/encode data-enum)))))
+    (cond-> header
+      (not (raw? header)) (update :header/type (enum/encode enum/HEADER_TYPE))
+      (and (not (raw? header)) data-enum) (update :header/data (enum/encode data-enum)))))
 
 (def instruction (comp parse-instruction-header parse-instruction-body))
