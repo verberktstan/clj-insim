@@ -31,10 +31,10 @@
     (a/>!! to-lfs-chan (packets/tiny))))
 
 (defn start
-  "Opens a socket, streams and async channels to connect with Live For Sspeed via InSim.
+  "Opens a socket, streams and async channels to connect with Live For Speed via InSim.
    Returns a map containing `::from-lfs-chan`, `::to-lfs-chan` & `::close!`
    `(a/>!! to-lfs-chan packet)` makes the client send the packet to lfs.
-   `(a/<!! from-lfs-chan)` returns a packet from lfs if available. Preferrably do
+   `(a/<!! from-lfs-chan)` returns a packet from LFS if available. Preferrably do
    this in a go block / loop. Evaluate `::close!` to stop and close the client."
   ([]
    (start nil))
