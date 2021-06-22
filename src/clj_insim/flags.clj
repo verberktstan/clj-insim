@@ -4,6 +4,10 @@
   ["XFG" "XRG" "XRT" "RB4" "FXO" "LX4" "LX6" "MRT" "UF1" "RAC" "FZ5" "FOX" "XFR"
    "UFR" "FO8" "FXR" "XRR" "FZR" "BF1" "FBM"])
 
+(def CONFIRMATION_FLAGS
+  [:mentioned :confirmed :penalty-dt :penalty-sg :penalty-30 :penalty-45
+   :did-not-pit])
+
 (def PIT_WORK
   [:nothing :stop:front-dam :front-wheels :left-front-damage :left-front-wheels
    :right-front-damage :right-front-wheels :right-damage :right-wheels
