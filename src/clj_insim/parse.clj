@@ -58,6 +58,11 @@
                :flags (flags/parse flags/PLAYER)
                :tyres parse-tyres
                :setup-flags (flags/parse flags/SETUP_FLAGS)}
+   :pit #:body{:flags (flags/parse flags/PLAYER)
+               :penalty (enum/decode enum/PENALTY)
+               :tyres parse-tyres
+               :pit-work (flags/parse flags/PIT_WORK)}
+   :pla #:body{:fact (enum/decode enum/PIT_LANE_FACTS)}
    :rst #:body{:race-laps #(if (zero? %) :qualifying %)
                :qualify-minutes #(if (zero? %) :race %)
                :wind (enum/decode enum/WIND)

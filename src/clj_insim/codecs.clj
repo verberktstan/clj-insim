@@ -136,20 +136,30 @@
       :body/num-player m/ubyte
       :body/spare2 (m/ascii-string 2)))
 
-   :ver
+   :pit
    (fn [_]
      (m/struct
-      :body/version (m/ascii-string 8)
-      :body/product (m/ascii-string 6)
-      :body/insim-version m/ubyte
-      :body/spare m/ubyte))
+      :body/laps-done m/ushort
+      :body/flags m/ushort
+      :body/spare0 m/ubyte
+      :body/penalty m/ubyte
+      :body/num-stops m/ubyte
+      :body/spare3 m/ubyte
+      :body/tyres (m/array m/ubyte 4)
+      :body/pit-work m/uint32
+      :body/spare m/uint32))
 
-   :vtn
+   :pla
    (fn [_]
      (m/struct
-      :body/ucid m/ubyte
-      :body/action m/ubyte
-      :body/spare (m/ascii-string 2)))
+      :body/fact m/ubyte
+      :body/spare (m/ascii-string 3)))
+
+   :psf
+   (fn [_]
+     (m/struct
+      :body/stop-time m/uint32
+      :body/spare m/uint32))
 
    :rst
    (fn [_]
@@ -166,8 +176,7 @@
       :body/finish m/ushort
       :body/split1 m/ushort
       :body/split2 m/ushort
-      :body/split3 m/ushort
-))
+      :body/split3 m/ushort))
 
    :scc
    (fn [_]
@@ -220,4 +229,19 @@
       :body/spare (m/ascii-string 2)
       :body/track (m/ascii-string 6)
       :body/weather m/ubyte
-      :body/wind m/ubyte))})
+      :body/wind m/ubyte))
+
+   :ver
+   (fn [_]
+     (m/struct
+      :body/version (m/ascii-string 8)
+      :body/product (m/ascii-string 6)
+      :body/insim-version m/ubyte
+      :body/spare m/ubyte))
+
+   :vtn
+   (fn [_]
+     (m/struct
+      :body/ucid m/ubyte
+      :body/action m/ubyte
+      :body/spare (m/ascii-string 2)))})

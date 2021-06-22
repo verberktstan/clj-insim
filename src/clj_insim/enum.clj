@@ -20,6 +20,8 @@
 
 (def PENALTY [:none :drive-through :drive-through-valid :stop-go :stop-go-valid :penalty-30 :penalty-45])
 
+(def PIT_LANE_FACTS [:exit :enter :no-purpose :drive-through :stop-go])
+
 (def PLAYER_TYPE [:female :ai :remote])
 
 (def RACE_IN_PROGRESS [:no-race :race :qualifying])
