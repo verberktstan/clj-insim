@@ -4,6 +4,12 @@
   ["XFG" "XRG" "XRT" "RB4" "FXO" "LX4" "LX6" "MRT" "UF1" "RAC" "FZ5" "FOX" "XFR"
    "UFR" "FO8" "FXR" "XRR" "FZR" "BF1" "FBM"])
 
+(def PIT_WORK
+  [:nothing :stop:front-dam :front-wheels :left-front-damage :left-front-wheels
+   :right-front-damage :right-front-wheels :right-damage :right-wheels
+   :left-rear-damage :left-rear-wheels :right-rear-damage :right-rear-wheels
+   :body-minor :body-major :setup :refuel])
+
 (def PLAYER
   [:swapside :reserved-2 :reserved-4 :autogears :shifter :reserved-32 :help-b
    :axis-clutch :in-pits :autoclutch :mouse :kb-no-help :kb-stabilised
