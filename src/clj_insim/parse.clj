@@ -48,6 +48,10 @@
 (def ^:private INFO_BODY_PARSERS
   {:cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
    :cnl #:body{:reason (enum/decode enum/LEAVE_REASONS)}
+   :fin #:body{:confirm (flags/parse flags/CONFIRMATION_FLAGS)
+               :flags (flags/parse flags/PLAYER)}
+   :flg #:body{:off-on (enum/decode [:off :on])
+               :flag (flags/parse [:given-blue :causing-yellow])}
    :ism #:body{:host (enum/decode enum/HOST)}
    :lap #:body{:flags (flags/parse flags/PLAYER)
                :penalty (enum/decode enum/PENALTY)}
@@ -58,6 +62,10 @@
                :flags (flags/parse flags/PLAYER)
                :tyres parse-tyres
                :setup-flags (flags/parse flags/SETUP_FLAGS)}
+   :pen #:body{:old-penalty (enum/decode enum/PENALTY)
+               :new-penalty (enum/decode enum/PENALTY)
+               :reason (enum/decode enum/PENALTY_REASONS)}
+   :pfl #:body{:flags (flags/parse flags/PLAYER)}
    :pit #:body{:flags (flags/parse flags/PLAYER)
                :penalty (enum/decode enum/PENALTY)
                :tyres parse-tyres

@@ -18,7 +18,12 @@
   [:disconnect :timeout :lost-connection :kicked :banned :security :cpw :oos
    :joos :hack])
 
-(def PENALTY [:none :drive-through :drive-through-valid :stop-go :stop-go-valid :penalty-30 :penalty-45])
+(def PENALTY
+  [:none :drive-through :drive-through-valid :stop-go :stop-go-valid :penalty-30
+   :penalty-45])
+
+(def PENALTY_REASONS
+  [:unknown :admin :wrong-way :false-start :speeding :stop-short :stop-late])
 
 (def PIT_LANE_FACTS [:exit :enter :no-purpose :drive-through :stop-go])
 

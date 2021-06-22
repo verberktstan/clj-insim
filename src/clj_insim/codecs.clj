@@ -46,6 +46,26 @@
 
    ;; TODO: Add CPP Codec
 
+   :fin
+   (fn [_]
+     (m/struct
+      :body/total-time m/uint32 ;; unsigned
+      :body/best-time m/uint32
+      :body/spare-a m/ubyte
+      :body/num-stops m/ubyte
+      :body/confirm m/ubyte
+      :body/spare-b m/ubyte
+      :body/laps-done m/ushort
+      :body/flags m/ushort))
+
+   :flg
+   (fn [_]
+     (m/struct
+      :body/off-on m/ubyte
+      :body/flag m/ubyte
+      :body/car-behind m/ubyte
+      :body/spare m/ubyte))
+
    :isi
    (fn [_]
      (m/struct
@@ -135,6 +155,20 @@
       :body/setup-flags m/ubyte
       :body/num-player m/ubyte
       :body/spare2 (m/ascii-string 2)))
+
+   :pen
+   (fn [_]
+     (m/struct
+      :body/old-penalty m/ubyte
+      :body/new-penalty m/ubyte
+      :body/reason m/ubyte
+      :body/spare m/ubyte))
+
+   :pfl
+   (fn [_]
+     (m/struct
+      :body/flags m/ushort
+      :body/spare (m/ascii-string 2)))
 
    :pit
    (fn [_]
@@ -230,6 +264,13 @@
       :body/track (m/ascii-string 6)
       :body/weather m/ubyte
       :body/wind m/ubyte))
+
+   :toc
+   (fn [_]
+     (m/struct
+      :body/old-ucid m/ubyte
+      :body/new-ucid m/ubyte
+      :body/spare (m/ascii-string 2)))
 
    :ver
    (fn [_]
