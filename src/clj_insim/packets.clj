@@ -32,6 +32,12 @@
    #:header{:size 68 :type :mst :request-info 0 :data 0}
    #:body{:message message}))
 
+(defn reo [{:keys [player-ids] :or {player-ids [1 2 3]}}]
+  (let [[_ zeroes] (split-at (count player-ids) (repeat 40 0))]
+    (merge
+     #:header{:size 44 :type :reo :request-info 0 :data 0}
+     #:body{:player-ids (concat player-ids zeroes)})))
+
 (defn scc [{:keys [player-id in-game-cam] :or {player-id 0 in-game-cam :driver}}]
   (merge
    #:header{:size 8 :type :scc :request-info 0 :data 0}

@@ -4,7 +4,7 @@
   ["XFG" "XRG" "XRT" "RB4" "FXO" "LX4" "LX6" "MRT" "UF1" "RAC" "FZ5" "FOX" "XFR"
    "UFR" "FO8" "FXR" "XRR" "FZR" "BF1" "FBM"])
 
-(def CONFIRMATION_FLAGS
+(def CONFIRMATION
   [:mentioned :confirmed :penalty-dt :penalty-sg :penalty-30 :penalty-45
    :did-not-pit])
 
