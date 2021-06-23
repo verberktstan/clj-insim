@@ -195,6 +195,30 @@
       :body/stop-time m/uint32
       :body/spare m/uint32))
 
+   :reo
+   (fn [_]
+     (m/struct
+      :body/player-ids (m/array m/ubyte 40)))
+
+   :res
+   (fn [_]
+     (m/struct
+      :body/user-name (m/ascii-string 24)
+      :body/player-name (m/ascii-string 24)
+      :body/plate (m/ascii-string 8)
+      :body/skin-name (m/ascii-string 4)
+      :body/total-time m/uint32
+      :body/best-time m/uint32
+      :body/spare-a m/ubyte
+      :body/num-stops m/ubyte
+      :bdoy/confirmation-flags m/ubyte
+      :body/spare-b m/ubyte
+      :body/laps-done m/ushort
+      :body/flags m/ushort
+      :body/result-num m/ubyte
+      :body/num-results m/ubyte
+      :body/penalty-seconds m/ushort))
+
    :rst
    (fn [_]
      (m/struct

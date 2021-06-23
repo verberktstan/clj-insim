@@ -48,7 +48,7 @@
 (def ^:private INFO_BODY_PARSERS
   {:cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
    :cnl #:body{:reason (enum/decode enum/LEAVE_REASONS)}
-   :fin #:body{:confirm (flags/parse flags/CONFIRMATION_FLAGS)
+   :fin #:body{:confirm (flags/parse flags/CONFIRMATION)
                :flags (flags/parse flags/PLAYER)}
    :flg #:body{:off-on (enum/decode [:off :on])
                :flag (flags/parse [:given-blue :causing-yellow])}
@@ -71,10 +71,11 @@
                :tyres parse-tyres
                :pit-work (flags/parse flags/PIT_WORK)}
    :pla #:body{:fact (enum/decode enum/PIT_LANE_FACTS)}
+   :res #:body{:confirmation-flags (flags/parse flags/CONFIRMATION)
+               :flags (flags/parse flags/PLAYER)}
    :rst #:body{:race-laps #(if (zero? %) :qualifying %)
                :qualify-minutes #(if (zero? %) :race %)
                :wind (enum/decode enum/WIND)
-               ;; TODO: Next step is to move flags data to flags ns
                :flags (flags/parse flags/RST)}
    ;; Some of the small packets can be received as info, and need parsing
    :small
