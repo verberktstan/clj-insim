@@ -104,7 +104,7 @@
      :body/spare0 m/ubyte
      :body/penalty m/ubyte
      :body/num-stops m/ubyte
-     :body/spare3 m/ubyte)
+     :body/fuel-200 m/ubyte)
 
    :mso
    (fn [{:header/keys [size]}]
@@ -205,7 +205,7 @@
      (m/struct
       :body/laps-done m/ushort
       :body/flags m/ushort
-      :body/spare0 m/ubyte
+      :body/fuel-added m/ubyte
       :body/penalty m/ubyte
       :body/num-stops m/ubyte
       :body/spare3 m/ubyte
@@ -299,7 +299,7 @@
       :body/split m/ubyte
       :body/penalty m/ubyte
       :body/num-stops m/ubyte
-      :body/spare m/ubyte))
+      :body/fuel-200 m/ubyte))
 
    :sta
    (fn [_]
