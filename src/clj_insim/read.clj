@@ -1,5 +1,6 @@
 (ns clj-insim.read
   (:require [clj-insim.codecs :as codecs]
+            [clj-insim.models.packet :as packet]
             [clj-insim.parse :as parse]
             [clj-insim.utils :as u]
             [marshal.core :as m]))
@@ -8,7 +9,8 @@
   "Reads 4 bytes from input-stream and returns these, marhalled into a clojure
    map with the header codec. Returns false when no bytes are available to read."
   [input-stream]
-  (and (pos? (.available input-stream))
+  {:post [(or (nil? %) (packet/raw? %))]}
+  (and (when (pos? (.available input-stream)) true)
        (m/read input-stream codecs/header)))
 
 (def ^:private header (comp parse/header read-header))
@@ -37,5 +39,6 @@
   "Read (info) packet header and body from input-stream, parse and return it.
    Returns `nil` when no data is present on the input-stream."
   [input-stream]
+  {:post [(or (nil? %) (packet/parsed? %))]}
   (when-let [hdr (header input-stream)]
     (body input-stream hdr)))
