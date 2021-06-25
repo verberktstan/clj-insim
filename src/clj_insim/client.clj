@@ -1,10 +1,14 @@
 (ns clj-insim.client
-  (:require [clj-insim.packets :as packets]
+  (:require [clj-insim.models.packet :as packet]
+            [clj-insim.packets :as packets]
             [clj-insim.read :as read]
             [clj-insim.write :as write]
             [clojure.core.async :as a]
             [clojure.java.io :as io])
   (:import [java.net Socket]))
+
+(defonce ERRORS (atom true))
+(defonce VERBOSE (atom false))
 
 (defn- maintain-connection-packet?
   "Returns a truethy value when a TINY/NONE packet is passed in as argument."
@@ -28,7 +32,11 @@
    the maintain connection concern."
   [{::keys [to-lfs-chan]} packet]
   (when (maintain-connection-packet? packet)
-    (a/>!! to-lfs-chan (packets/tiny))))
+    (a/>!! to-lfs-chan (packets/tiny)))
+  (when @VERBOSE
+    (newline)
+    (println (str "IS_" (-> (:header/type packet) name clojure.string/upper-case) " packet!"))
+    (println (str packet))))
 
 (defn start
   "Opens a socket, streams and async channels to connect with Live For Speed via InSim.
@@ -56,11 +64,15 @@
      (a/go
        (a/>! to-lfs-chan isi)
        (while @running?
-         (let [packet (a/<! to-lfs-chan)]
-           (write/packet! output-stream packet))))
+         (try
+           (let [packet (a/<! to-lfs-chan)]
+             (write/packet! output-stream packet))
+           (catch AssertionError e (when @ERRORS (println "ERROR:" (.getMessage e)))))))
      (a/go
        (while @running?
-         (when-let [packet (read/packet input-stream)]
+         (when-let [packet (try
+                             (read/packet input-stream)
+                             (catch AssertionError e (when @ERRORS (println "ERROR:" (.getMessage e)))))]
            (dispatch channels packet)
            (a/>! from-lfs-chan packet))))
      (println "clj-insim: client started")
@@ -77,7 +89,10 @@
   ;; Stop the client
   (stop! lfs-client)
 
-  (let [packet (packets/scc {:player-id 0 :in-game-cam :follow})]
+  (reset! VERBOSE true)
+
+  (let [packet (packets/scc {:player-id 0 :in-game-cam :follow})
+        packet {:blah "shizzle"}]
     (a/>!! (::to-lfs-chan lfs-client) packet))
   
   (let [packet (packets/mtc {:text "Hello world!"})]
