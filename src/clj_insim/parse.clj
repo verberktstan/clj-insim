@@ -31,7 +31,8 @@
 ;; Private parsing data
 
 (def ^:private HEADER_DATA
-  {:small enum/SMALL_HEADER_DATA
+  {:msl enum/MESSAGE_SOUNDS
+   :small enum/SMALL_HEADER_DATA
    :tiny enum/TINY_HEADER_DATA
    :ttc enum/TTC_HEADER_DATA})
 
@@ -133,7 +134,9 @@
 
 (def ^:private INSTRUCTION_BODY_PARSERS
   {:isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
+   :msl #:body{:message #(u/c-str % 128)}
    :mst #:body{:message #(u/c-str % 64)}
+   :msx #:body{:message #(u/c-str % 96)}
    :mtc #:body{:text #(u/c-str % (count %))}
    :scc #:body{:in-game-cam (enum/encode enum/VIEW_IDENTIFIERS)}
    :sch #:body{:char int :flag (enum/encode [:shift :ctrl])}

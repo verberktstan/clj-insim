@@ -91,10 +91,10 @@
 
   (reset! VERBOSE true)
 
-  (let [packet (packets/scc {:player-id 0 :in-game-cam :follow})
-        packet {:blah "shizzle"}]
+  (let [;packet (packets/scc {:player-id 0 :in-game-cam :follow})
+        packet (packets/msl {:sound :error})]
     (a/>!! (::to-lfs-chan lfs-client) packet))
-  
+
   (let [packet (packets/mtc {:text "Hello world!"})]
     (a/>!! (::to-lfs-chan lfs-client) packet))
 )
