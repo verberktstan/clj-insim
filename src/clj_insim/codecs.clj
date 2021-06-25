@@ -139,22 +139,52 @@
       :body/flags m/ubyte
       :body/spare m/ubyte))
 
+   :nlp
+   (fn [{:header/keys [size]}]
+     (let [body-size (- size 4)
+           remainder (rem body-size 6)
+           n (int (/ body-size 6))]
+       (apply
+        m/struct
+        (concat
+         [:body/nlp
+          (m/array
+           (m/struct
+            :nlp/node m/ushort
+            :nlp/lap m/ushort
+            :nlp/player-id m/ubyte
+            :nlp/position m/ubyte)
+           n)]
+         (when-not (zero? remainder)
+           [:body/spare (m/ascii-string remainder)])))))
+
    :npl
    (fn [_]
      (m/struct
       :body/ucid m/ubyte
       :body/player-type m/ubyte
       :body/flags m/ushort
+
+      :body/player-name (m/ascii-string 24)
+      :body/plate (m/ascii-string 8)
+
       :body/car-name (m/ascii-string 4)
       :body/skin-name (m/ascii-string 16)
       :body/tyres (m/array m/ubyte 4)
+
       :body/handicap-mass m/ubyte
       :body/handicap-restriction m/ubyte
+      :body/model m/ubyte
       :body/passenger m/ubyte
-      :body/spare (m/ascii-string 4)
+
+      :body/rear-wheel-adjustment m/ubyte
+      :body/front-wheel-adjustment m/ubyte
+      :body/spare (m/ascii-string 2)
+
       :body/setup-flags m/ubyte
       :body/num-player m/ubyte
-      :body/spare2 (m/ascii-string 2)))
+      :body/config m/ubyte
+      :body/fuel m/ubyte))
 
    :pen
    (fn [_]

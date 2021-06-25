@@ -21,7 +21,7 @@
 
 (def RST [:can-vote :can-select :mid-race :must-pit :can-reset :fcv :cruise])
 
-(def SETUP_FLAGS [:symm-wheels :tc-enable :abs-enable])
+(def SETUP [:symm-wheels :tc-enable :abs-enable])
 
 (def STA
   [:game :replay :paused :shift-u :dialog :shift-u-follow :shift-u-no-opt

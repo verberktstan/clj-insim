@@ -61,7 +61,7 @@
    :npl #:body{:player-type (enum/decode enum/PLAYER_TYPE)
                :flags (flags/parse flags/PLAYER)
                :tyres parse-tyres
-               :setup-flags (flags/parse flags/SETUP_FLAGS)}
+               :setup-flags (flags/parse flags/SETUP)}
    :pen #:body{:old-penalty (enum/decode enum/PENALTY)
                :new-penalty (enum/decode enum/PENALTY)
                :reason (enum/decode enum/PENALTY_REASONS)}
