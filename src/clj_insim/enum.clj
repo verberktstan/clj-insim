@@ -3,6 +3,8 @@
 
 (def ACTION [:none :end :restart :qualify])
 
+(def BFN_HEADER_DATA [:delete-button :clear :user-clear :request])
+
 (def COMPOUNDS [:r1 :r2 :r3 :r4 :road-super :road-normal :hybrid :knobbly])
 
 (def HEADER_TYPE

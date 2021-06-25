@@ -31,7 +31,8 @@
 ;; Private parsing data
 
 (def ^:private HEADER_DATA
-  {:msl enum/MESSAGE_SOUNDS
+  {:bfn enum/BFN_HEADER_DATA
+   :msl enum/MESSAGE_SOUNDS
    :small enum/SMALL_HEADER_DATA
    :tiny enum/TINY_HEADER_DATA
    :ttc enum/TTC_HEADER_DATA})

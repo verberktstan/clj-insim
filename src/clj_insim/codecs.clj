@@ -23,7 +23,23 @@
 ;; type/data. Take a look at `:small` for an example.
 
 (def body
-  {:cch
+  {:axi
+   (fn [_]
+     (m/struct
+      :body/autocross-start m/ubyte
+      :body/num-checkpoints m/ubyte
+      :body/num-objects m/ushort
+      :body/layout-name (m/ascii-string 32)))
+
+   :bfn
+   (fn [_]
+     (m/struct
+      :body/ucid m/ubyte
+      :body/click-id m/ubyte
+      :body/click-max m/ubyte
+      :body/inst m/ubyte))
+
+   :cch
    (fn [_]
      (m/struct
       :body/camera m/ubyte
