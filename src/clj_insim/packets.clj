@@ -27,9 +27,20 @@
      #:header{:size (-> clipped count (+ 4 4)) :type :mtc :request-info 0 :data 0}
      #:body{:ucid ucid :player-id player-id :spare "00" :text clipped})))
 
+(defn msl [{:keys [message sound]
+            :or {message "Hello world" sound :silent}}]
+  (merge
+   #:header{:size 132 :type :msl :request-info 0 :data sound}
+   #:body{:message message}))
+
 (defn mst [{:keys [message] :or {message "Hello world"}}]
   (merge
    #:header{:size 68 :type :mst :request-info 0 :data 0}
+   #:body{:message message}))
+
+(defn msx [{:keys [message] :or {message "Hello world"}}]
+  (merge
+   #:header{:size 100 :type :msx :request-info 0 :data 0}
    #:body{:message message}))
 
 (defn reo [{:keys [player-ids] :or {player-ids [1 2 3]}}]

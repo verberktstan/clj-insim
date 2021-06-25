@@ -106,6 +106,13 @@
      :body/num-stops m/ubyte
      :body/fuel-200 m/ubyte)
 
+   ;; TODO: Add MCI packet
+
+   :msl
+   (fn [_]
+     (m/struct
+      :body/message (m/ascii-string 128)))
+
    :mso
    (fn [{:header/keys [size]}]
      (m/struct
@@ -120,6 +127,11 @@
    (fn [_]
      (m/struct
       :body/message (m/ascii-string 64)))
+
+   :msx
+   (fn [_]
+     (m/struct
+      :body/message (m/ascii-string 96)))
 
    :mtc
    (fn [{:header/keys [size]}]

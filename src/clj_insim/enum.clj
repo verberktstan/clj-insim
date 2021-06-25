@@ -18,6 +18,8 @@
   [:disconnect :timeout :lost-connection :kicked :banned :security :cpw :oos
    :joos :hack])
 
+(def MESSAGE_SOUNDS [:silent :message :system-message :invalid-key :error])
+
 (def PENALTY
   [:none :drive-through :drive-through-valid :stop-go :stop-go-valid :penalty-30
    :penalty-45])
