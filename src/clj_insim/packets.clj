@@ -6,6 +6,31 @@
 ;; :body/spare is (m/ascii-string 2), the default :body/spare value should always
 ;; be a string of length 2!
 
+(defn btn [{:keys [text request-info ucid click-id inst button-style type-in left top width height]
+            :or {text "Hello button"
+                 request-info 1
+                 ucid 0
+                 click-id 0
+                 inst 0
+                 button-style #{:click}
+                 type-in 0
+                 left (- 100 25)
+                 top (- 100 5)
+                 width 50
+                 height 10}}]
+  (let [clipped (u/clip-str text 240 4)]
+    (merge
+     #:header{:size (+ 12 (-> clipped count (+ 4 8))) :type :btn :request-info request-info :ucid ucid}
+     #:body{:click-id click-id
+            :inst inst
+            :button-style button-style
+            :type-in type-in
+            :left left
+            :top top
+            :width width
+            :height height
+            :text clipped})))
+
 ;; InSimInit packet
 (defn isi
   ([]

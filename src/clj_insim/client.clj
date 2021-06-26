@@ -4,7 +4,8 @@
             [clj-insim.read :as read]
             [clj-insim.write :as write]
             [clojure.core.async :as a]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [clojure.string :as str])
   (:import [java.net Socket]))
 
 (defonce ERRORS (atom true))
@@ -27,16 +28,19 @@
   {::output-stream (io/output-stream socket)
    ::input-stream  (io/input-stream socket)})
 
+(defn- print-verbose [packet]
+  (when @VERBOSE
+    (newline)
+    (println (str "IS_" (-> (:header/type packet) name str/upper-case) " packet!"))
+    (println (str packet))))
+
 (defn- dispatch
   "Dispatch is the entrypoint for automatic responses to certain packets, like
    the maintain connection concern."
   [{::keys [to-lfs-chan]} packet]
   (when (maintain-connection-packet? packet)
     (a/>!! to-lfs-chan (packets/tiny)))
-  (when @VERBOSE
-    (newline)
-    (println (str "IS_" (-> (:header/type packet) name clojure.string/upper-case) " packet!"))
-    (println (str packet))))
+  (print-verbose packet))
 
 (defn start
   "Opens a socket, streams and async channels to connect with Live For Speed via InSim.
@@ -92,7 +96,8 @@
   (reset! VERBOSE true)
 
   (let [;packet (packets/scc {:player-id 0 :in-game-cam :follow})
-        packet (packets/msl {:sound :error})]
+        ;packet (packets/msl {:sound :error})
+        packet (packets/btn {})]
     (a/>!! (::to-lfs-chan lfs-client) packet))
 
   (let [packet (packets/mtc {:text "Hello world!"})]

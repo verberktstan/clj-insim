@@ -38,17 +38,20 @@
    :ttc enum/TTC_HEADER_DATA})
 
 (def ^:private data->player-id
-  #:header{:data :player-id})
+  {:header/data :header/player-id})
 
 ;; In some cases, the header/data key must be renamed so we provide rename-keys
 ;; kmaps per packet type here.
 (def ^:private HEADER_RENAMES
-  {:crs data->player-id
+  {:axi data->player-id
+   :btc {:header/data :header/ucid}
+   :crs data->player-id
    :pll data->player-id
    :plp data->player-id})
 
 (def ^:private INFO_BODY_PARSERS
-  {:cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
+  {:btc #:body{:flags (flags/parse [:lmb :rmb :ctrl :shift])}
+   :cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
    :cnl #:body{:reason (enum/decode enum/LEAVE_REASONS)}
    :fin #:body{:confirm (flags/parse flags/CONFIRMATION)
                :flags (flags/parse flags/PLAYER)}
@@ -134,7 +137,8 @@
 ;; the packet to LFS.
 
 (def ^:private INSTRUCTION_BODY_PARSERS
-  {:isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
+  {:btn #:body{:button-style (flags/unparse flags/BUTTON_STYLE)}
+   :isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
    :msl #:body{:message #(u/c-str % 128)}
    :mst #:body{:message #(u/c-str % 64)}
    :msx #:body{:message #(u/c-str % 96)}

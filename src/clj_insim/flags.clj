@@ -1,5 +1,7 @@
 (ns clj-insim.flags)
 
+(def BUTTON_STYLE [:c1 :c2 :c4 :click :light :dark :left :right])
+
 (def CARS
   ["XFG" "XRG" "XRT" "RB4" "FXO" "LX4" "LX6" "MRT" "UF1" "RAC" "FZ5" "FOX" "XFR"
    "UFR" "FO8" "FXR" "XRR" "FZR" "BF1" "FBM"])
