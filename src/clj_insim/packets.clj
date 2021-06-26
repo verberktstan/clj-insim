@@ -72,7 +72,7 @@
 (defn plc [{:keys [cars ucid] :or {ucid 0 cars #{"XFG XRG"}}}]
   (merge
    #:header{:size 12 :type :plc :request-info 0 :data 0}
-   #:body{:ucid ucid :spare 0 :cars cars}))
+   #:body{:ucid ucid :spare "000" :cars cars}))
 
 (defn reo [{:keys [player-ids] :or {player-ids [1 2 3]}}]
   (let [[_ zeroes] (split-at (count player-ids) (repeat 40 0))]

@@ -71,16 +71,16 @@
          (try
            (let [packet (a/<! to-lfs-chan)]
              (write/packet! output-stream packet))
-           (catch Throwable e
+           (catch Throwable t
              (when @ERRORS
-               (println "clj-insim error:" (.getMessage e)))))))
+               (println "clj-insim error:" (.getMessage t)))))))
      (a/go
        (while @running?
          (when-let [packet (try
                              (read/packet input-stream)
-                             (catch Throwable e
+                             (catch Throwable t
                                (when @ERRORS
-                                 (println "clj-insim error:" (.getMessage e)))))]
+                                 (println "clj-insim error:" (.getMessage t)))))]
            (dispatch channels packet)
            (a/>! from-lfs-chan packet))))
      (println "clj-insim: client started")
@@ -99,10 +99,7 @@
 
   (reset! VERBOSE true)
 
-  (let [;packet (packets/scc {:player-id 0 :in-game-cam :follow})
-        ;packet (packets/msl {:sound :error})
-        ;packet (packets/btn {})
-        packet (packets/plc {:ucid 0 :cars #{"XFG XRG"}})]
+  (let [packet (packets/plc {:ucid 0 :cars #{"FZR" "FBM"}})]
     (a/>!! (::to-lfs-chan lfs-client) packet))
 
   (let [packet (packets/mtc {:text "Hello world!"})]
