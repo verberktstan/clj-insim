@@ -158,6 +158,7 @@
    :mst #:body{:message #(u/c-str % 64)}
    :msx #:body{:message #(u/c-str % 96)}
    :mtc #:body{:text #(u/c-str % (count %))}
+   :plc #:body{:cars (flags/unparse flags/CARS)}
    :scc #:body{:in-game-cam (enum/encode enum/VIEW_IDENTIFIERS)}
    :sch #:body{:char int :flag (enum/encode [:shift :ctrl])}
    :sfp #:body{:flag (enum/encode enum/SFP) :on-off (enum/encode [:off :on])}

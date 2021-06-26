@@ -332,6 +332,13 @@
       :body/fact m/ubyte
       :body/spare (m/ascii-string 3)))
 
+   :plc
+   (fn [_]
+     (m/struct
+      :body/ucid m/ubyte
+      :body/spare (m/ascii-string 3)
+      :body/cars m/uint32)) ;; unsigned
+
    :psf
    (fn [_]
      (m/struct
