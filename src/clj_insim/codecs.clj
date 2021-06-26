@@ -39,6 +39,36 @@
       :body/click-max m/ubyte
       :body/inst m/ubyte))
 
+   :btc
+   (fn [_]
+     (m/struct
+      :body/click-id m/ubyte
+      :body/inst m/ubyte
+      :body/flags m/ubyte
+      :body/spare m/ubyte))
+
+   :btn
+   (fn [{:header/keys [size]}]
+     (m/struct
+      :body/click-id m/ubyte
+      :body/inst m/ubyte
+      :body/button-style m/ubyte
+      :body/type-in m/ubyte
+      :body/left m/ubyte
+      :body/top m/ubyte
+      :body/width m/ubyte
+      :body/height m/ubyte
+      :body/text (m/ascii-string (- size 12))))
+
+   :btt
+   (fn [_]
+     (m/struct
+      :body/click-id m/ubyte
+      :body/inst m/ubyte
+      :body/type-in m/ubyte
+      :body/spare m/ubyte
+      :body/text (m/ascii-string 96)))
+
    :cch
    (fn [_]
      (m/struct
