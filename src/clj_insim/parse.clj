@@ -14,6 +14,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private parser functions
 
+(defn- parse-car-contact [{:car-contact/keys [throttle-brake] :as car-contact}]
+  (let [throttle (unsigned-bit-shift-right throttle-brake 4)
+        brake (bit-shift-left throttle-brake 4)]
+    (-> car-contact
+        (assoc :car-contact/throttle throttle)
+        (assoc :car-contact/brake brake))))
+
 (defn- parse-race-laps [rl]
   (cond
     (zero? rl) {:practice true}
@@ -53,6 +60,7 @@
   {:btc #:body{:flags (flags/parse [:lmb :rmb :ctrl :shift])}
    :cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
    :cnl #:body{:reason (enum/decode enum/LEAVE_REASONS)}
+   ;; TODO add parsing for the CON packet
    :fin #:body{:confirm (flags/parse flags/CONFIRMATION)
                :flags (flags/parse flags/PLAYER)}
    :flg #:body{:off-on (enum/decode [:off :on])
@@ -138,7 +146,10 @@
 
 (def ^:private INSTRUCTION_BODY_PARSERS
   {:btn #:body{:button-style (flags/unparse flags/BUTTON_STYLE)}
-   :isi #:body{:admin #(u/c-str % 16) :iname #(u/c-str % 16) :prefix int}
+   :isi #:body{:admin #(u/c-str % 16)
+               :flags (flags/unparse flags/ISI)
+               :iname #(u/c-str % 16)
+               :prefix int}
    :msl #:body{:message #(u/c-str % 128)}
    :mst #:body{:message #(u/c-str % 64)}
    :msx #:body{:message #(u/c-str % 96)}

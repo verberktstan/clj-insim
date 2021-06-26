@@ -17,6 +17,23 @@
    :tms [:body/stop m/uint32]
    :vta [:body/action m/uint32]})
 
+(def ^:private CAR_CONTACT
+  (m/struct
+   :car-contact/player-id m/ubyte
+   :car-contact/info m/ubyte
+   :car-contact/spare m/ubyte
+   :car-contact/steer m/sbyte
+   :car-contact/throttle-brake m/ubyte
+   :car-contact/clutch-handbrake m/ubyte
+   :car-contact/gear-spare m/ubyte
+   :car-contact/speed m/ubyte
+   :car-contact/direction m/ubyte
+   :car-contact/heading m/ubyte
+   :car-contact/acceleration-forward m/sbyte
+   :car-contact/acceleration-right m/sbyte
+   :car-contact/x m/ushort
+   :car-contact/y m/ushort))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The values in the `body` map are functions that return a marshal struct.
 ;; Because in some cases we want to change the body codec based on the header
@@ -83,6 +100,14 @@
       :body/total m/ubyte
       :body/spare (m/ascii-string 2)))
 
+   :con
+   (fn [_]
+     (m/struct
+      :body/closing-speed m/ushort
+      :body/time m/ushort
+      :body/car-contacts
+      (m/array CAR_CONTACT 2)))
+
    ;; Connection Player Renamed
    :cpr
    (fn [_]
@@ -116,7 +141,7 @@
    (fn [_]
      (m/struct
       :body/udp-port m/ushort
-      :body/is-flags m/ushort
+      :body/flags m/ushort
       :body/insim-version m/ubyte
       :body/prefix m/ubyte
       :body/interval m/ushort
@@ -307,6 +332,8 @@
       :body/num-results m/ubyte
       :body/penalty-seconds m/ushort))
 
+   ;; TODO add RIP codec
+
    :rst
    (fn [_]
      (m/struct
@@ -358,6 +385,8 @@
       :body/penalty m/ubyte
       :body/num-stops m/ubyte
       :body/fuel-200 m/ubyte))
+
+   ;; TODO add SSH codec
 
    :sta
    (fn [_]
