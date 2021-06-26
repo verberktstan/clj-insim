@@ -10,6 +10,9 @@
   [:mentioned :confirmed :penalty-dt :penalty-sg :penalty-30 :penalty-45
    :did-not-pit])
 
+(def ISI
+  [:spare-0 :spare-1 :local :mso-cols :nlp :mci :con :obh :hlv :axm-load :axm-edit :req-join])
+
 (def PIT_WORK
   [:nothing :stop:front-dam :front-wheels :left-front-damage :left-front-wheels
    :right-front-damage :right-front-wheels :right-damage :right-wheels

@@ -35,15 +35,16 @@
 (defn isi
   ([]
    (isi nil))
-  ([{:keys [admin iname insim-version prefix]
+  ([{:keys [admin flags iname insim-version prefix]
       :or {admin "pwd"
+           flags #{:con}
            iname "clj-insim"
            insim-version 8
            prefix \!}}]
    ;; TODO: Implement is-flags
    (merge
     #:header{:size 44 :type :isi :request-info 1 :data 0}
-    #:body{:udp-port 0 :is-flags 0 :insim-version insim-version :prefix prefix
+    #:body{:udp-port 0 :flags flags :insim-version insim-version :prefix prefix
            :interval 0 :admin admin :iname iname})))
 
 (defn mtc [{:keys [ucid player-id text] :or {ucid 0 player-id 0 text "hello"}}]
