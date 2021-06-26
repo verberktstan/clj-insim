@@ -43,6 +43,11 @@
    :car-contact/x m/ushort
    :car-contact/y m/ushort))
 
+(def ^:private CAR_HANDICAP
+  (m/struct
+   :car-handicap/mass m/ubyte
+   :car-handicap/restriction m/ubyte))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The values in the `body` map are functions that return a marshal struct.
 ;; Because in some cases we want to change the body codec based on the header
@@ -145,6 +150,11 @@
       :body/flag m/ubyte
       :body/car-behind m/ubyte
       :body/spare m/ubyte))
+
+   :hcp
+   (fn [_]
+     (m/struct
+      :body/car-handicaps (m/array CAR_HANDICAP 32)))
 
    :hlv
    (fn [_]

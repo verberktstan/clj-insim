@@ -1,5 +1,6 @@
 (ns clj-insim.packets
-  (:require [clj-insim.utils :as u]))
+  (:require [clj-insim.flags :as flags]
+            [clj-insim.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Notice that :body/spare always gets a string. If the codec for a given
@@ -30,6 +31,14 @@
             :width width
             :height height
             :text clipped})))
+
+(defn hcp
+  "car-handicaps is expected to be a map with handicaps per car, like:
+  `{:XFG {:car-handicap/mass 10 :car-handicap/restriction 10}}`"
+  [car-handicaps]
+  (merge
+   #:header{:size 68 :type :hcp :request-info 0 :data 0}
+   #:body{:car-handicaps ((apply juxt (map keyword flags/CARS)) car-handicaps)}))
 
 ;; InSimInit packet
 (defn isi
