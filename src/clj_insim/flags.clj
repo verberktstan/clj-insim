@@ -13,6 +13,8 @@
 (def ISI
   [:spare-0 :spare-1 :local :mso-cols :nlp :mci :con :obh :hlv :axm-load :axm-edit :req-join])
 
+(def OBH [:layout :can-move :was-moving :on-spot])
+
 (def PIT_WORK
   [:nothing :stop:front-dam :front-wheels :left-front-damage :left-front-wheels
    :right-front-damage :right-front-wheels :right-damage :right-wheels

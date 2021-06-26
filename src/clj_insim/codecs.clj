@@ -31,6 +31,15 @@
    :car-contact/heading m/ubyte
    :car-contact/acceleration-forward m/sbyte
    :car-contact/acceleration-right m/sbyte
+   :car-contact/x m/sshort
+   :car-contact/y m/sshort))
+
+(def ^:private CAR_CONTACT_OBJECT
+  (m/struct
+   :car-contact/direction m/ubyte
+   :car-contact/heading m/ubyte
+   :car-contact/speed m/ubyte
+   :car-contact/z-byte m/ubyte
    :car-contact/x m/ushort
    :car-contact/y m/ushort))
 
@@ -136,6 +145,14 @@
       :body/flag m/ubyte
       :body/car-behind m/ubyte
       :body/spare m/ubyte))
+
+   :hlv
+   (fn [_]
+     (m/struct
+      :body/hlvc m/ubyte
+      :body/spare m/ubyte
+      :body/time m/ushort
+      :body/car-contact CAR_CONTACT_OBJECT))
 
    :isi
    (fn [_]
@@ -268,6 +285,19 @@
       :body/num-player m/ubyte
       :body/config m/ubyte
       :body/fuel m/ubyte))
+
+   :obh
+   (fn [_]
+     (m/struct
+      :body/closing-speed m/ushort
+      :body/time m/ushort
+      :body/car-contact CAR_CONTACT_OBJECT
+      :body/x m/sshort
+      :body/y m/sshort
+      :body/z-byte m/ubyte
+      :body/spare m/ubyte
+      :body/index m/ubyte
+      :body/flags m/ubyte))
 
    :pen
    (fn [_]

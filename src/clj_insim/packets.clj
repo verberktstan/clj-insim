@@ -37,7 +37,7 @@
    (isi nil))
   ([{:keys [admin flags iname insim-version prefix]
       :or {admin "pwd"
-           flags #{:con}
+           flags #{:con :hlv} ; Contact & Hot lap validity
            iname "clj-insim"
            insim-version 8
            prefix \!}}]

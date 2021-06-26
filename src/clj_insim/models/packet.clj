@@ -7,7 +7,8 @@
 (s/def :header/data #(or (nat-int? %) (keyword? %)))
 
 (s/def ::header
-  (s/keys :req [:header/size :header/type :header/request-info :header/data]))
+  (s/keys :req [:header/size :header/type :header/request-info]
+          :opt [:header/data :header/player-id])) ;; data is somethings renamed to player-id 
 
 (defn- conform-header-type [{:header/keys [type] :as packet}]
   (when (s/valid? ::header packet)
