@@ -58,7 +58,9 @@
    :plp data->player-id})
 
 (def ^:private INFO_BODY_PARSERS
-  {:btc #:body{:flags (flags/parse [:lmb :rmb :ctrl :shift])}
+  {:axm #:body{:action (enum/decode enum/PMO_ACTION)
+               :flags (flags/parse flags/PMO)}
+   :btc #:body{:flags (flags/parse [:lmb :rmb :ctrl :shift])}
    :cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
    :cnl #:body{:reason (enum/decode enum/LEAVE_REASONS)}
    ;; TODO add parsing for the CON packet
@@ -149,7 +151,9 @@
 ;; the packet to LFS.
 
 (def ^:private INSTRUCTION_BODY_PARSERS
-  {:btn #:body{:button-style (flags/unparse flags/BUTTON_STYLE)}
+  {:axm #:body{:action (enum/encode enum/PMO_ACTION)
+               :flags (flags/unparse flags/PMO)}
+   :btn #:body{:button-style (flags/unparse flags/BUTTON_STYLE)}
    :isi #:body{:admin #(u/c-str % 16)
                :flags (flags/unparse flags/ISI)
                :iname #(u/c-str % 16)

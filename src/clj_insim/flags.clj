@@ -26,6 +26,8 @@
    :axis-clutch :in-pits :autoclutch :mouse :kb-no-help :kb-stabilised
    :custom-view])
 
+(def PMO [:file-end :move-modify :selection-real :avoid-check])
+
 (def RST [:can-vote :can-select :mid-race :must-pit :can-reset :fcv :cruise])
 
 (def SETUP [:symm-wheels :tc-enable :abs-enable])

@@ -7,6 +7,14 @@
 ;; :body/spare is (m/ascii-string 2), the default :body/spare value should always
 ;; be a string of length 2!
 
+(defn axm [{:keys [ucid action flags object-infos]
+            :or {ucid 0 action :add-objects
+                 flags #{:file-end} object-infos []}}]
+  (let [n (count object-infos)]
+    (merge
+     #:header{:size (+ 4 4 (* n 8)) :type :axm :request-info 0 :data n}
+     #:body{:ucid ucid :action action :flags flags :spare "0" :object-infos object-infos})))
+
 (defn btn [{:keys [text request-info ucid click-id inst button-style type-in left top width height]
             :or {text "Hello button"
                  request-info 1
