@@ -48,6 +48,15 @@
    :car-handicap/mass m/ubyte
    :car-handicap/restriction m/ubyte))
 
+(def ^:private OBJECT_INFO
+  (m/struct
+   :object-info/x m/sshort
+   :object-info/y m/sshort
+   :object-info/z-byte m/ubyte
+   :object-info/flags m/ubyte
+   :object-info/index m/ubyte
+   :object-info/heading m/ubyte))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The values in the `body` map are functions that return a marshal struct.
 ;; Because in some cases we want to change the body codec based on the header
@@ -61,6 +70,16 @@
       :body/num-checkpoints m/ubyte
       :body/num-objects m/ushort
       :body/layout-name (m/ascii-string 32)))
+
+   :axm
+   (fn [{:header/keys [data]}] ;; :header/data is the n of object info's
+     (let [n data]
+       (m/struct
+        :body/ucid m/ubyte
+        :body/action m/ubyte
+        :body/flags m/ubyte
+        :body/spare (m/ascii-string 1)
+        :body/object-infos (m/array OBJECT_INFO n))))
 
    :bfn
    (fn [_]
@@ -199,7 +218,7 @@
      :body/total-time m/uint32
      :body/laps-done m/ushort
      :body/flags m/ushort
-     :body/spare0 m/ubyte
+     :body/spare m/ubyte
      :body/penalty m/ubyte
      :body/num-stops m/ubyte
      :body/fuel-200 m/ubyte)
@@ -417,7 +436,7 @@
      (m/struct
       :body/flag m/ushort
       :body/off-on m/ubyte
-      :body/spare m/ubyte))
+      :body/spare (m/ascii-string 1)))
 
    :small
    (fn [{:header/keys [data]}]
