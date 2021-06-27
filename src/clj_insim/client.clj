@@ -70,7 +70,7 @@
        (while @running?
          (try
            (let [packet (a/<! to-lfs-chan)]
-             (write/packet! output-stream packet))
+             (write/instruction output-stream packet))
            (catch Throwable t
              (when @ERRORS
                (println "clj-insim error:" (.getMessage t)))))))
