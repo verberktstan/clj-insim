@@ -34,10 +34,10 @@
 
 (comment
   ;; To start the echo process
-  (def echo (echo))
+  (def lfs-client (echo))
 
   ;; To stop the client and echo process
-  (let [{:keys [stop!]} echo]
+  (let [{:keys [stop!]} lfs-client]
     (stop!))
 )
 
