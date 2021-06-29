@@ -27,8 +27,8 @@
       (let [mst-message (str plate " now has " (get @POINTS player-name) " points.")]
         (a/go (a/>! to-lfs-chan (packets/mst {:message mst-message})))))))
 
-(defn scoring []
-  (let [{::client/keys [from-lfs-chan] :as client} (client/start)
+#_(defn scoring []
+  (let [{::client/keys [from-lfs-chan] :as client} (client/start-client)
         running? (atom true)
         stop! #(do (reset! running? false) (client/stop! client))]
     (a/go

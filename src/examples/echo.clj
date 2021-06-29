@@ -6,13 +6,13 @@
 
 ;; An annotated example for using clj-insim
 
-(defn echo
+#_(defn echo
   "Starts a simple echo process that prints all incoming packets from LFS to the
    console, and to LFS via a IS_MST packet. Well not ALL incoming packets, we
    ignore IS_MSO packets because this causes a feedback loop :-)."
   []  
   (let [;; 1. Start the clj-insim client
-        client (client/start)
+        client (client/start-client)
         running? (atom true)
         ;; 2. Define a function that terminates this process and the clj-insim client.
         stop! #(do (reset! running? false) (client/stop! client))]
