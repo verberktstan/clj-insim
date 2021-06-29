@@ -8,6 +8,7 @@
             [clojure.string :as str])
   (:import [java.net Socket]))
 
+(def ERROR_LOG (atom nil))
 (defonce ERRORS (atom true))
 (defonce VERBOSE (atom false))
 
@@ -73,6 +74,7 @@
              (write/instruction output-stream packet))
            (catch Throwable t
              (when @ERRORS
+               (swap! ERROR_LOG conj (Throwable->map t))
                (println "clj-insim error:" (.getMessage t)))))))
      (a/go
        (while @running?
@@ -80,6 +82,7 @@
                              (read/packet input-stream)
                              (catch Throwable t
                                (when @ERRORS
+                                 (swap! ERROR_LOG conj (Throwable->map t))
                                  (println "clj-insim error:" (.getMessage t)))))]
            (dispatch channels packet)
            (a/>! from-lfs-chan packet))))
@@ -98,6 +101,8 @@
   (stop! lfs-client)
 
   (reset! VERBOSE true)
+
+  @ERROR_LOG
 
   (let [packet (packets/plc {:ucid 0 :cars #{"FZR" "FBM"}})]
     (a/>!! (::to-lfs-chan lfs-client) packet))
