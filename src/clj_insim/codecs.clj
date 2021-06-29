@@ -138,8 +138,7 @@
      (m/struct
       :body/closing-speed m/ushort
       :body/time m/ushort
-      :body/car-contacts
-      (m/array CAR_CONTACT 2)))
+      :body/car-contacts (m/array CAR_CONTACT 2)))
 
    ;; Connection Player Renamed
    :cpr
@@ -214,14 +213,15 @@
 
    :lap
    (fn [_]
-     :body/lap-time m/uint32
-     :body/total-time m/uint32
-     :body/laps-done m/ushort
-     :body/flags m/ushort
-     :body/spare m/ubyte
-     :body/penalty m/ubyte
-     :body/num-stops m/ubyte
-     :body/fuel-200 m/ubyte)
+     (m/struct
+      :body/lap-time m/uint32
+      :body/total-time m/uint32
+      :body/laps-done m/ushort
+      :body/flags m/ushort
+      :body/spare m/ubyte
+      :body/penalty m/ubyte
+      :body/num-stops m/ubyte
+      :body/fuel-200 m/ubyte))
 
    ;; TODO: Add MCI packet
 
@@ -390,7 +390,7 @@
       :body/best-time m/uint32
       :body/spare-a m/ubyte
       :body/num-stops m/ubyte
-      :bdoy/confirmation-flags m/ubyte
+      :body/confirmation-flags m/ubyte
       :body/spare-b m/ubyte
       :body/laps-done m/ushort
       :body/flags m/ushort

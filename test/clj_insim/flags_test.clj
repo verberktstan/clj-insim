@@ -11,6 +11,7 @@
   (testing "parse"
     (let [parse (sut/parse [:a :b :c])]
       (are [x y] (= x y)
+        #{} (parse 0)
         #{:a} (parse 1)
         #{:b} (parse 2)
         #{:a :b} (parse 3)
@@ -23,6 +24,7 @@
   (testing "unparse"
     (let [unparse (sut/unparse [:a :b :c])]
       (are [x y] (= x y)
+        0 (unparse #{})
         1 (unparse #{:a})
         2 (unparse #{:b})
         3 (unparse #{:a :b})

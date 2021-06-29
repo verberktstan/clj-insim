@@ -60,8 +60,14 @@
     (let [powr (power-range (count coll))
           get-flag #(nth coll (.indexOf powr %))]
       (loop [acc #{}, i i]
-        (if (contains? (set powr) i)
+        (cond
+          (zero? i)
+          acc
+
+          (contains? (set powr) i)
           (conj acc (get-flag i))
+
+          :else
           (let [below (apply max (take-while #(< % i) powr))]
             (recur (conj acc (get-flag below)) (- i below))))))))
 
