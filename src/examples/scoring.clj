@@ -16,7 +16,7 @@
                           {:body/keys [confirmation-flags player-name plate result-num]}]
   (when (contains? confirmation-flags :confirmed)
     (let [pnts (points result-num)
-          mst-message (str plate " gains " pnts " points.")]
+          mst-message (str plate "(" player-name ") gains " pnts " points.")]
       ;; Inform about gained points
       (a/go (a/>! to-lfs (packets/mst {:message mst-message})))
       ;; Save points
@@ -24,7 +24,7 @@
         (swap! POINTS update player-name + pnts)
         (swap! POINTS assoc player-name pnts))
       ;; Inform about new points amount
-      (let [mst-message (str plate " now has " (get @POINTS player-name) " points.")]
+      (let [mst-message (str plate "(" player-name ") now has " (get @POINTS player-name) " points.")]
         (a/go (a/>! to-lfs (packets/mst {:message mst-message})))))))
 
 (defn scoring []

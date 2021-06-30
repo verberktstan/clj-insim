@@ -34,6 +34,14 @@
       (map #(vector %1 (f %2)) [:rear-left :rear-right :front-left :front-right])
       (into {}))))
 
+(def ^:private parse-plate
+  (memoize
+   #(cond-> % (>= (count %) 8) (subs 0 8))))
+
+(def ^:private parse-string
+  (memoize
+   #(apply str (take-while (complement #{(char 0)}) %))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private parsing data
 
@@ -63,6 +71,7 @@
    :btc #:body{:flags (flags/parse [:lmb :rmb :ctrl :shift])}
    :cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
    :cnl #:body{:reason (enum/decode enum/LEAVE_REASONS)}
+   :cpr #:body{:plate parse-plate}
    ;; TODO add parsing for the CON packet
    :fin #:body{:confirm (flags/parse flags/CONFIRMATION)
                :flags (flags/parse flags/PLAYER)}
@@ -76,6 +85,7 @@
    :ncn #:body{:admin #(when (= 1 %) :admin)
                :flags (enum/decode enum/PLAYER_TYPE)}
    :npl #:body{:player-type (enum/decode enum/PLAYER_TYPE)
+               :plate parse-plate
                :flags (flags/parse flags/PLAYER)
                :tyres parse-tyres
                :setup-flags (flags/parse flags/SETUP)}
@@ -90,7 +100,8 @@
                :tyres parse-tyres
                :pit-work (flags/parse flags/PIT_WORK)}
    :pla #:body{:fact (enum/decode enum/PIT_LANE_FACTS)}
-   :res #:body{:confirmation-flags (flags/parse flags/CONFIRMATION)
+   :res #:body{:plate parse-plate
+               :confirmation-flags (flags/parse flags/CONFIRMATION)
                :flags (flags/parse flags/PLAYER)}
    :rst #:body{:race-laps #(if (zero? %) :qualifying %)
                :qualify-minutes #(if (zero? %) :race %)
@@ -144,7 +155,12 @@
   (let [parsers (if (#{:small} type)
                   (get-in INFO_BODY_PARSERS [type data] {})
                   (get INFO_BODY_PARSERS type {}))]
-    (u/map-kv parsers packet)))
+    (into
+     {}
+     (map
+      (fn [[k v]]
+        [k (cond-> v (string? v) parse-string)])
+      (u/map-kv parsers packet)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Parse clj-insim packets to raw instruction. This must be done prior to sending
