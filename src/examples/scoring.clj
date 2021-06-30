@@ -12,38 +12,36 @@
 (defmulti dispatch (fn [_ {:header/keys [type]}] type))
 (defmethod dispatch :default [_ _] nil)
 
-(defmethod dispatch :res [{::client/keys [to-lfs-chan]}
+(defmethod dispatch :res [{:keys [to-lfs]}
                           {:body/keys [confirmation-flags player-name plate result-num]}]
   (when (contains? confirmation-flags :confirmed)
     (let [pnts (points result-num)
           mst-message (str plate " gains " pnts " points.")]
       ;; Inform about gained points
-      (a/go (a/>! to-lfs-chan (packets/mst {:message mst-message})))
+      (a/go (a/>! to-lfs (packets/mst {:message mst-message})))
       ;; Save points
       (if (contains? @POINTS player-name)
         (swap! POINTS update player-name + pnts)
         (swap! POINTS assoc player-name pnts))
       ;; Inform about new points amount
       (let [mst-message (str plate " now has " (get @POINTS player-name) " points.")]
-        (a/go (a/>! to-lfs-chan (packets/mst {:message mst-message})))))))
+        (a/go (a/>! to-lfs (packets/mst {:message mst-message})))))))
 
-#_(defn scoring []
-  (let [{::client/keys [from-lfs-chan] :as client} (client/start-client)
+(defn scoring []
+  (let [{:keys [from-lfs] :as client} (client/start)
         running? (atom true)
-        stop! #(do (reset! running? false) (client/stop! client))]
+        stop #(do (reset! running? false) (client/stop client))]
+    (reset! client/VERBOSE false)
     (a/go
       (while @running?
-        (when-let [packet (a/<! from-lfs-chan)]
+        (when-let [packet (a/<! from-lfs)]
           (dispatch client packet))))
-    {::stop stop!}))
+    stop))
 
 (comment
-  (def lfs-client (scoring))
+  (def scoring-client (scoring))
 
-  ((::stop lfs-client))
+  (scoring-client)
 
   @POINTS
-  @client/ERROR_LOG
-  (reset! client/ERROR_LOG nil)
-  (reset! client/VERBOSE false)
 )
