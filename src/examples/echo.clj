@@ -6,16 +6,16 @@
 
 ;; An annotated example for using clj-insim
 
-#_(defn echo
+(defn echo
   "Starts a simple echo process that prints all incoming packets from LFS to the
    console, and to LFS via a IS_MST packet. Well not ALL incoming packets, we
    ignore IS_MSO packets because this causes a feedback loop :-)."
-  []  
+  [client]
   (let [;; 1. Start the clj-insim client
-        client (client/start-client)
+        ;client (client/start)
         running? (atom true)
         ;; 2. Define a function that terminates this process and the clj-insim client.
-        stop! #(do (reset! running? false) (client/stop! client))]
+        stop #(reset! running? false)]
     (a/go
       ;; 3. Start a go block with a while-loop to check for packets
       (while @running?
@@ -30,15 +30,17 @@
             ;; 5. Put a response (IS_MST packet) onto the channel
             (a/>! (::client/to-lfs-chan client) (packets/mst {:message message}))))))
     ;; 6. Expose the stop! function so we can use it elsewhere.
-    {:stop! stop!}))
+    {:stop stop}))
 
 (comment
+  (def lfs-client (client/start))
+
   ;; To start the echo process
-  (def lfs-client (echo))
+  (def echo-client (echo lfs-client))
 
   ;; To stop the client and echo process
-  (let [{:keys [stop!]} lfs-client]
-    (stop!))
+  (let [{:keys [stop]} lfs-client]
+    (stop))
 )
 
 

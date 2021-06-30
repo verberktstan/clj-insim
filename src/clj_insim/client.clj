@@ -5,18 +5,12 @@
             [clj-insim.write :as write]
             [clojure.core.async :as a]
             [clojure.java.io :as io]
-            [clojure.string :as str]
-            [com.stuartsierra.component :as component])
+            [clojure.string :as str])
   (:import [java.net Socket]))
 
 (def ERROR_LOG (atom nil))
 (defonce ERRORS (atom true))
 (defonce VERBOSE (atom false))
-
-(defonce to-lfs (atom nil))
-(defonce from-lfs (atom nil))
-
-(defonce ^:private running? (atom false))
 
 (defn- maintain-connection-packet?
   "Returns a truethy value when a TINY/NONE packet is passed in as argument."
@@ -32,22 +26,18 @@
 (defn- dispatch
   "Dispatch is the entrypoint for automatic responses to certain packets, like
    the maintain connection concern."
-  [packet]
+  [{:keys [to-lfs]} packet]
   (when (maintain-connection-packet? packet)
-    (a/>!! @to-lfs (packets/tiny)))
+    (a/>!! to-lfs (packets/tiny)))
   (print-verbose packet))
 
-(defn- close-fn [{:keys [input-stream output-stream socket]}]
+(defn- close-fn [{:keys [running? from-lfs to-lfs input-stream output-stream socket]}]
   (when @running?
-    (a/>!! @to-lfs (packets/tiny {:data :close}))
-    (reset! running? false)
-    (when @from-lfs
-      (a/close! @from-lfs)
-      (reset! from-lfs nil))
-    (when @to-lfs
-      (a/close! @to-lfs)
-      (reset! to-lfs nil))
+    (a/>!! to-lfs (packets/tiny {:data :close}))
+    (a/close! from-lfs)
+    (a/close! to-lfs)
     (Thread/sleep 10) ;; TODO, fix this!
+    (reset! running? false)
     (.close input-stream)
     (.close output-stream)
     (.close socket)
@@ -57,82 +47,65 @@
   (try
     (Socket. host port)
     (catch java.net.ConnectException e
-      (println (.getMessage e) "\nMake sure you've run `/insim 29999` in LFS."))))
+      (println (.getMessage e) (format "\nPlease run `/insim %d` in LFS." port)))))
 
-(defn start-client
+(defn- log-throwable [t]
+  (when @ERRORS
+    (swap! ERROR_LOG conj (Throwable->map t))
+    (println "clj-insim error:" (.getMessage t))))
+
+(defn- wrap-try-catch [f & args]
+  (try (apply f args) (catch Throwable t (log-throwable t))))
+
+(defn start
   "Opens a socket, streams and async channels to connect with Live For Speed via InSim.
    Returns a map containing `::from-lfs-chan`, `::to-lfs-chan` & `::close!`
    `(a/>!! to-lfs-chan packet)` makes the client send the packet to lfs.
    `(a/<!! from-lfs-chan)` returns a packet from LFS if available. Preferrably do
    this in a go block / loop. Evaluate `::close!` to stop and close the client."
   ([]
-   (start-client nil))
-  ([{:keys [host port isi] :or {host "127.0.0.1" port 29999 isi (packets/isi)}}]
+   (start nil))
+  ([{:keys [host port isi] :or {host "127.0.0.1" port 29999 isi (packets/isi)} :as options}]
    (when-let [socket (make-socket host port)]
      (let [input-stream (io/input-stream socket)
-           output-stream (io/output-stream socket)]
+           output-stream (io/output-stream socket)
+           from-lfs (a/chan (a/sliding-buffer 10))
+           to-lfs (a/chan (a/sliding-buffer 10))
+           running? (atom true)]
        (a/go
-         (a/>!! @to-lfs isi)
+         (a/>!! to-lfs isi)
          (while @running?
-           (try
-             (let [packet (a/<! @to-lfs)]
-               (write/instruction output-stream packet))
-             (catch Throwable t
-               (when @ERRORS
-                 (swap! ERROR_LOG conj (Throwable->map t))
-                 (println "clj-insim write error:" (.getMessage t)))))))
+           (let [packet (a/<! to-lfs)]
+             (wrap-try-catch write/instruction output-stream packet))))
        (a/go
          (while @running?
-           (when-let [packet (try
-                               (read/packet input-stream)
-                               (catch Throwable t
-                                 (when @ERRORS
-                                   (swap! ERROR_LOG conj (Throwable->map t))
-                                   (println "clj-insim read error:" (.getMessage t)))))]
-             (dispatch packet)
-             (a/>! @from-lfs packet))))
+           (when-let [packet (wrap-try-catch read/packet input-stream)]
+             (dispatch {:to-lfs to-lfs} packet)
+             (a/>! from-lfs packet))))
        (println "clj-insim: client started")
-       (fn []
-         (close-fn
-          {:input-stream input-stream
-           :output-stream output-stream
-           :socket socket}))))))
+       {:from-lfs from-lfs
+        :to-lfs to-lfs
+        :stop (fn []
+                (close-fn
+                 {:from-lfs from-lfs
+                  :input-stream input-stream
+                  :output-stream output-stream
+                  :running? running?
+                  :socket socket
+                  :to-lfs to-lfs}))}))))
 
-(defn- stop-client [client]
-  (when client (client)))
-
-(defrecord Client []
-  component/Lifecycle
-  (start [this]
-    (reset! from-lfs (a/chan (a/sliding-buffer 10)))
-    (reset! to-lfs (a/chan (a/sliding-buffer 10)))
-    (reset! running? true)
-    (assoc this :client (start-client)))
-  (stop [this]
-    (stop-client (:client this))
-    (dissoc this :client)))
-
-(defn create-client []
-  (Client.))
+(defn stop [{:keys [stop]}]
+  (stop))
 
 (comment
-  #_(.start (create-client))
+  (def lfs-client (start))
+  (stop lfs-client)
 
-
-  ;; Start a client
-  (def lfs-client (start-client))
-  ;; Print the first packet that we receive from LFS
-  (a/go (println (a/<! (::from-lfs-chan lfs-client))))
-  ;; Stop the client
-  (stop! lfs-client)
-
+  ;; In order to set verbose logging (log all incoming packets)
   (reset! VERBOSE true)
 
+  ;; To send a packet to lfs
+  (a/>!! (:to-lfs lfs-client) (packets/msl {:sound :error}))
+
   @ERROR_LOG
-
-  (let [packet (packets/plc {:ucid 0 :cars #{"FZR" "FBM"}})]
-    (a/>!! (::to-lfs-chan lfs-client) packet))
-
-  (let [packet (packets/mtc {:text "Hello world!"})]
-    (a/>!! (::to-lfs-chan lfs-client) packet))
 )
