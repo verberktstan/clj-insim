@@ -10,37 +10,32 @@
   "Starts a simple echo process that prints all incoming packets from LFS to the
    console, and to LFS via a IS_MST packet. Well not ALL incoming packets, we
    ignore IS_MSO packets because this causes a feedback loop :-)."
-  [client]
-  (let [;; 1. Start the clj-insim client
-        ;client (client/start)
+  []
+  (let [client (client/start)
         running? (atom true)
-        ;; 2. Define a function that terminates this process and the clj-insim client.
-        stop #(reset! running? false)]
+        ;; 1. Define a function that terminates this process and the clj-insim client.
+        stop #(do (reset! running? false) (client/stop client))]
+    ;; 2. Enable verbose logging in clj-insim
+  (reset! client/VERBOSE true)
     (a/go
       ;; 3. Start a go block with a while-loop to check for packets
       (while @running?
-        (let [;; 4. Retreive a single packet from the channel
-              {:header/keys [type] :as packet} (a/<! (::client/from-lfs-chan client))
+        ;; 4. Retreive a single packet from the channel
+        (let [{:header/keys [type] :as packet} (a/<! (:from-lfs client))
               message (str "clj-insim: got a IS_" (-> type name str/upper-case) " packet from LFS.")]
-          ;; Print stuff to the console
-          (newline)
-          (println message)
-          (println packet)
           (when-not (= :mso type)
             ;; 5. Put a response (IS_MST packet) onto the channel
-            (a/>! (::client/to-lfs-chan client) (packets/mst {:message message}))))))
-    ;; 6. Expose the stop! function so we can use it elsewhere.
-    {:stop stop}))
+            (a/>! (:to-lfs client) (packets/mst {:message message}))))))
+    ;; 6. Expose the stop function so we can use it elsewhere.
+    stop))
 
 (comment
-  (def lfs-client (client/start))
 
   ;; To start the echo process
-  (def echo-client (echo lfs-client))
+  (def echo-client (echo))
 
-  ;; To stop the client and echo process
-  (let [{:keys [stop]} lfs-client]
-    (stop))
+  ;; To stop the client and echo process, simply call the stored function
+  (echo-client)
 )
 
 
