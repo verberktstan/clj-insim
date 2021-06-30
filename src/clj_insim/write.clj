@@ -12,9 +12,10 @@
   "Prepare the packet by parsing the packet into a raw packet and determine the
    body codec."
   [{:header/keys [size type] :as packet}]
-  {:pre [(packet/parsed? packet)]}
-  {:instruction (parse/instruction packet)
-   :body-codec ((get codecs/body type unknown-codec) packet)})
+  {:pre [(or (nil? packet) (packet/parsed? packet))]}
+  (when packet
+    {:instruction (parse/instruction packet)
+     :body-codec ((get codecs/body type unknown-codec) packet)}))
 
 (defn- write-instruction!
   "Write raw instruction packet to output stream."
@@ -29,4 +30,5 @@
   "Prepares the packet and write it to the output stream."
   [output-stream packet]
   (let [{:keys [body-codec instruction]} (prepare packet)]
-    (write-instruction! output-stream body-codec instruction)))
+    (when instruction
+      (write-instruction! output-stream body-codec instruction))))
