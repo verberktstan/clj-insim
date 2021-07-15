@@ -12,14 +12,13 @@
    ignore IS_MSO packets because this causes a feedback loop :-)."
   []
   (let [client (client/start)
-        running? (atom true)
         ;; 1. Define a function that terminates this process and the clj-insim client.
-        stop #(do (reset! running? false) (client/stop client))]
+        stop #(client/stop client)]
     ;; 2. Enable verbose logging in clj-insim
   (reset! client/VERBOSE true)
     (a/go
       ;; 3. Start a go block with a while-loop to check for packets
-      (while @running?
+      (while (client/running? client)
         ;; 4. Retreive a single packet from the channel
         (let [{:header/keys [type] :as packet} (a/<! (:from-lfs client))
               message (str "clj-insim: got a IS_" (-> type name str/upper-case) " packet from LFS.")]
