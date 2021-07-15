@@ -1,7 +1,8 @@
 (ns examples.scoring
   (:require [clj-insim.client :as client]
             [clj-insim.packets :as packets]
-            [clojure.core.async :as a]))
+            [clojure.core.async :as a]
+            [examples.utils :as u]))
 
 (defonce POINTS (atom {}))
 
@@ -12,36 +13,41 @@
 (defmulti dispatch (fn [_ {:header/keys [type]}] type))
 (defmethod dispatch :default [_ _] nil)
 
-(defmethod dispatch :res [{:keys [to-lfs]}
+(defmethod dispatch :res [client
                           {:body/keys [confirmation-flags player-name plate result-num]}]
   (when (contains? confirmation-flags :confirmed)
     (let [pnts (points result-num)
           mst-message (str plate "(" player-name ") gains " pnts " points.")]
       ;; Inform about gained points
-      (a/go (a/>! to-lfs (packets/mst {:message mst-message})))
+      (client/>!! client (packets/mst {:message mst-message}))
       ;; Save points
       (if (contains? @POINTS player-name)
         (swap! POINTS update player-name + pnts)
         (swap! POINTS assoc player-name pnts))
       ;; Inform about new points amount
       (let [mst-message (str plate "(" player-name ") now has " (get @POINTS player-name) " points.")]
-        (a/go (a/>! to-lfs (packets/mst {:message mst-message})))))))
+        (client/>!! client (packets/mst {:message mst-message}))))))
 
 (defn scoring []
   (let [{:keys [from-lfs] :as client} (client/start)
-        running? (atom true)
-        stop #(do (reset! running? false) (client/stop client))]
+        stop #(client/stop client)]
     (reset! client/VERBOSE false)
     (a/go
-      (while @running?
+      (while (client/running? client)
         (when-let [packet (a/<! from-lfs)]
           (dispatch client packet))))
     stop))
 
+(defn -main [& args]
+  (u/main scoring))
+
 (comment
+  ;; To start the scoring client
   (def scoring-client (scoring))
 
+  ;; To stop the scoring client
   (scoring-client)
 
-  @POINTS
+  ;; Inspect the points
+  (sort-by val > @POINTS)
 )

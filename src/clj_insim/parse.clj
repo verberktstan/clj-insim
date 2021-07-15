@@ -62,6 +62,9 @@
    :btc {:header/data :header/ucid}
    :crs data->player-id
    :hlv data->player-id
+   :lap data->player-id
+   :ncn {:header/data :header/ucid}
+   :npl data->player-id
    :pll data->player-id
    :plp data->player-id})
 

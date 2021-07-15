@@ -12,10 +12,25 @@
 (defonce ERRORS (atom true))
 (defonce VERBOSE (atom false))
 
-(defn- maintain-connection-packet?
-  "Returns a truethy value when a TINY/NONE packet is passed in as argument."
-  [{:header/keys [type data]}]
-  (and (#{:tiny} type) (#{:none} data)))
+(defn >!!
+  "(Blocking) put packet on the channel for sending to LFS."
+  [client packet]
+  (a/>!! (:to-lfs client) packet))
+
+(defn <!!
+  "(Blocking) take packet from the channel for receiving from LFS."
+  [client packet]
+  (a/<!! (:from-lfs client)))
+
+(defn >!
+  "(Async) put packet on the channel for sending to LFS."
+  [client packet]
+  (a/go (a/>! (:to-lfs client) packet)))
+
+(defn <!
+  "(Ascync) take packet from the channel for receiving from LFS."
+  [client packet]
+  (a/go (a/<! (:from-lfs client))))
 
 (defn- print-verbose [packet]
   (when @VERBOSE
@@ -26,14 +41,14 @@
 (defn- dispatch
   "Dispatch is the entrypoint for automatic responses to certain packets, like
    the maintain connection concern."
-  [{:keys [to-lfs]} packet]
-  (when (maintain-connection-packet? packet)
-    (a/>!! to-lfs (packets/tiny)))
+  [client packet]
+  (when (packet/maintain-connection? packet)
+    (>!! client (packets/tiny)))
   (print-verbose packet))
 
-(defn- close-fn [{:keys [running? from-lfs to-lfs input-stream output-stream socket]}]
+(defn- close-fn [{:keys [running? from-lfs to-lfs input-stream output-stream socket] :as client}]
   (when @running?
-    (a/>!! to-lfs (packets/tiny {:data :close}))
+    (>!! client (packets/tiny {:data :close}))
     (a/close! from-lfs)
     (a/close! to-lfs)
     (Thread/sleep 10) ;; TODO, fix this!
@@ -85,6 +100,7 @@
        (println "clj-insim: client started")
        {:from-lfs from-lfs
         :to-lfs to-lfs
+        :running? running?
         :stop (fn []
                 (close-fn
                  {:from-lfs from-lfs
@@ -93,6 +109,9 @@
                   :running? running?
                   :socket socket
                   :to-lfs to-lfs}))}))))
+
+(defn running? [client]
+  @(:running? client))
 
 (defn stop [{:keys [stop]}]
   (stop))
@@ -105,7 +124,7 @@
   (reset! VERBOSE true)
 
   ;; To send a packet to lfs
-  (a/>!! (:to-lfs lfs-client) (packets/msl {:sound :error}))
+  (>!! lfs-client (packets/msl {:sound :error}))
 
   @ERROR_LOG
 )

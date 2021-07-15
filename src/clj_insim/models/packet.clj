@@ -22,5 +22,11 @@
   (when-let [conformed (conform-header-type packet)]
     (= :raw conformed)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Specific packets
 
+(defn maintain-connection?
+  "Returns a truethy value when a TINY/NONE packet is passed in as argument."
+  [{:header/keys [type data]}]
+  (and (#{:tiny} type) (#{:none} data)))
 
