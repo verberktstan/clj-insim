@@ -29,7 +29,7 @@
                  height 10}}]
   (let [clipped (u/clip-str text 240 4)]
     (merge
-     #:header{:size (+ 12 (-> clipped count (+ 4 8))) :type :btn :request-info request-info :ucid ucid}
+     #:header{:size (-> clipped count (+ 4 8)) :type :btn :request-info request-info :data ucid}
      #:body{:click-id click-id
             :inst inst
             :button-style button-style
