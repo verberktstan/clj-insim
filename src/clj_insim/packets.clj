@@ -52,17 +52,18 @@
 (defn isi
   ([]
    (isi nil))
-  ([{:keys [admin flags iname insim-version prefix]
+  ([{:keys [admin flags iname insim-version interval prefix]
       :or {admin "pwd"
            flags #{:con :hlv} ; Contact & Hot lap validity
            iname "clj-insim"
            insim-version 8
+           interval 100
            prefix \!}}]
    ;; TODO: Implement is-flags
    (merge
     #:header{:size 44 :type :isi :request-info 1 :data 0}
     #:body{:udp-port 0 :flags flags :insim-version insim-version :prefix prefix
-           :interval 0 :admin admin :iname iname})))
+           :interval interval :admin admin :iname iname})))
 
 (defn mtc [{:keys [ucid player-id text] :or {ucid 0 player-id 0 text "hello"}}]
   (let [clipped (u/clip-str text 128 4)]
