@@ -66,7 +66,8 @@
    :ncn {:header/data :header/ucid}
    :npl data->player-id
    :pll data->player-id
-   :plp data->player-id})
+   :plp data->player-id
+   :spx data->player-id})
 
 (def ^:private INFO_BODY_PARSERS
   {:axm #:body{:action (enum/decode enum/PMO_ACTION)
