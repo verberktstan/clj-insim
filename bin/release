@@ -1,0 +1,9 @@
+#! /bin/bash
+
+echo "Building the jar..."
+clojure -T:build jar
+
+echo "Generating the pom file..."
+clojure -Spom
+
+echo "Done!"

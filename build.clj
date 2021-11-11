@@ -31,5 +31,4 @@
                   :class-dir class-dir})
   (b/uber {:class-dir class-dir
            :uber-file uber-file
-           :basis basis
-           :manifest {:main examples.echo}}))
+           :basis basis}))
