@@ -26,9 +26,6 @@ jobs:
       with:
         # Install just one or all simultaneously
         cli: 1.10.1.693 # Clojure CLI based on tools.deps
-
-    - name: Prepare dependencies
-      run: clojure -Sdeps
       
     - name: Run tests
       run: clojure -X:test
