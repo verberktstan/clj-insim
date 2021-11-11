@@ -1,4 +1,6 @@
-(ns clj-insim.flags)
+(ns clj-insim.flags
+  "Functionality to parse/unparse bit flags. Check `parse`, `unparse` and
+   `clj-insim.flags-test` for more info.")
 
 (def BUTTON_STYLE [:c1 :c2 :c4 :click :light :dark :left :right])
 
