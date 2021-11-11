@@ -2,7 +2,8 @@
   (:require [clj-insim.client :as client]
             [clj-insim.packets :as packets]
             [clojure.core.async :as a]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [examples.utils :as u]))
 
 ;; An annotated example for using clj-insim
 
@@ -27,6 +28,9 @@
             (a/>! (:to-lfs client) (packets/mst {:message message}))))))
     ;; 6. Expose the stop function so we can use it elsewhere.
     stop))
+
+(defn -main [& args]
+  (u/main echo))
 
 (comment
 
