@@ -152,9 +152,8 @@
 
 (defn body
   "Returns packet with it's :body/keys parsed, based on INFO_BODY_PARSERS
-   ```clojure
-  (body {:header/type :small :header/data :vta :body/action 1}) =>
-  {:header/type :small :header/data :vta :body/action :end}```"
+   `(body {:header/type :small :header/data :vta :body/action 1}) =>
+    {:header/type :small :header/data :vta :body/action :end}`"
   [{:header/keys [type data] :as packet}]
   (let [parsers (if (#{:small} type)
                   (get-in INFO_BODY_PARSERS [type data] {})

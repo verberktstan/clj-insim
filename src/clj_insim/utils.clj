@@ -1,15 +1,21 @@
 (ns clj-insim.utils)
 
 (defn c-str
-  "Returns a string of length where the last char is always the null char. When
-   string `s` is shorter than `length`, adds null chars to the end of the string."
+  "Returns a string of `length` where the last char is always the null char. When
+   string `s` is shorter than `length`, adds null chars to the end of the string.
+   `(c-str \"abc\" 5) => \"abc^@^@\"`"
   [s length]
   {:pre [(string? s) (pos-int? length)]}
   (-> (apply str s (repeat length (char 0)))
       (subs 0 (dec length))
       (str (char 0))))
 
-(defn clip-str [s max div]
+(defn clip-str
+  "Returns a string with a maximum length of `max` and it's length truncated to
+   the nearest multiple of `div` above the lenght of the string. Returned string
+   a c-string, take a look at `c-str` for more info.
+   `(clip-str \"abcde\" 12 3) => \"abcde^@\"`"
+  [s max div]
   (let [length (min (count s) (dec max))
         factor (loop [x (inc length)]
                  (if (zero? (mod x div)) x (recur (inc x))))]

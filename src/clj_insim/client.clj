@@ -1,4 +1,6 @@
 (ns clj-insim.client
+  "Provides functionality to create a InSim client. You'll want to use `start` to
+   start a client and call `(stop client)` to stop it."
   (:require [clj-insim.models.packet :as packet]
             [clj-insim.packets :as packets]
             [clj-insim.read :as read]
@@ -113,7 +115,10 @@
 (defn running? [client]
   @(:running? client))
 
-(defn stop [{:keys [stop]}]
+(defn stop
+  "When passed a running client (map) as argument, stops the client, in/output
+   streams and the socket."
+  [{:keys [stop]}]
   (stop))
 
 (comment

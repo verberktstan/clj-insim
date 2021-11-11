@@ -1,4 +1,7 @@
 (ns clj-insim.packets
+  "clj-insim.packets provides functions that return maps that represent InSim
+   packets. These are to be consumed by the parser (clj-insim.parse) and writer
+   (clj-insim.write)"
   (:require [clj-insim.flags :as flags]
             [clj-insim.utils :as u]))
 
@@ -87,6 +90,7 @@
    #:header{:size 100 :type :msx :request-info 0 :data 0}
    #:body{:message message}))
 
+;; TODO - Shouldn't :cars be a set of strings, like so; #{"XFG" "XRG"}
 (defn plc [{:keys [cars ucid] :or {ucid 0 cars #{"XFG XRG"}}}]
   (merge
    #:header{:size 12 :type :plc :request-info 0 :data 0}
