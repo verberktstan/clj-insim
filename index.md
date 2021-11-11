@@ -1,37 +1,31 @@
-## Welcome to GitHub Pages
+# clj-insim
 
-You can use the [editor on GitHub](https://github.com/verberktstan/clj-insim/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+A clojure library to connect with Live For Speed racing simulator via the InSim protocol.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+![Tests](https://github.com/verberktstan/clj-insim/actions/workflows/clojure.yml/badge.svg)
 
-### Markdown
+***Pre 0.2.1 deprecation warning***
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+clj-insim 0.2.1-SNAPSHOT (and versions before that) are still available on Clojars. These are deprecated and not maintained!
+This repo contains version 0.3.x (and up) with a (completely different) async architecture.
 
-```markdown
-Syntax highlighted code block
+At the time of writing, you can only run it from clojure directly. Knowledge of clojure and the repl is assumed.
+I'll try to deploy the clj-insim 0.3.x client to clojars soon, so you can use it as a dependency easily.
 
-# Header 1
-## Header 2
-### Header 3
+## Run examples from cli
 
-- Bulleted
-- List
+I develop this on Mac OSX and Linux, and didn't test all this on Windows. Please refer to ![Getting Started - Installation on Windows](https://clojure.org/guides/getting_started#_installation_on_windows) to get it going.
 
-1. Numbered
-2. List
+Make sure clojure is installed and run one of the examples by executing:
 
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```
+clojure -m examples.safety
+```
+```
+clojure -m examples.scoring
+```
+```
+clojure -m examples.buttons
 ```
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/verberktstan/clj-insim/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+Take a look at safety.clj, scoring.clj & buttons.clj in the src/examples directory to see how these example clients are implemented.
