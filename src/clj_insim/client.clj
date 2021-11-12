@@ -115,6 +115,16 @@
 (defn running? [client]
   @(:running? client))
 
+(defn go
+  "Start a async go-loop that calls `dispatch` on every incoming packet.
+   The dispatch function should accept the client as first argument and the
+   incoming packet as second argument."
+  [{:keys [from-lfs] :as client} dispatch]
+  (a/go
+    (while (running? client)
+      (when-let [packet (a/<! from-lfs)]
+        (dispatch client packet)))))
+
 (defn stop
   "When passed a running client (map) as argument, stops the client, in/output
    streams and the socket."

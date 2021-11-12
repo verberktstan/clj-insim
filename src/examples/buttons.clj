@@ -1,12 +1,11 @@
 (ns examples.buttons
   (:require [clj-insim.client :as client]
             [clj-insim.packets :as packets]
-            [clojure.core.async :as a]
             [examples.utils :as u]))
 
-(def CLICK_ID 13)
+(def ^:private CLICK_ID 13)
 
-(defmulti dispatch (fn [_ {:header/keys [type]}] type))
+(defmulti ^:private dispatch (fn [_ {:header/keys [type]}] type))
 (defmethod dispatch :default [_ _] nil)
 
 ;; When the VER(sion) packet is received, send a button to LFS.
@@ -21,20 +20,18 @@
   (when (= click-id CLICK_ID)
     (println "BTC packet received; clicked on the test button")))
 
-(defn buttons []
-  (let [{:keys [from-lfs] :as client} (client/start)
-        stop #(client/stop client)]
-    (a/go
-      (while (client/running? client)
-        (when-let [packet (a/<! from-lfs)]
-          (dispatch client packet))))
-    stop))
+(defn- buttons []
+  (let [client (client/start)]
+    (client/go client dispatch)
+    #(client/stop client)))
 
 (defn -main [& args]
   (u/main buttons))
 
 (comment
+  ;; To start the client
   (def buttons-client (buttons))
 
+  ;; To stop the client
   (buttons-client)
 )
