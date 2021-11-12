@@ -1,16 +1,15 @@
 (ns examples.scoring
   (:require [clj-insim.client :as client]
             [clj-insim.packets :as packets]
-            [clojure.core.async :as a]
             [examples.utils :as u]))
 
-(defonce POINTS (atom {}))
+(defonce ^:private POINTS (atom {}))
 
 (defn- points [result-num]
   {:pre [(nat-int? result-num)]}
   (nth [25 18 15 12 10 8 6 4 2 1] result-num 0))
 
-(defmulti dispatch (fn [_ {:header/keys [type]}] type))
+(defmulti ^:private dispatch (fn [_ {:header/keys [type]}] type))
 (defmethod dispatch :default [_ _] nil)
 
 (defmethod dispatch :res [client
@@ -28,15 +27,10 @@
       (let [mst-message (str plate "(" player-name ") now has " (get @POINTS player-name) " points.")]
         (client/>!! client (packets/mst {:message mst-message}))))))
 
-(defn scoring []
-  (let [{:keys [from-lfs] :as client} (client/start)
-        stop #(client/stop client)]
-    (reset! client/VERBOSE false)
-    (a/go
-      (while (client/running? client)
-        (when-let [packet (a/<! from-lfs)]
-          (dispatch client packet))))
-    stop))
+(defn- scoring []
+  (let [client (client/start)]
+    (client/go client dispatch)
+    #(client/stop client)))
 
 (defn -main [& args]
   (u/main scoring))
