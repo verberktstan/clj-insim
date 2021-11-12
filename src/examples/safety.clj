@@ -1,11 +1,10 @@
 (ns examples.safety
   (:require [clj-insim.client :as client]
             [clj-insim.packets :as packets]
-            [clojure.core.async :as a]
             [examples.utils :as u]))
 
-(defonce PLAYERS (atom {}))
-(defonce SAFETY (atom {}))
+(defonce ^:private PLAYERS (atom {}))
+(defonce ^:private SAFETY (atom {}))
 
 (defn- get-player-name [player-id]
   (when-let [player (get @PLAYERS player-id)]
@@ -53,7 +52,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Dispatch based on packet type
 
-(defmulti dispatch (fn [_ {:header/keys [type]}] type))
+(defmulti ^:private dispatch (fn [_ {:header/keys [type]}] type))
 (defmethod dispatch :default [_ _] nil)
 
 ;; With every reported contact, (both) players' safety-rating is decreased
@@ -87,16 +86,12 @@
 (defmethod dispatch :pll [client packet]
   (swap! PLAYERS dissoc (:header/player-id packet)))
 
-(defn safety []
-  (let [{:keys [from-lfs] :as client} (client/start)
-        stop #(client/stop client)]
+(defn- safety []
+  (let [client (client/start)]
     (reset! PLAYERS {})
     (client/>!! client (packets/tiny {:request-info 1 :data :npl}))
-    (a/go
-      (while (client/running? client)
-        (when-let [packet (a/<! from-lfs)]
-          (dispatch client packet))))
-    stop))
+    (client/go client dispatch)
+    #(client/stop client)))
 
 (defn -main [& args]
   (u/main safety))

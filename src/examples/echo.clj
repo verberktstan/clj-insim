@@ -1,7 +1,6 @@
 (ns examples.echo
   (:require [clj-insim.client :as client]
             [clj-insim.packets :as packets]
-            [clojure.core.async :as a]
             [clojure.string :as str]))
 
 ;; An annotated example for using clj-insim
