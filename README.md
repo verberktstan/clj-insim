@@ -6,11 +6,50 @@ A clojure library to connect with Live For Speed racing simulator via the InSim 
 
 ***Pre 0.2.1 deprecation warning***
 
-clj-insim 0.2.1-SNAPSHOT (and versions before that) are still available on Clojars. These are deprecated and not maintained!
-This repo contains version 0.3.x (and up) with a (completely different) async architecture.
+> clj-insim 0.2.1-SNAPSHOT (and versions before that) are still available on Clojars. These are deprecated and not maintained!
+> This repo contains version 0.3.x with a completely different async architecture.
 
-At the time of writing, you can only run it from clojure directly. Knowledge of clojure and the repl is assumed.
-I'll try to deploy the clj-insim 0.3.x client to clojars soon, so you can use it as a dependency easily.
+## Configuration
+
+Include a dependency on this project and core.async in your `deps.edn`.
+
+```clojure
+;; v 0.3.0
+:deps {com.github.verberkstan/clj-insim {:git/url "https://github.com/verberktstan/clj-insim.git"
+                                         :git/sha "ceec73e"}}
+```
+
+## Printing incoming packets
+
+Require clj-insim.client in your ns.
+
+```clojure
+(ns core
+  (:require [clj-insim.client :as client]))
+```
+
+Define a function that starts the client, using client/start and client/go.
+
+```clojure
+(defn start-listener []
+  ;; Start the client
+  (let [client (client/start)]
+    ;; Start a async go-loop that simply prints packets
+    ;; The dispatch function supplied to clj-insim.client/go should accept 2
+    ;; arguments, the client and incoming the packet.
+    (client/go client (fn [_ packet]
+                        (println packet)))
+    ;; Return the client map, so we can stop it later.
+    client))
+
+(comment
+  ;; To start the client:
+  (def lfs-client (start-listener))
+
+  ;; To stop it:
+  (client/stop lfs-client)
+)
+```
 
 ## Documentation
 [Take a look at the docs](https://htmlpreview.github.io/?https://github.com/verberktstan/clj-insim/blob/e9dde5c927fe797ad8308c97c38dc29ce9583030/target/doc/index.html)
