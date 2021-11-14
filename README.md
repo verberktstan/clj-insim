@@ -15,8 +15,8 @@ Include a dependency on this project and core.async in your `deps.edn`.
 
 ```clojure
 ;; v 0.3.0
-:deps {com.github.verberkstan/clj-insim {:git/url "https://github.com/verberktstan/clj-insim.git"
-                                         :git/sha "ceec73e"}}
+:deps {com.github.verberktstan/clj-insim {:git/tag "v0.3.0"
+                                          :git/sha "552993f"}}
 ```
 
 ## Printing incoming packets
