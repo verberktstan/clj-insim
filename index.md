@@ -52,7 +52,7 @@ Define a function that starts the client, using client/start and client/go.
 ```
 
 ## Documentation
-[Take a look at the docs](https://htmlpreview.github.io/?https://github.com/verberktstan/clj-insim/tree/552993f18a4781d148f00628077521822d6ce66d/target/doc/index.html)
+[Take a look at the docs](https://htmlpreview.github.io/?https://github.com/verberktstan/clj-insim/blob/552993f18a4781d148f00628077521822d6ce66d/target/doc/index.html)
 
 ## Run examples from cli
 
