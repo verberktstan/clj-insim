@@ -28,6 +28,8 @@
    :axis-clutch :in-pits :autoclutch :mouse :kb-no-help :kb-stabilised
    :custom-view])
 
+(def PLAYER_TYPE [:female :ai :remote])
+
 (def PMO [:file-end :move-modify :selection-real :avoid-check])
 
 (def RST [:can-vote :can-select :mid-race :must-pit :can-reset :fcv :cruise])
@@ -77,7 +79,7 @@
   "Returns integer representation of flags.
   ```clojure
   (unparse [:a :b :c] #{:b}) => 2
-  (unparse [:a :b :c] #{:b}) => 2
+  (unparse [:a :b :c] #{:a :b}) => 3
   ```"
   [coll]
   {:pre [(sequential? coll)]}
@@ -91,4 +93,3 @@
           sum))
       0
       flags))))
-

@@ -88,8 +88,8 @@
                :penalty (enum/decode enum/PENALTY)}
    :mso #:body{:user-type (enum/decode enum/USER_TYPE)}
    :ncn #:body{:admin #(when (= 1 %) :admin)
-               :flags (enum/decode enum/PLAYER_TYPE)}
-   :npl #:body{:player-type (enum/decode enum/PLAYER_TYPE)
+               :flags (flags/parse flags/PLAYER_TYPE)}
+   :npl #:body{:player-type (flags/parse flags/PLAYER_TYPE)
                :plate parse-plate
                :flags (flags/parse flags/PLAYER)
                :tyres parse-tyres
