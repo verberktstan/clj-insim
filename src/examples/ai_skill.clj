@@ -2,56 +2,76 @@
   (:require [clj-insim.client :as client]
             [clj-insim.packets :as packets]))
 
-(defn grid-skills [n]
+;; Private data (state)
+(defonce ^:private PLAYERS (atom {})) ;; A map with player data keyed by player-id
+(defonce ^:private TARGET_SKILLS (atom {})) ;; A map with target skills keyed by player-id
+(defonce ^:private SKILLS (atom {})) ;; A map with current skills keyed by player-id
+
+;; Private functions
+(defn- grid-skills [n]
   (let [n-per-skill (cond-> (int (/ n 5)) (not (zero? (mod n 5))) inc)]
     (->> (range 5 0 -1)
          (mapcat (partial repeat n-per-skill))
          (take n))))
 
-(defn gravitate [x target]
+(defn- gravitate [x target]
   (cond
     (> target x) (inc x)
     (< target x) (dec x)
     :else x))
 
-(defmulti dispatch (fn [_ packet] (:header/type packet)))
-(defmethod dispatch :default [_ _] nil)
-
-(defonce PLAYERS (atom {}))
-
-;; Todo - Request NPL on startup
-(defmethod dispatch :npl [_ {:header/keys [player-id] :as packet}]
-  (when-not (contains? @PLAYERS player-id)
-    (swap! PLAYERS assoc player-id packet)))
-
-(defmethod dispatch :pll [_ {:header/keys [player-id]}]
-  (swap! PLAYERS dissoc player-id))
-
-(defonce TARGET_SKILLS (atom {}))
-(defonce SKILLS (atom {}))
-
-(defn ai-set! [client player-name skill]
+(defn- ai-set! [client player-name skill]
   (client/>!!
    client
    (packets/mst
     {:message (str "/aiset " player-name " " skill)})))
 
+(defn- auto-gravitate-skill [skill n]
+  (if (zero? n)
+    skill
+    (reduce gravitate skill (repeat n 5))))
+
+(defn- random-skills [n]
+  (repeatedly n #(-> 5 rand-int (auto-gravitate-skill (inc (rand-int 3))))))
+
+(defn- auto-update-ai-skill [client player-id]
+  (cond
+    (not (= (get @SKILLS player-id) (get @TARGET_SKILLS player-id)))
+    (let [new-skill (gravitate (get @SKILLS player-id) (get @TARGET_SKILLS player-id))]
+      (swap! SKILLS assoc player-id new-skill)
+      (ai-set! client (-> @PLAYERS (get player-id) :body/player-name) new-skill))
+
+    (< (rand) 0.5)
+    (let [new-target-skill (-> 5 random-skills shuffle first)]
+      (swap! TARGET_SKILLS assoc player-id new-target-skill))))
+
+;; Dispatch methods
+
+(defmulti dispatch (fn [_ packet] (:header/type packet)))
+(defmethod dispatch :default [_ _] nil)
+
+(defmethod dispatch :ver [client _]
+  (reset! PLAYERS {})
+  (client/>!! client (packets/tiny {:request-info 1 :data :npl})))
+
+;; Todo - Request NPL on startup
+(defmethod dispatch :npl [_ {:header/keys [player-id] :as packet}]
+  (when-not (contains? @PLAYERS player-id)
+    (swap! PLAYERS assoc player-id (select-keys packet [:body/player-name :body/player-type]))))
+
+(defmethod dispatch :pll [_ {:header/keys [player-id]}]
+  (swap! PLAYERS dissoc player-id))
+
 (defmethod dispatch :reo [client {:body/keys [player-ids]}]
   (let [pids (take-while (complement zero?) player-ids)
         skills (grid-skills (count pids))
-        targets (repeatedly (count pids) #(-> 5 rand-int inc))]
+        targets (random-skills (count pids))]
     (doseq [[player-id {:keys [skill target]}] (zipmap pids (map (fn [s t] {:skill s :target t}) skills targets))]
       (let [{:body/keys [player-name player-type]} (get @PLAYERS player-id)]
         (when (contains? player-type :ai)
           (swap! TARGET_SKILLS assoc player-id target)
           (swap! SKILLS assoc player-id skill)
           (ai-set! client player-name skill))))))
-
-(defn auto-update-ai-skill [client player-id]
-  (when-not (= (get @SKILLS player-id) (get @TARGET_SKILLS player-id))
-    (let [new-skill (gravitate (get @SKILLS player-id) (get @TARGET_SKILLS player-id))]
-      (swap! SKILLS assoc player-id new-skill)
-      (ai-set! client (-> @PLAYERS (get player-id) :body/player-name) new-skill))))
 
 (defmethod dispatch :lap [client {:header/keys [player-id]}]
   (auto-update-ai-skill client player-id))
