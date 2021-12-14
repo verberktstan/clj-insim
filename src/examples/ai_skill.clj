@@ -27,19 +27,37 @@
 (defmethod dispatch :pll [_ {:header/keys [player-id]}]
   (swap! PLAYERS dissoc player-id))
 
-;; Todo - Store a randomized target skill for every ai on race start.
+(defonce TARGET_SKILLS (atom {}))
+(defonce SKILLS (atom {}))
+
+(defn ai-set! [client player-name skill]
+  (client/>!!
+   client
+   (packets/mst
+    {:message (str "/aiset " player-name " " skill)})))
+
 (defmethod dispatch :reo [client {:body/keys [player-ids]}]
   (let [pids (take-while (complement zero?) player-ids)
-        skills (grid-skills (count pids))]
-    (doseq [[player-id new-skill] (zipmap pids skills)]
-      (let [player (get @PLAYERS player-id)]
-        (when (contains? (:body/player-type player) :ai)
-          (client/>!!
-           client
-           (packets/mst
-            {:message (str "/aiset " (:body/player-name player) " " new-skill)})))))))
+        skills (grid-skills (count pids))
+        targets (repeatedly (count pids) #(-> 5 rand-int inc))]
+    (doseq [[player-id {:keys [skill target]}] (zipmap pids (map (fn [s t] {:skill s :target t}) skills targets))]
+      (let [{:body/keys [player-name player-type]} (get @PLAYERS player-id)]
+        (when (contains? player-type :ai)
+          (swap! TARGET_SKILLS assoc player-id target)
+          (swap! SKILLS assoc player-id skill)
+          (ai-set! client player-name skill))))))
 
-;; Todo - 'Gravitate' towards target skill on every split/lap
+(defn auto-update-ai-skill [client player-id]
+  (when-not (= (get @SKILLS player-id) (get @TARGET_SKILLS player-id))
+    (let [new-skill (gravitate (get @SKILLS player-id) (get @TARGET_SKILLS player-id))]
+      (swap! SKILLS assoc player-id new-skill)
+      (ai-set! client (-> @PLAYERS (get player-id) :body/player-name) new-skill))))
+
+(defmethod dispatch :lap [client {:header/keys [player-id]}]
+  (auto-update-ai-skill client player-id))
+
+(defmethod dispatch :spx [client {:header/keys [player-id]}]
+  (auto-update-ai-skill client player-id))
 
 (defn ai-skill []
   (let [client (client/start)]
