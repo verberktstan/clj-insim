@@ -203,4 +203,8 @@
       (not (raw? header)) (update :header/type (enum/encode enum/HEADER_TYPE))
       (and (not (raw? header)) data-enum) (update :header/data (enum/encode data-enum)))))
 
-(def instruction (comp parse-instruction-header parse-instruction-body))
+(defn instruction [size-div packet]
+  (-> packet
+      parse-instruction-body
+      parse-instruction-header
+      (update :header/size (comp int #(/ % size-div)))))

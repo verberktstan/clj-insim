@@ -94,7 +94,7 @@
          (a/>!! to-lfs isi)
          (while @running?
            (let [packet (a/<! to-lfs)]
-             (wrap-try-catch write/instruction output-stream packet))))
+             (wrap-try-catch (write/instruction new-byte-size?) output-stream packet))))
        (a/go
          (while @running?
            (when-let [packet (wrap-try-catch (read/packet new-byte-size?) input-stream)]
