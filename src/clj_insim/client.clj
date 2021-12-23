@@ -10,10 +10,6 @@
             [clojure.string :as str])
   (:import [java.net Socket]))
 
-(def ERROR_LOG (atom nil))
-(defonce ERRORS (atom true))
-(defonce VERBOSE (atom false))
-
 (defn >!!
   "(Blocking) put packet on the channel for sending to LFS."
   [client packet]
@@ -35,18 +31,18 @@
   (a/go (a/<! (:from-lfs client))))
 
 (defn- print-verbose [packet]
-  (when @VERBOSE
-    (newline)
-    (println (str "IS_" (-> (:header/type packet) name str/upper-case) " packet!"))
-    (println (str packet))))
+  (newline)
+  (println (str "IS_" (-> (:header/type packet) name str/upper-case) " packet!"))
+  (println (str packet)))
 
 (defn- dispatch
   "Dispatch is the entrypoint for automatic responses to certain packets, like
    the maintain connection concern."
-  [client packet]
+  [{:keys [verbose?] :as client} packet]
   (when (packet/maintain-connection? packet)
     (>!! client (packets/tiny)))
-  (print-verbose packet))
+  (when verbose?
+    (print-verbose packet)))
 
 (defn- close-fn [{:keys [running? from-lfs to-lfs input-stream output-stream socket] :as client}]
   (when @running?
@@ -67,9 +63,8 @@
       (println (.getMessage e) (format "\nPlease run `/insim %d` in LFS." port)))))
 
 (defn- log-throwable [t]
-  (when @ERRORS
-    (swap! ERROR_LOG conj (Throwable->map t))
-    (println "clj-insim error:" (.getMessage t))))
+  #_(swap! ERROR_LOG conj (Throwable->map t))
+  (println "clj-insim error:" (.getMessage t)))
 
 (defn- wrap-try-catch [f & args]
   (try (apply f args) (catch Throwable t (log-throwable t))))
@@ -82,7 +77,8 @@
    this in a go block / loop. Evaluate `::close!` to stop and close the client."
   ([]
    (start nil))
-  ([{:keys [host port isi] :or {host "127.0.0.1" port 29999 isi (packets/isi)} :as options}]
+  ([{:keys [host port isi verbose?]
+     :or {host "127.0.0.1" port 29999 isi (packets/isi) verbose? false}}]
    (when-let [socket (make-socket host port)]
      (let [input-stream (io/input-stream socket)
            output-stream (io/output-stream socket)
@@ -99,7 +95,8 @@
        (a/go
          (while @running?
            (when-let [packet (wrap-try-catch (read/packet new-byte-size?) input-stream)]
-             (dispatch {:to-lfs to-lfs} packet)
+             (dispatch {:to-lfs to-lfs
+                        :verbose? verbose?} packet)
              (a/>! from-lfs packet))))
        (println "clj-insim: client started")
        {:from-lfs from-lfs
@@ -137,11 +134,6 @@
   (def lfs-client (start))
   (stop lfs-client)
 
-  ;; In order to set verbose logging (log all incoming packets)
-  (reset! VERBOSE true)
-
   ;; To send a packet to lfs
   (>!! lfs-client (packets/msl {:sound :error}))
-
-  @ERROR_LOG
 )
