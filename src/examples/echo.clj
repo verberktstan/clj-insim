@@ -16,7 +16,7 @@
    console, and to LFS via a IS_MST packet. Well not ALL incoming packets, we
    ignore IS_MSO packets because this causes a feedback loop :-)."
   []
-  (let [client (client/start) ;; 1. Start the client
+  (let [client (client/start {:isi (packets/isi {:insim-version 9})}) ;; 1. Start the client
         stop #(client/stop client)] ;; 2. Define a function that terminates client.
   (client/go client dispatch) ;; 3. Start a go block with a while-loop to check for packets
   stop)) ;; 5. Expose the stop function so we can use it elsewhere.
@@ -29,5 +29,3 @@
   ;; To stop the client and echo process, simply call the stored function
   (echo-client)
 )
-
-

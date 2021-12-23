@@ -16,7 +16,7 @@
   "Read and parse header data from input-stream. Multiplies :header/size by
    size-mul on the fly."
   [size-mul input-stream]
-  (-> input-stream
+  (some-> input-stream
       read-header
       parse/header
       (update :header/size (comp int (partial * size-mul)))))

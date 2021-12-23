@@ -90,6 +90,7 @@
            to-lfs (a/chan (a/sliding-buffer 10))
            running? (atom true)
            new-byte-size? (> (:body/insim-version isi) 8)]
+       (println "clj-insim: using INSIM_VERSION: " (:body/insim-version isi))
        (a/go
          (a/>!! to-lfs isi)
          (while @running?
