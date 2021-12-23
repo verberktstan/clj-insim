@@ -22,7 +22,13 @@
 
 (deftest pipeline-test
   (testing "pipe instruction & header/body"
-    (let [packet (merge #:header{:size 4 :type :small :request-info 1 :data :ssp}
-                        #:body{:unsigned-value 500})]
-      (is (= packet
-             ((comp sut/body sut/header) (sut/instruction packet)))))))
+    (testing "with old byte size"
+      (let [packet (merge #:header{:size 8 :type :small :request-info 1 :data :ssp}
+                          #:body{:unsigned-value 500})]
+        (is (= packet
+               ((comp sut/body sut/header) (sut/instruction 1 packet))))))
+    (testing "with new byte size"
+      (let [packet (merge #:header{:size 8 :type :small :request-info 1 :data :ssp}
+                          #:body{:unsigned-value 500})]
+        (is (= (assoc packet :header/size 2)
+               ((comp sut/body sut/header) (sut/instruction 4 packet))))))))

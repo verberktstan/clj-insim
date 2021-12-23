@@ -88,15 +88,17 @@
            output-stream (io/output-stream socket)
            from-lfs (a/chan (a/sliding-buffer 10))
            to-lfs (a/chan (a/sliding-buffer 10))
-           running? (atom true)]
+           running? (atom true)
+           new-byte-size? (> (:body/insim-version isi) 8)]
+       (println "clj-insim: using INSIM_VERSION:" (:body/insim-version isi))
        (a/go
          (a/>!! to-lfs isi)
          (while @running?
            (let [packet (a/<! to-lfs)]
-             (wrap-try-catch write/instruction output-stream packet))))
+             (wrap-try-catch (write/instruction new-byte-size?) output-stream packet))))
        (a/go
          (while @running?
-           (when-let [packet (wrap-try-catch read/packet input-stream)]
+           (when-let [packet (wrap-try-catch (read/packet new-byte-size?) input-stream)]
              (dispatch {:to-lfs to-lfs} packet)
              (a/>! from-lfs packet))))
        (println "clj-insim: client started")

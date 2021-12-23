@@ -29,5 +29,3 @@
   ;; To stop the client and echo process, simply call the stored function
   (echo-client)
 )
-
-
