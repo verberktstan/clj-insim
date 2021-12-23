@@ -63,6 +63,7 @@
    :crs data->player-id
    :hlv data->player-id
    :lap data->player-id
+   :mal {:header/data :header/num-mods}
    :ncn {:header/data :header/ucid}
    :npl data->player-id
    :pll data->player-id
