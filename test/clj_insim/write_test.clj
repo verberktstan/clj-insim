@@ -10,7 +10,7 @@
 (deftest prepare-test
   (testing "prepare"
     (let [packet (packets/msl {:text "Local message" :sound :error})
-          {:keys [body-codec instruction]} (#'sut/prepare packet)]
+          {:keys [body-codec instruction]} (#'sut/prepare false packet)]
       (testing "returns a raw packet associatedd with :instruction"
         (is (packet/raw? instruction)))
       (testing "and the IS_MSL codec associated with :body-codec, or nil"
@@ -23,8 +23,17 @@
 (deftest write-instruction!-test
   ;; Todo add test for writing bigger packets than TINY
   (testing "write-instruction!"
-    (with-open [baos (ByteArrayOutputStream.)]
-      (#'sut/write-instruction! baos nil (parse/instruction (packets/tiny)))
-      (testing "writes header data to output stream when no body-codec is supplied"
-        (is (= [4 3 0 0]
-               (vec (.toByteArray baos))))))))
+    (testing "with old byte size"
+      (with-open [baos (ByteArrayOutputStream.)]
+        (let [parse-instruction (partial parse/instruction 1)]
+          (#'sut/write-instruction! baos nil (parse-instruction (packets/tiny)))
+          (testing "writes header data to output stream when no body-codec is supplied"
+            (is (= [4 3 0 0]
+                   (vec (.toByteArray baos))))))))
+    (testing "with new byte size"
+      (with-open [baos (ByteArrayOutputStream.)]
+        (let [parse-instruction (partial parse/instruction 4)]
+          (#'sut/write-instruction! baos nil (parse-instruction (packets/tiny)))
+          (testing "writes header data to output stream when no body-codec is supplied"
+            (is (= [1 3 0 0]
+                   (vec (.toByteArray baos))))))))))

@@ -223,6 +223,15 @@
       :body/num-stops m/ubyte
       :body/fuel-200 m/ubyte))
 
+   :mal
+   (fn [{:header/keys [data]}]
+     (let [num-mods data]
+       (m/struct
+        :body/ucid m/ubyte
+        :body/flags m/ubyte
+        :body/spare (m/ascii-string 2)
+        :body/skin-ids (m/array m/uint32 num-mods))))
+
    ;; TODO: Add MCI packet
 
    :msl

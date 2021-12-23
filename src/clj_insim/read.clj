@@ -2,18 +2,24 @@
   (:require [clj-insim.codecs :as codecs]
             [clj-insim.models.packet :as packet]
             [clj-insim.parse :as parse]
-            [clj-insim.utils :as u]
             [marshal.core :as m]))
 
 (defn- read-header
-  "Reads 4 bytes from input-stream and returns these, marhalled into a clojure
+  "Reads 4 bytes from input-stream and returns these, marshalled into a clojure
    map with the header codec. Returns false when no bytes are available to read."
   [input-stream]
   {:post [(or (nil? %) (packet/raw? %))]}
-  (and (when (pos? (.available input-stream)) true)
-       (m/read input-stream codecs/header)))
+  (when (pos? (.available input-stream))
+    (m/read input-stream codecs/header)))
 
-(def ^:private header (comp parse/header read-header))
+(defn- header
+  "Read and parse header data from input-stream. Multiplies :header/size by
+   size-mul on the fly."
+  [size-mul input-stream]
+  (some-> input-stream
+      read-header
+      parse/header
+      (update :header/size (comp int (partial * size-mul)))))
 
 (defn- get-body-codec
   "Returns the marshal codec for a given header (type).
@@ -36,9 +42,13 @@
       (parse/body)))
 
 (defn packet
-  "Read (info) packet header and body from input-stream, parse and return it.
-   Returns `nil` when no data is present on the input-stream."
-  [input-stream]
-  {:post [(or (nil? %) (packet/parsed? %))]}
-  (when-let [hdr (header input-stream)]
-    (body input-stream hdr)))
+  "Returns a function that reads (info) packet header and body from input-stream,
+   parse and return it. The returned fn returns `nil` when no data is present on
+   the input-stream."
+  [new-byte-size?]
+  (let [header-fn (if new-byte-size? (partial header 4) (partial header 1))]
+    (fn read-packet
+      [input-stream]
+      {:post [(or (nil? %) (packet/parsed? %))]}
+      (when-let [hdr (header-fn input-stream)]
+        (body input-stream hdr)))))

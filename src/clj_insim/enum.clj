@@ -12,7 +12,7 @@
    :mod :vtn :rst :ncn :cnl :cpr :npl :plp :pll :lap :spx :pit :psf :pla :cch
    :pen :toc :flg :pfl :fin :res :reo :nlp :mci :msx :msl :crs :bfn :axi :axo
    :btn :btc :btt :rip :ssh :con :obh :hlv :plc :axm :acr :hcp :nci :jrr :uco :oco
-   :ttc :slc :csc :cim])
+   :ttc :slc :csc :cim :mal])
 
 (def HOST [:guest :host])
 
@@ -45,7 +45,7 @@
 
 (def TINY_HEADER_DATA
   [:none :ver :close :ping :reply :vtc :scp :sst :gth :mpe :ism :ren :clr :ncn
-   :npl :res :nlp :mci :reo :rst :axi :axc :rip :nci :alc :axm :slc])
+   :npl :res :nlp :mci :reo :rst :axi :axc :rip :nci :alc :axm :slc :mal])
 
 (def TTC_HEADER_DATA [:none :sel :sel-start :sel-stop])
 
