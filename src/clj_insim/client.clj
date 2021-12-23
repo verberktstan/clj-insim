@@ -63,11 +63,15 @@
       (println (.getMessage e) (format "\nPlease run `/insim %d` in LFS." port)))))
 
 (defn- log-throwable [t]
-  #_(swap! ERROR_LOG conj (Throwable->map t))
   (println "clj-insim error:" (.getMessage t)))
 
 (defn- wrap-try-catch [f & args]
-  (try (apply f args) (catch Throwable t (log-throwable t))))
+  (try
+    (apply f args)
+    (catch Throwable t
+      (do
+        (log-throwable t)
+        (spit "logs.edn" (pr-str (Throwable->map t)) :append true)))))
 
 (defn start
   "Opens a socket, streams and async channels to connect with Live For Speed via InSim.
