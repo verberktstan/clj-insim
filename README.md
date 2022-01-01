@@ -14,9 +14,9 @@ A clojure library to connect with Live For Speed racing simulator via the InSim 
 Include a dependency on this project and core.async in your `deps.edn`.
 
 ```clojure
-;; v 0.3.0
-:deps {com.github.verberktstan/clj-insim {:git/tag "v0.3.0"
-                                          :git/sha "552993f"}}
+;; v 0.3.1
+:deps {com.github.verberktstan/clj-insim {:git/tag "v0.3.1"
+                                          :git/sha "df28ecf"}}
 ```
 
 ## Printing incoming packets
