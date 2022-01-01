@@ -2,3 +2,4 @@
 .nrepl-port
 target/*
 !target/doc/
+logs.edn
