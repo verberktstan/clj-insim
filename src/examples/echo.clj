@@ -6,14 +6,15 @@
 ;; An annotated example for using clj-insim
 
 (defn- dispatch [client {:header/keys [type] :as packet}]
-  (let [message (str "clj-insim: got a IS_" (-> type name str/upper-case) " packet from LFS.")]
+  (let [message (str "clj-insim: got a IS_" (-> type name str/upper-case) " packet from LFS.")
+        packet  (packets/msl {:message message})]
     (when-not (= :mso type)
-      ;; 4. Put a response (IS_MST packet) onto the channel
-      (client/>! client (packets/mst {:message message})))))
+      ;; 4. Put a response (IS_MSL packet) onto the channel
+      (client/>! client packet))))
 
 (defn echo
   "Starts a simple echo process that prints all incoming packets from LFS to the
-   console, and to LFS via a IS_MST packet. Well not ALL incoming packets, we
+   console, and to LFS via a IS_MSL packet. Well not ALL incoming packets, we
    ignore IS_MSO packets because this causes a feedback loop :-)."
   []
   (let [client (client/start) ;; 1. Start the client
