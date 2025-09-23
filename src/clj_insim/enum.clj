@@ -31,7 +31,7 @@
 
 (def PIT_LANE_FACTS [:exit :enter :no-purpose :drive-through :stop-go])
 
-(def PLAYER_TYPE [:female :ai :remote])
+(def PLAYER_TYPE [:female :remote :ai]) ;; NOTE: Different from docs!
 
 (def PMO_ACTION [:loading-file :add-objects :delete-objects :clear-all :tiny-axm :ttc-sel :selection :position :get-z])
 
