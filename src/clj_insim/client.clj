@@ -1,78 +1,52 @@
 (ns clj-insim.client
   "Provides functionality to create a InSim client. You'll want to use `start` to
    start a client and call `(stop client)` to stop it."
-  (:require [clj-insim.models.packet :as packet]
+  (:require [clj-insim.channel :as channel]
+            [clj-insim.connection :as connection]
+            [clj-insim.logging :as logging]
+            [clj-insim.models.packet :as packet]
             [clj-insim.packets :as packets]
             [clj-insim.read :as read]
             [clj-insim.write :as write]
             [clojure.core.async :as a]
-            [clojure.java.io :as io]
-            [clojure.string :as str])
-  (:import [java.net Socket]))
-
-(def ERROR_LOG (atom nil))
-(defonce ERRORS (atom true))
-(defonce VERBOSE (atom false))
+            [clojure.java.io :as io]))
 
 (defn >!!
   "(Blocking) put packet on the channel for sending to LFS."
   [client packet]
-  (a/>!! (:to-lfs client) packet))
+  (channel/>!! client packet))
 
 (defn <!!
   "(Blocking) take packet from the channel for receiving from LFS."
   [client packet]
-  (a/<!! (:from-lfs client)))
+  (channel/<!! client packet))
 
 (defn >!
   "(Async) put packet on the channel for sending to LFS."
   [client packet]
-  (a/go (a/>! (:to-lfs client) packet)))
+  (channel/>! client packet))
 
 (defn <!
   "(Ascync) take packet from the channel for receiving from LFS."
   [client packet]
-  (a/go (a/<! (:from-lfs client))))
-
-(defn- print-verbose [packet]
-  (when @VERBOSE
-    (newline)
-    (println (str "IS_" (-> (:header/type packet) name str/upper-case) " packet!"))
-    (println (str packet))))
+  (channel/<! client packet))
 
 (defn- dispatch
   "Dispatch is the entrypoint for automatic responses to certain packets, like
    the maintain connection concern."
   [client packet]
   (when (packet/maintain-connection? packet)
-    (>!! client (packets/tiny)))
-  (print-verbose packet))
+    (channel/>!! client (packets/tiny)))
+  (logging/print-verbose packet))
 
 (defn- close-fn [{:keys [running? from-lfs to-lfs input-stream output-stream socket] :as client}]
   (when @running?
-    (>!! client (packets/tiny {:data :close}))
-    (a/close! from-lfs)
-    (a/close! to-lfs)
+    (channel/>!! client (packets/tiny {:data :close}))
+    (channel/close! client)
     (Thread/sleep 10) ;; TODO, fix this!
     (reset! running? false)
-    (.close input-stream)
-    (.close output-stream)
-    (.close socket)
+    (connection/close-socket! socket input-stream output-stream)
     (println "clj-insim: client stopped")))
-
-(defn- make-socket [host port]
-  (try
-    (Socket. host port)
-    (catch java.net.ConnectException e
-      (println (.getMessage e) (format "\nPlease run `/insim %d` in LFS." port)))))
-
-(defn- log-throwable [t]
-  (when @ERRORS
-    (swap! ERROR_LOG conj (Throwable->map t))
-    (println "clj-insim error:" (.getMessage t))))
-
-(defn- wrap-try-catch [f & args]
-  (try (apply f args) (catch Throwable t (log-throwable t))))
 
 (defn start
   "Opens a socket, streams and async channels to connect with Live For Speed via InSim.
@@ -83,7 +57,7 @@
   ([]
    (start nil))
   ([{:keys [host port isi] :or {host "127.0.0.1" port 29999 isi (packets/isi)} :as options}]
-   (when-let [socket (make-socket host port)]
+   (when-let [socket (connection/make-socket host port)]
      (let [input-stream (io/input-stream socket)
            output-stream (io/output-stream socket)
            from-lfs (a/chan (a/sliding-buffer 10))
@@ -95,10 +69,10 @@
          (a/>!! to-lfs isi)
          (while @running?
            (let [packet (a/<! to-lfs)]
-             (wrap-try-catch (write/instruction new-byte-size?) output-stream packet))))
+             (logging/wrap-try-catch (write/instruction new-byte-size?) output-stream packet))))
        (a/go
          (while @running?
-           (when-let [packet (wrap-try-catch (read/packet new-byte-size?) input-stream)]
+           (when-let [packet (logging/wrap-try-catch (read/packet new-byte-size?) input-stream)]
              (dispatch {:to-lfs to-lfs} packet)
              (a/>! from-lfs packet))))
        (println "clj-insim: client started")
@@ -135,13 +109,13 @@
 
 (comment
   (def lfs-client (start))
+  (def lfs-client (start {:host "192.168.2.11" :port 29999}))
   (stop lfs-client)
 
   ;; In order to set verbose logging (log all incoming packets)
-  (reset! VERBOSE true)
+  (reset! logging/VERBOSE true)
 
   ;; To send a packet to lfs
   (>!! lfs-client (packets/msl {:sound :error}))
 
-  @ERROR_LOG
-)
+  @logging/ERROR_LOG)

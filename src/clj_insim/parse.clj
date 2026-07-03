@@ -55,20 +55,25 @@
 (def ^:private data->player-id
   {:header/data :header/player-id})
 
+(def ^:private data->ucid
+  {:header/data :header/ucid})
+
 ;; In some cases, the header/data key must be renamed so we provide rename-keys
 ;; kmaps per packet type here.
 (def ^:private HEADER_RENAMES
   {:axi data->player-id
-   :btc {:header/data :header/ucid}
+   :btc data->ucid
+   :cpr data->ucid
    :crs data->player-id
    :hlv data->player-id
    :lap data->player-id
    :mal {:header/data :header/num-mods}
-   :ncn {:header/data :header/ucid}
+   :ncn data->ucid
    :npl data->player-id
    :pll data->player-id
    :plp data->player-id
-   :spx data->player-id})
+   :spx data->player-id
+   :toc data->player-id})
 
 (def ^:private INFO_BODY_PARSERS
   {:axm #:body{:action (enum/decode enum/PMO_ACTION)
