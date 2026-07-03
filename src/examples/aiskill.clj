@@ -97,20 +97,23 @@
    (127.0.0.1:29999)."
   ([] (aiskill nil))
   ([{:keys [host port]}]
-   (let [client (client/start (cond-> {} host (assoc :host host) port (assoc :port port)))
-         stop #(client/stop client)]
-     (client/go client dispatch)
-     ;; Request an IS_NPL for every player already in the race - LFS only sends
-     ;; them for players joining *after* we connect otherwise. ReqI must be
-     ;; non-zero or LFS ignores the request.
-     (client/>! client (packets/tiny {:request-info 1 :data :npl}))
-     stop)))
+   ;; `client/start` returns nil when it can't connect to LFS (e.g. `/insim`
+   ;; hasn't been run yet), in which case there's nothing to start.
+   (when-let [client (client/start (cond-> {} host (assoc :host host) port (assoc :port port)))]
+     (let [stop #(client/stop client)]
+       (client/go client dispatch)
+       ;; Request an IS_NPL for every player already in the race - LFS only sends
+       ;; them for players joining *after* we connect otherwise. ReqI must be
+       ;; non-zero or LFS ignores the request.
+       (client/>! client (packets/tiny {:request-info 1 :data :npl}))
+       stop))))
 
 (defn -main
   "Entrypoint for the uberjar. Usage: `java -jar aiskill.jar [host] [port]`."
   [& [host port]]
-  (aiskill {:host host :port (some-> port Integer/parseInt)})
-  @(promise)) ;; block forever - the client runs on core.async's daemon threads
+  (if (aiskill {:host host :port (some-> port Integer/parseInt)})
+    @(promise) ;; block forever - the client runs on core.async's daemon threads
+    (System/exit 1)))
 
 (comment
 
