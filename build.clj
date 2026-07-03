@@ -15,6 +15,9 @@
   []
   (str/trim (b/git-process {:git-args "describe --tags --always --dirty"})))
 
+(defn- runner-script? [filename]
+  (or (str/ends-with? filename ".bat") (str/ends-with? filename ".sh")))
+
 (defn- zip-target!
   "Stages the built jar, compiled classes and runner scripts into a versioned
    folder and zips it, so the whole target folder's build output can be
@@ -23,12 +26,14 @@
   (b/delete {:path dist-dir})
   (let [dist-name (str "aiskill-" (version))
         stage-dir (str dist-dir "/" dist-name)]
+    (println "  - staging files")
     (b/copy-file {:src uber-file :target (str stage-dir "/aiskill.jar")})
     (b/copy-dir {:src-dirs [class-dir] :target-dir (str stage-dir "/classes")})
     (doseq [script (->> (io/file target-dir)
-                         .listFiles
-                         (filter #(str/starts-with? (.getName %) "run-aiskill")))]
+                        .listFiles
+                        (filter #(-> (.getName %) runner-script?)))]
       (b/copy-file {:src (.getPath script) :target (str stage-dir "/" (.getName script))}))
+    (println "  - zipping" dist-name)
     (b/zip {:src-dirs [dist-dir]
             :zip-file (str target-dir "/" dist-name ".zip")})
     (b/delete {:path dist-dir})))
@@ -50,11 +55,15 @@
   (b/delete {:path uber-file})
   (let [basis (b/create-basis {:project "deps.edn"})]
     (b/copy-dir {:src-dirs ["src"] :target-dir class-dir})
+    (println " - compiling clojure")
     (b/compile-clj {:basis basis :src-dirs ["src"] :class-dir class-dir})
+    (println " - creating artifact" uber-file)
     (b/uber {:class-dir class-dir
              :uber-file uber-file
              :basis basis
              :main 'examples.aiskill})
+    (println " - copying runner scripts")
     (copy-runner-script! "scripts/run-aiskill.sh")
     (copy-runner-script! "scripts/run-aiskill.bat")
+    (println " - zipping target")
     (zip-target!)))
