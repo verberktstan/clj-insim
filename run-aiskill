@@ -1,6 +1,0 @@
-#! /bin/bash
-
-set -euo pipefail
-
-clojure -T:build uber
-java -jar target/aiskill.jar "$@"

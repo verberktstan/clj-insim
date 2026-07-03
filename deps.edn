@@ -10,6 +10,7 @@
          :main-opts ["-m" "cognitect.test-runner"]
          :exec-fn cognitect.test-runner.api/test}
 
+  ;; Build the uberjar: clojure -T:build aiskill
   :build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.6"}}
           :ns-default build}}
 

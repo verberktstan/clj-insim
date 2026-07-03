@@ -21,10 +21,16 @@
 (defn- shuffle? [{:keys [shuffle-odds-1-in]}]
   (-> shuffle-odds-1-in rand-int zero?))
 
-(defn- random-skill-value [{:keys [min-skill max-skill]}]
-  (-> max-skill (- min-skill) rand-int (+ min-skill)))
+(defn- random-skill-value
+  "Picks a random skill level within the preset's `:min-skill`/`:max-skill`
+   range, inclusive on both ends."
+  [{:keys [min-skill max-skill]}]
+  (-> max-skill (- min-skill) inc rand-int (+ min-skill)))
 
 (defn- update-ai-skill!
+  "Advances `player`'s AI skill level by one, or reshuffles it to a random
+   value within its preset once maxed out, then sends the corresponding
+   `/aiset` command over `client` and records the new level in `players`."
   [client {:keys [player-id player-name preset current-skill]}]
   (let [preset-config (skill-presets preset)
         level         (cond
@@ -40,14 +46,17 @@
     (swap! players assoc-in [player-id :current-skill] level)
     (client/>! client command)))
 
-(defn- new-ai-player! [{:header/keys [player-id] :body/keys [player-name ucid]}]
+(defn- new-ai-player!
+  "Starts tracking a newly joined AI player, assigning it a random
+   difficulty preset and seeding its skill at that preset's `:max-skill`."
+  [{:header/keys [player-id] :body/keys [player-name ucid]}]
   (let [preset (rand-nth [:easy :normal :normal :hard :hard :hard])]
     (swap! players assoc player-id
            {:player-name   player-name
             :player-id     player-id ;; duplicated so `update-ai-skill!` can `swap!` by id from the player map alone
             :ucid          ucid ;; tracked so a later IS_CPR rename (keyed by ucid, not player-id) can find this player
             :preset        preset
-            :current-skill (get-in skill-presets [preset :min-skill])})))
+            :current-skill (get-in skill-presets [preset :max-skill])})))
 
 (defn- rename-players-by-ucid!
   "IS_CPR (connection renamed) is keyed by ucid, not player-id, so every
@@ -63,6 +72,8 @@
                       players))))
 
 (defn- dispatch
+  "Routes an incoming InSim packet to the appropriate player-tracking or
+   skill-update logic based on its `:header/type`."
   [client
    {:header/keys [type player-id ucid]
     :body/keys [player-type player-name new-ucid] :as packet}]
