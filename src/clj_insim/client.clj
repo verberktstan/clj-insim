@@ -57,6 +57,7 @@
   ([]
    (start nil))
   ([{:keys [host port isi] :or {host "127.0.0.1" port 29999 isi (packets/isi)} :as options}]
+   (println "Starting clj-insim client on host:" host "port:" port)
    (when-let [socket (connection/make-socket host port)]
      (let [input-stream (io/input-stream socket)
            output-stream (io/output-stream socket)
