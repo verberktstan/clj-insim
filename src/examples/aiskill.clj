@@ -88,32 +88,47 @@
    to use the new preset, resetting their skill to that preset's `:max-skill`."
   [difficulty]
   (when (contains? skill-presets difficulty)
+    (println "Setting difficulty to" difficulty)
     (reset! current-difficulty difficulty)
     (let [skill (get-in skill-presets [difficulty :max-skill])]
       (swap! players override-player-skills difficulty skill))
-    (packets/mst {:message (str "aiskill preset set to " (name difficulty))})))
+    (packets/mst {:message (str "ai skill preset set to " (name difficulty))})))
+
+(def ai-argument (comp #{:hard :normal :easy} keyword))
 
 (defn- parse-command [s]
   (when (string? s)
-    (when (str/starts-with? s "/aiskill ")
-      (->> (str/split s #" ")
-           rest
-           (map str/trim)
-           (zipmap [:command :argument])))))
+    (when (str/starts-with? s "!ai")
+      (update
+        (->> (str/split s #" ")
+             (map str/trim)
+             (map str/lower-case)
+             (remove str/blank?)
+             (zipmap [:command :argument]))
+        :argument ai-argument))))
 
 (defn- handle-aiskill-command!
-  "Parses `/aiskill <difficulty>` chat commands and updates the preset."
-  [message]
-  (let [{:keys [command argument]} (parse-command message)]
-    (when (and command argument)
-      (set-difficulty! (keyword argument)))))
+  "Parses `/ais <difficulty>` chat commands and updates the preset."
+  [{:body/keys [text-start message user-type] :as packet}]
+  (when (= :prefix user-type)
+    (let [message                    (subs message text-start)
+          {:keys [command argument]} (parse-command message)]
+      (println :message message :user-type user-type :command command :argument argument)
+      (or
+       (when (and command argument)
+         (set-difficulty! argument))
+       (when command
+         (let [report-message (str "AI preset: "
+                                   (name @current-difficulty)
+                                   ", try: !ai hard, !ai normal or !ai easy")]
+           (packets/mst {:message report-message})))))))
 
 (defn- dispatch
   "Routes an incoming InSim packet to the appropriate player-tracking or
    skill-update logic based on its `:header/type`."
   [client
    {:header/keys [type player-id ucid]
-    :body/keys [player-type player-name new-ucid message] :as packet}]
+    :body/keys [player-type player-name new-ucid user-type message] :as packet}]
   (case type
     :npl        (when (= :ai player-type) (new-ai-player! packet @current-difficulty))
     :pll        (swap! players dissoc player-id)
@@ -122,7 +137,8 @@
     ;; car handed to a different connection - only relevant if we're already tracking it
     :toc        (when (contains? @players player-id)
                   (swap! players assoc-in [player-id :ucid] new-ucid))
-    :mso        (handle-aiskill-command! message)
+    :mso        (when-let [packet (handle-aiskill-command! packet)]
+                  (client/>! client packet))
     (:lap :spx) (when-let [player (get @players player-id)]
                   (update-ai-skill! client player))
     nil))
