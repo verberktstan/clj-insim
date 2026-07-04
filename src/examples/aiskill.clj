@@ -76,12 +76,12 @@
 
 (defn- override-player-skills [players difficulty skill]
   (reduce-kv
-    (fn override-player-skills* [players player-id _player]
-      (-> players
-          (assoc-in [player-id :preset] difficulty)
-          (assoc-in [player-id :current-skill] skill)))
-    players
-    players))
+   (fn override-player-skills* [players player-id _player]
+     (cond-> players
+       difficulty (assoc-in [player-id :preset] difficulty)
+       skill      (assoc-in [player-id :current-skill] skill)))
+   players
+   players))
 
 (defn- set-difficulty!
   "Changes the current difficulty preset and updates all existing players
@@ -90,8 +90,7 @@
   (when (contains? skill-presets difficulty)
     (println "Setting difficulty to" difficulty)
     (reset! current-difficulty difficulty)
-    (let [skill (get-in skill-presets [difficulty :max-skill])]
-      (swap! players override-player-skills difficulty skill))
+    (swap! players override-player-skills difficulty nil)
     (packets/mst {:message (str "ai skill preset set to " (name difficulty))})))
 
 (def ai-argument (comp #{:hard :normal :easy} keyword))
