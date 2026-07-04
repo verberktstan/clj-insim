@@ -1,9 +1,9 @@
 # InSim v10 Upgrade - Quick Checklist
 
-**Status**: ✅ Phase 1 + Phase 2.1 COMPLETE  
-**Current**: v10 enums & flags + version-aware parse context implemented  
+**Status**: ✅ Phase 1 + Phase 2.1-2.5 COMPLETE  
+**Current**: v10 codecs fixed (OBH, HLV, CON, RIP) + version-aware parse context  
 **Target**: Full v10 support (time handling, defaults, integration testing)  
-**Remaining Effort**: ~3.5 hours (Phase 2.2-2.9, Phase 3, Phase 4)
+**Remaining Effort**: ~2 hours (Phase 2.6-2.9, Phase 3, Phase 4)
 
 ---
 
@@ -25,12 +25,12 @@
 - Backward Compatibility: ✅ No breaking changes
 - Documentation: See PHASE1_FINAL_SUMMARY.md
 
-### 🔄 Phase 2: Time Format Handling (1-2 hours)
+### 🔄 Phase 2: Time Format Handling (2.5-3 hours)
 - [x] **2.1** Track InSimVer in parse context (parse.clj) ✅ COMPLETE (2026-07-04)
-- [ ] **2.2** Verify IS_OBH has time field unsigned (codecs.clj)
-- [ ] **2.3** Verify IS_HLV has time field unsigned (codecs.clj)
-- [ ] **2.4** Verify IS_CON has time field unsigned (codecs.clj)
-- [ ] **2.5** Verify IS_RIP has ctime/ttime fields unsigned (codecs.clj)
+- [x] **2.2** Fix IS_OBH codec: add SpW field + uint32 time (codecs.clj) ✅ COMPLETE (2026-07-04)
+- [x] **2.3** Fix IS_HLV codec: add SpW field + uint32 time (codecs.clj) ✅ COMPLETE (2026-07-04)
+- [x] **2.4** Fix IS_CON codec: add SpW field + uint32 time (codecs.clj) ✅ COMPLETE (2026-07-04)
+- [x] **2.5** Add IS_RIP codec with ctime/ttime (uint32) (codecs.clj) ✅ COMPLETE (2026-07-04)
 - [ ] **2.6** Add/verify IS_UCO codec with time field (codecs.clj)
 - [ ] **2.7** Add/verify IS_CSC codec with time field (codecs.clj)
 - [ ] **2.8** Verify SMALL_RTP has time field (codecs.clj)
@@ -112,16 +112,16 @@ docs/
 
 ## Critical Path
 
-1. **Phase 1** ✅ DONE → **Phase 2.1** ✅ DONE → Phase 2.2-2.9 → Phase 3 (sequential)
+1. **Phase 1** ✅ DONE → **Phase 2.1** ✅ DONE → **Phase 2.2-2.5** ✅ DONE → Phase 2.6-2.9 → Phase 3 (sequential)
 2. **Phase 4** (can start during Phase 2-3)
 
 ```
-Phase 1 ✅ (30m) → Phase 2.1 ✅ (1h) → Phase 2.2-2.9 (1h) → Phase 3 (30m) → Done!
-                                              ↓
-                                           Phase 4 (2-3h, parallel with 3)
+Phase 1 ✅ (30m) → Phase 2.1 ✅ (1h) → Phase 2.2-2.5 ✅ (1.5h) → Phase 2.6-2.9 (1h) → Phase 3 (30m) → Done!
+                                                                       ↓
+                                                    Phase 4 (2-3h, parallel with 2.6-3)
 
-COMPLETED: ████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 31% of v10 upgrade
-REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 69%
+COMPLETED: ██████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 44% of v10 upgrade
+REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 56%
 ```
 
 ---
@@ -210,10 +210,20 @@ REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░
 - Added 2 test suites verifying version tracking (105 assertions total)
 - All tests passing (35/35)
 
-### 🔄 NEXT: Phase 2.2-2.9 - Time Field Codecs (Estimated: 1-1.5 hours)
-1. Verify 6 packet codecs for millisecond times (OBH, HLV, CON, RIP)
-2. Add missing IS_UCO, IS_CSC codecs if needed
-3. Verify SMALL_RTP time field
+### ✅ COMPLETED: Phase 2.2-2.5 - Time Field Codec Fixes
+**Date**: 2026-07-04  
+**Time**: ~1.5 hours (analysis + implementation + testing)
+- Fixed IS_OBH: added SpW field, changed time to uint32
+- Fixed IS_HLV: added SpW field, changed time to uint32
+- Fixed IS_CON: added SpW field, changed time to uint32
+- Added IS_RIP: complete codec with ctime/ttime (uint32)
+- Added 4 codec validation tests
+- All tests passing (39/39, 110 assertions)
+
+### 🔄 NEXT: Phase 2.6-2.9 - Remaining Codecs & Parsing (Estimated: 1-1.5 hours)
+1. Add/verify IS_UCO codec with time field (uint32 ms)
+2. Add/verify IS_CSC codec with time field (uint32 ms)
+3. Verify SMALL_RTP time field is uint32
 4. Implement version-aware time parsing in body parsers
 
 ### ⏳ THEN: Phase 3 (Estimated: 30 mins)
@@ -224,5 +234,5 @@ REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░
 1. Write integration tests
 2. Test with real LFS connection
 
-**Total Effort Remaining**: ~3.5 hours  
-**Overall Progress**: 31% complete (Phase 1 + Phase 2.1 done)
+**Total Effort Remaining**: ~2 hours  
+**Overall Progress**: 44% complete (Phase 1 + Phase 2.1-2.5 done)

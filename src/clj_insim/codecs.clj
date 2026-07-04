@@ -137,7 +137,8 @@
    (fn [_]
      (m/struct
       :body/closing-speed m/ushort
-      :body/time m/ushort
+      :body/speed-word m/ushort
+      :body/time m/uint32
       :body/car-contacts (m/array CAR_CONTACT 2)))
 
    ;; Connection Player Renamed
@@ -179,7 +180,8 @@
      (m/struct
       :body/hlvc m/ubyte
       :body/spare m/ubyte
-      :body/time m/ushort
+      :body/speed-word m/ushort
+      :body/time m/uint32
       :body/car-contact CAR_CONTACT_OBJECT))
 
    :isi
@@ -328,7 +330,8 @@
    (fn [_]
      (m/struct
       :body/closing-speed m/ushort
-      :body/time m/ushort
+      :body/speed-word m/ushort
+      :body/time m/uint32
       :body/car-contact CAR_CONTACT_OBJECT
       :body/x m/sshort
       :body/y m/sshort
@@ -407,7 +410,16 @@
       :body/num-results m/ubyte
       :body/penalty-seconds m/ushort))
 
-   ;; TODO add RIP codec
+   :rip
+   (fn [_]
+     (m/struct
+      :body/mpr m/ubyte
+      :body/paused m/ubyte
+      :body/options m/ubyte
+      :body/spare m/ubyte
+      :body/ctime m/uint32
+      :body/ttime m/uint32
+      :body/rname (m/ascii-string 64)))
 
    :rst
    (fn [_]
