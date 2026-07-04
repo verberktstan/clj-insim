@@ -6,6 +6,7 @@
             [clj-insim.logging :as logging]
             [clj-insim.models.packet :as packet]
             [clj-insim.packets :as packets]
+            [clj-insim.parse :as parse]
             [clj-insim.read :as read]
             [clj-insim.write :as write]
             [clojure.core.async :as a]
@@ -33,8 +34,11 @@
 
 (defn- dispatch
   "Dispatch is the entrypoint for automatic responses to certain packets, like
-   the maintain connection concern."
+   the maintain connection concern. Also updates parse context when ISI received."
   [client packet]
+  ;; Phase 2: Update parse context when ISI response received from LFS
+  (when (= :isi (:header/type packet))
+    (parse/set-insim-version! (:body/insim-version packet)))
   (when (packet/maintain-connection? packet)
     (channel/>!! client (packets/tiny)))
   (logging/print-verbose packet))
@@ -65,7 +69,8 @@
            to-lfs (a/chan (a/sliding-buffer 10))
            running? (atom true)
            new-byte-size? (> (:body/insim-version isi) 8)]
-       (println "clj-insim: using INSIM_VERSION:" (:body/insim-version isi))
+       ;; Phase 2: Initialize parse context with negotiated version
+       (parse/set-insim-version! (:body/insim-version isi))
        (a/go
          (a/>!! to-lfs isi)
          (while @running?

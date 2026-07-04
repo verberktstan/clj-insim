@@ -32,3 +32,22 @@
                           #:body{:unsigned-value 500})]
         (is (= (assoc packet :header/size 2)
                ((comp sut/body sut/header) (sut/instruction 4 packet))))))))
+
+;; Phase 2: Parse Context - InSimVer tracking for backward compatibility
+;; Version tracking allows time-format aware parsing for v9 (hundredths) vs v10 (ms)
+(deftest insim-version-context-test
+  (testing "insim-version context tracking"
+    (sut/set-insim-version! 9)
+    (is (= 9 (sut/insim-version)) "Can track v9")
+    (sut/set-insim-version! 10)
+    (is (= 10 (sut/insim-version)) "Can track v10")))
+
+(deftest new-byte-size-test
+  (testing "new-byte-size? derives from insim-version"
+    ;; Both v9 and v10 use new byte size (> 8)
+    (sut/set-insim-version! 9)
+    (is (sut/new-byte-size?) "v9 uses new byte size (version > 8)")
+    (sut/set-insim-version! 10)
+    (is (sut/new-byte-size?) "v10 uses new byte size (version > 8)")
+    (sut/set-insim-version! 8)
+    (is (false? (sut/new-byte-size?)) "v8 and below use old byte size (version <= 8)")))

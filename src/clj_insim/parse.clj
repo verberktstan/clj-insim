@@ -4,6 +4,32 @@
             [clj-insim.utils :as u]
             [clojure.set :as set]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Parse Context - Track InSimVer for version-aware parsing (Phase 2)
+;; Allows time field parsing to differ between v9 (hundredths) and v10 (ms)
+
+(defonce ^:dynamic *insim-version* 9)
+
+(defn set-insim-version!
+  "Updates the current InSimVer in the parse context. Called when ISI packet is
+   received from LFS to track the negotiated protocol version.
+   v9: times in hundredths of seconds (0.01s units)
+   v10: times in milliseconds (0.001s units)"
+  [version]
+  (alter-var-root #'*insim-version* (constantly version))
+  (println "clj-insim: negotiated InSimVer" version))
+
+(defn insim-version
+  "Returns the current InSimVer from the parse context."
+  []
+  *insim-version*)
+
+(defn new-byte-size?
+  "Returns true if current InSimVer > 8 (i.e., header size multiplier is 4 not 1).
+   Used in read/write to determine packet header size format."
+  []
+  (> *insim-version* 8))
+
 (defn- raw?
   "Returns `true` if header/type is an integer value. This means that this
    packet's header is a raw packet, received from LFS or prepared instruction

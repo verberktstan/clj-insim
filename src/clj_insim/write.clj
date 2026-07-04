@@ -32,9 +32,14 @@
   (.flush output-stream))
 
 (defn instruction
-  "Returns a function that prepares the packet and writes it to the output stream."
-  [new-byte-size?]
-  (fn write-instruction [output-stream packet]
-    (let [{:keys [body-codec instruction]} (prepare new-byte-size? packet)]
-      (when instruction
-        (write-instruction! output-stream body-codec instruction)))))
+  "Returns a function that prepares the packet and writes it to the output stream.
+
+   Accepts optional new-byte-size? boolean. If not provided, uses parse context
+   (dynamic var tracking current InSimVer from ISI negotiation)."
+  ([]
+   (instruction (parse/new-byte-size?)))
+  ([new-byte-size?]
+   (fn write-instruction [output-stream packet]
+     (let [{:keys [body-codec instruction]} (prepare new-byte-size? packet)]
+       (when instruction
+         (write-instruction! output-stream body-codec instruction))))))

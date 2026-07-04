@@ -44,11 +44,16 @@
 (defn packet
   "Returns a function that reads (info) packet header and body from input-stream,
    parse and return it. The returned fn returns `nil` when no data is present on
-   the input-stream."
-  [new-byte-size?]
-  (let [header-fn (if new-byte-size? (partial header 4) (partial header 1))]
-    (fn read-packet
-      [input-stream]
-      {:post [(or (nil? %) (packet/parsed? %))]}
-      (when-let [hdr (header-fn input-stream)]
-        (body input-stream hdr)))))
+   the input-stream.
+
+   Accepts optional new-byte-size? boolean. If not provided, uses parse context
+   (dynamic var tracking current InSimVer from ISI negotiation)."
+  ([]
+   (packet (parse/new-byte-size?)))
+  ([new-byte-size?]
+   (let [header-fn (if new-byte-size? (partial header 4) (partial header 1))]
+     (fn read-packet
+       [input-stream]
+       {:post [(or (nil? %) (packet/parsed? %))]}
+       (when-let [hdr (header-fn input-stream)]
+         (body input-stream hdr))))))
