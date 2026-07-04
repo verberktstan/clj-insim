@@ -59,7 +59,7 @@
       :or {admin "pwd"
            flags #{:con :hlv} ; Contact & Hot lap validity
            iname "clj-insim"
-           insim-version 9
+           insim-version 10
            interval 100
            prefix \!}}]
    ;; TODO: Implement is-flags

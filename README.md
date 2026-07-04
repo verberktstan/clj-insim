@@ -9,6 +9,18 @@ A clojure library to connect with Live For Speed racing simulator via the InSim 
 > clj-insim 0.2.1-SNAPSHOT (and versions before that) are still available on Clojars. These are deprecated and not maintained!
 > This repo contains version 0.3.x with a completely different async architecture.
 
+## Version Support
+
+clj-insim supports **InSim Protocol v10** (LFS 0.8B and later).
+
+- **Protocol Version**: v10 (default)
+- **Live For Speed**: 0.8B and later
+- **Backward Compatibility**: Handles v9 packets transparently (time values automatically converted)
+
+The library automatically negotiates the protocol version with LFS and adapts time handling:
+- **v10**: All time fields in milliseconds
+- **v9**: Time values converted from hundredths of seconds to milliseconds for consistency
+
 ## Configuration
 
 Include a dependency on this project and core.async in your `deps.edn`.

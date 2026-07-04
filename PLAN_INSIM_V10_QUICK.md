@@ -1,9 +1,9 @@
 # InSim v10 Upgrade - Quick Checklist
 
-**Status**: ✅ Phase 1 + Phase 2 COMPLETE  
-**Current**: All v10 time codecs complete (OBH, HLV, CON, RIP, UCO, CSC) + version-aware parsing  
-**Target**: Full v10 support (defaults, integration testing)  
-**Remaining Effort**: ~2.5 hours (Phase 3, Phase 4)
+**Status**: ✅ Phase 1 + Phase 2 + Phase 3 COMPLETE  
+**Current**: All v10 codecs + version-aware parsing + defaults + documentation  
+**Target**: Full v10 support (integration testing)  
+**Remaining Effort**: ~2-3 hours (Phase 4)
 
 ---
 
@@ -36,10 +36,10 @@
 - [x] **2.8** Verify SMALL_RTP has time field (codecs.clj) ✅ VERIFIED (already correct)
 - [x] **2.9** Add version-aware time parsing (parse.clj) ✅ COMPLETE (2026-07-04)
 
-### ☐ Phase 3: Integration & Defaults (30 mins)
-- [ ] **3.1** Update default insim-version from 9 → 10 (packets.clj line 62)
-- [ ] **3.2** Update documentation (README.md, feature_*.md)
-- [ ] **3.3** Add version compatibility notes
+### ✅ Phase 3: Integration & Defaults - COMPLETE (30 mins)
+- [x] **3.1** Update default insim-version from 9 → 10 (packets.clj) ✅ COMPLETE (2026-07-04)
+- [x] **3.2** Update documentation (README.md version support section) ✅ COMPLETE (2026-07-04)
+- [x] **3.3** Add version compatibility notes (README + inline docs) ✅ COMPLETE (2026-07-04)
 
 ### ☐ Phase 4: Testing (2-3 hours)
 - [ ] **4.1** Unit tests for enum positions
@@ -112,15 +112,13 @@ docs/
 
 ## Critical Path
 
-1. **Phase 1** ✅ DONE → **Phase 2** ✅ COMPLETE → Phase 3 → Phase 4 (parallel)
+1. **Phase 1** ✅ DONE → **Phase 2** ✅ COMPLETE → **Phase 3** ✅ COMPLETE → Phase 4
 
 ```
-Phase 1 ✅ (30m) → Phase 2 ✅ (3h) → Phase 3 (30m) → Done!
-                                            ↓
-                                Phase 4 (2-3h, parallel with 3)
+Phase 1 ✅ (30m) → Phase 2 ✅ (3h) → Phase 3 ✅ (30m) → Phase 4 (2-3h) → Done!
 
-COMPLETED: ████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 56% of v10 upgrade
-REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 44%
+COMPLETED: ██████████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 69% of v10 upgrade
+REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 31%
 ```
 
 ---
@@ -231,18 +229,18 @@ REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░
 
 **Result**: All 39 tests passing (109 assertions), 0 failures
 
-### 🔄 NEXT: Phase 3 - Integration & Defaults (Estimated: 30 minutes)
-1. Update default insim-version from 9 → 10 in packets.clj
-2. Update documentation (README, feature lists)
-3. Add version compatibility notes
+### ✅ COMPLETED: Phase 3 - Integration & Defaults
+**Date**: 2026-07-04  
+**Time**: ~30 minutes
+- Updated default insim-version from 9 → 10 in packets.clj
+- Added version support section to README.md
+- Added backward compatibility notes
 
-### ⏳ THEN: Phase 3 (Estimated: 30 mins)
-1. Update default insim-version from 9 → 10
-2. Update all documentation
+### 🧪 NEXT: Phase 4 - Testing & Validation (Estimated: 2-3 hours)
+1. Write integration tests with real LFS connection
+2. Test v9 and v10 packet handling
+3. Verify time field conversion
+4. Performance benchmarks
 
-### 🧪 PARALLEL: Phase 4 (Estimated: 2-3 hours)
-1. Write integration tests
-2. Test with real LFS connection
-
-**Total Effort Remaining**: ~2.5 hours  
-**Overall Progress**: 56% complete (Phase 1 + Phase 2 done)
+**Total Effort Remaining**: ~2-3 hours  
+**Overall Progress**: 69% complete (Phase 1 + Phase 2 + Phase 3 done)
