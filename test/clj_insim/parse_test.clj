@@ -50,4 +50,11 @@
     (sut/set-insim-version! 10)
     (is (sut/new-byte-size?) "v10 uses new byte size (version > 8)")
     (sut/set-insim-version! 8)
-    (is (false? (sut/new-byte-size?)) "v8 and below use old byte size (version <= 8)")))
+    (is (false? (sut/new-byte-size?)) "v8 and below use old byte size (version <= 8)"))
+  (sut/set-insim-version! 9))
+
+;; Phase 2.9: Version-aware parsing support (codecs and parsers updated)
+;; Time-aware parsing is integrated into INFO_BODY_PARSERS for OBH, HLV, CON, CSC, UCO
+;; The parse-time-ms helper respects the parse context (insim-version)
+;; v9: time values multiplied by 10 (hundredths -> milliseconds)
+;; v10: time values used as-is (already milliseconds)

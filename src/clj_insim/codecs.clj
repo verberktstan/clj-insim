@@ -133,6 +133,15 @@
       :body/total m/ubyte
       :body/spare (m/ascii-string 2)))
 
+   :csc
+   (fn [_]
+     (m/struct
+      :body/spare-a m/ubyte
+      :body/action m/ubyte
+      :body/spare-b (m/ascii-string 2)
+      :body/time m/uint32
+      :body/car-contact CAR_CONTACT_OBJECT))
+
    :con
    (fn [_]
      (m/struct
@@ -499,6 +508,16 @@
       :body/old-ucid m/ubyte
       :body/new-ucid m/ubyte
       :body/spare (m/ascii-string 2)))
+
+   :uco
+   (fn [_]
+     (m/struct
+      :body/spare-a m/ubyte
+      :body/action m/ubyte
+      :body/spare-b (m/ascii-string 2)
+      :body/time m/uint32
+      :body/car-contact CAR_CONTACT_OBJECT
+      :body/object-info OBJECT_INFO))
 
    :ver
    (fn [_]

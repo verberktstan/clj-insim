@@ -1,9 +1,9 @@
 # InSim v10 Upgrade - Quick Checklist
 
-**Status**: ✅ Phase 1 + Phase 2.1-2.5 COMPLETE  
-**Current**: v10 codecs fixed (OBH, HLV, CON, RIP) + version-aware parse context  
-**Target**: Full v10 support (time handling, defaults, integration testing)  
-**Remaining Effort**: ~2 hours (Phase 2.6-2.9, Phase 3, Phase 4)
+**Status**: ✅ Phase 1 + Phase 2 COMPLETE  
+**Current**: All v10 time codecs complete (OBH, HLV, CON, RIP, UCO, CSC) + version-aware parsing  
+**Target**: Full v10 support (defaults, integration testing)  
+**Remaining Effort**: ~2.5 hours (Phase 3, Phase 4)
 
 ---
 
@@ -25,16 +25,16 @@
 - Backward Compatibility: ✅ No breaking changes
 - Documentation: See PHASE1_FINAL_SUMMARY.md
 
-### 🔄 Phase 2: Time Format Handling (2.5-3 hours)
+### ✅ Phase 2: Time Format Handling - COMPLETE (3 hours total)
 - [x] **2.1** Track InSimVer in parse context (parse.clj) ✅ COMPLETE (2026-07-04)
 - [x] **2.2** Fix IS_OBH codec: add SpW field + uint32 time (codecs.clj) ✅ COMPLETE (2026-07-04)
 - [x] **2.3** Fix IS_HLV codec: add SpW field + uint32 time (codecs.clj) ✅ COMPLETE (2026-07-04)
 - [x] **2.4** Fix IS_CON codec: add SpW field + uint32 time (codecs.clj) ✅ COMPLETE (2026-07-04)
 - [x] **2.5** Add IS_RIP codec with ctime/ttime (uint32) (codecs.clj) ✅ COMPLETE (2026-07-04)
-- [ ] **2.6** Add/verify IS_UCO codec with time field (codecs.clj)
-- [ ] **2.7** Add/verify IS_CSC codec with time field (codecs.clj)
-- [ ] **2.8** Verify SMALL_RTP has time field (codecs.clj)
-- [ ] **2.9** Add version-aware time parsing to body parsers (parse.clj)
+- [x] **2.6** Add IS_UCO codec with time field (codecs.clj) ✅ COMPLETE (2026-07-04)
+- [x] **2.7** Add IS_CSC codec with time field (codecs.clj) ✅ COMPLETE (2026-07-04)
+- [x] **2.8** Verify SMALL_RTP has time field (codecs.clj) ✅ VERIFIED (already correct)
+- [x] **2.9** Add version-aware time parsing (parse.clj) ✅ COMPLETE (2026-07-04)
 
 ### ☐ Phase 3: Integration & Defaults (30 mins)
 - [ ] **3.1** Update default insim-version from 9 → 10 (packets.clj line 62)
@@ -112,16 +112,15 @@ docs/
 
 ## Critical Path
 
-1. **Phase 1** ✅ DONE → **Phase 2.1** ✅ DONE → **Phase 2.2-2.5** ✅ DONE → Phase 2.6-2.9 → Phase 3 (sequential)
-2. **Phase 4** (can start during Phase 2-3)
+1. **Phase 1** ✅ DONE → **Phase 2** ✅ COMPLETE → Phase 3 → Phase 4 (parallel)
 
 ```
-Phase 1 ✅ (30m) → Phase 2.1 ✅ (1h) → Phase 2.2-2.5 ✅ (1.5h) → Phase 2.6-2.9 (1h) → Phase 3 (30m) → Done!
-                                                                       ↓
-                                                    Phase 4 (2-3h, parallel with 2.6-3)
+Phase 1 ✅ (30m) → Phase 2 ✅ (3h) → Phase 3 (30m) → Done!
+                                            ↓
+                                Phase 4 (2-3h, parallel with 3)
 
-COMPLETED: ██████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 44% of v10 upgrade
-REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 56%
+COMPLETED: ████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 56% of v10 upgrade
+REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 44%
 ```
 
 ---
@@ -210,21 +209,32 @@ REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░
 - Added 2 test suites verifying version tracking (105 assertions total)
 - All tests passing (35/35)
 
-### ✅ COMPLETED: Phase 2.2-2.5 - Time Field Codec Fixes
+### ✅ COMPLETED: Phase 2 - Time Format Handling (All 9 Tasks)
 **Date**: 2026-07-04  
-**Time**: ~1.5 hours (analysis + implementation + testing)
-- Fixed IS_OBH: added SpW field, changed time to uint32
-- Fixed IS_HLV: added SpW field, changed time to uint32
-- Fixed IS_CON: added SpW field, changed time to uint32
-- Added IS_RIP: complete codec with ctime/ttime (uint32)
-- Added 4 codec validation tests
-- All tests passing (39/39, 110 assertions)
+**Time**: ~3 hours total (all phases combined)
 
-### 🔄 NEXT: Phase 2.6-2.9 - Remaining Codecs & Parsing (Estimated: 1-1.5 hours)
-1. Add/verify IS_UCO codec with time field (uint32 ms)
-2. Add/verify IS_CSC codec with time field (uint32 ms)
-3. Verify SMALL_RTP time field is uint32
-4. Implement version-aware time parsing in body parsers
+**Phase 2.1**: Version-aware parse context tracking (1h)
+- Dynamic variable to track InSimVer
+- Read/write functions updated with context fallback
+
+**Phase 2.2-2.5**: Time field codec fixes (1.5h)
+- Fixed IS_OBH, IS_HLV, IS_CON: added SpW field, uint32 time
+- Added IS_RIP: complete codec with ctime/ttime
+- Added codec validation tests
+
+**Phase 2.6-2.9**: Remaining codecs & version-aware parsing (0.5h)
+- Added IS_UCO: complete 28-byte codec with time field
+- Added IS_CSC: complete 20-byte codec with time field
+- Verified SMALL_RTP: already correct (uint32)
+- Implemented parse-time-ms helper for version-aware conversion
+- Added time parsing to 5 INFO_BODY_PARSERS (OBH, HLV, CON, CSC, UCO)
+
+**Result**: All 39 tests passing (109 assertions), 0 failures
+
+### 🔄 NEXT: Phase 3 - Integration & Defaults (Estimated: 30 minutes)
+1. Update default insim-version from 9 → 10 in packets.clj
+2. Update documentation (README, feature lists)
+3. Add version compatibility notes
 
 ### ⏳ THEN: Phase 3 (Estimated: 30 mins)
 1. Update default insim-version from 9 → 10
@@ -234,5 +244,5 @@ REMAINING: ░░░░░░░░░░░░░░░░░░░░░░░
 1. Write integration tests
 2. Test with real LFS connection
 
-**Total Effort Remaining**: ~2 hours  
-**Overall Progress**: 44% complete (Phase 1 + Phase 2.1-2.5 done)
+**Total Effort Remaining**: ~2.5 hours  
+**Overall Progress**: 56% complete (Phase 1 + Phase 2 done)

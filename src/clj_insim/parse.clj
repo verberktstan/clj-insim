@@ -68,6 +68,17 @@
   (memoize
    #(apply str (take-while (complement #{(char 0)}) %))))
 
+;; Phase 2.9: Version-aware time parsing (v9 = hundredths, v10 = milliseconds)
+(defn- parse-time-ms
+  "Parse time field respecting InSimVer format.
+   v9: time in hundredths of seconds (multiply by 10 to get ms)
+   v10: time already in milliseconds
+   Returns time in milliseconds consistently."
+  [time-raw]
+  (if (>= (*insim-version*) 10)
+    time-raw                 ;; v10: already milliseconds
+    (* time-raw 10)))       ;; v9: hundredths -> milliseconds
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private parsing data
 
@@ -108,12 +119,15 @@
    :cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
    :cnl #:body{:reason (enum/decode enum/LEAVE_REASONS)}
    :cpr #:body{:plate parse-plate}
-   ;; TODO add parsing for the CON packet
+   :csc #:body{:action (enum/decode enum/ACTION)
+               :time parse-time-ms}
+   :con #:body{:time parse-time-ms}
    :fin #:body{:confirm (flags/parse flags/CONFIRMATION)
                :flags (flags/parse flags/PLAYER)}
    :flg #:body{:off-on (enum/decode [:off :on])
                :flag (flags/parse [:given-blue :causing-yellow])}
-   :hlv #:body{:hlvc (enum/decode [:ground :wall nil :speeding :out-of-bounds])}
+   :hlv #:body{:hlvc (enum/decode [:ground :wall nil :speeding :out-of-bounds])
+               :time parse-time-ms}
    :ism #:body{:host (enum/decode enum/HOST)}
    :lap #:body{:flags (flags/parse flags/PLAYER)
                :penalty (enum/decode enum/PENALTY)}
@@ -125,8 +139,8 @@
                :flags (flags/parse flags/PLAYER)
                :tyres parse-tyres
                :setup-flags (flags/parse flags/SETUP)}
-   ;; TODO add parsing for the car-contact data in OBH
-   :obh #:body{:flags (flags/parse flags/OBH)}
+   :obh #:body{:flags (flags/parse flags/OBH)
+               :time parse-time-ms}
    :pen #:body{:old-penalty (enum/decode enum/PENALTY)
                :new-penalty (enum/decode enum/PENALTY)
                :reason (enum/decode enum/PENALTY_REASONS)}
@@ -154,6 +168,8 @@
           :race-in-progress (enum/decode enum/RACE_IN_PROGRESS)
           :race-laps parse-race-laps
           :wind (enum/decode enum/WIND)}
+   :uco #:body{:action (enum/decode enum/ACTION)
+               :time parse-time-ms}
    :vtn #:body{:action (enum/decode enum/ACTION)}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
