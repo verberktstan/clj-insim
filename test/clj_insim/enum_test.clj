@@ -23,3 +23,20 @@
   (testing "accepts only sequential enum"
     (is (fn? (sut/decode '(:x :y :z))))
     (is (thrown? AssertionError (sut/decode {:test "map"})))))
+
+;; Phase 1: InSim v10 Enum Updates
+(deftest insim-v10-tiny-header-data-test
+  (testing "TINY_HEADER_DATA - v10 changes"
+    (testing "position 8 renamed GTH → GTM"
+      (is (= :gtm (nth sut/TINY_HEADER_DATA 8))))
+    (testing "position 28: TINY_PLH added"
+      (is (= :plh (nth sut/TINY_HEADER_DATA 28))))
+    (testing "position 29: TINY_IPB added"
+      (is (= :ipb (nth sut/TINY_HEADER_DATA 29))))
+    (testing "position 30: TINY_LCL added"
+      (is (= :lcl (nth sut/TINY_HEADER_DATA 30))))))
+
+(deftest insim-v10-small-header-data-test
+  (testing "SMALL_HEADER_DATA - v10 changes"
+    (testing "position 10: SMALL_LCL added"
+      (is (= :lcl (nth sut/SMALL_HEADER_DATA 10))))))

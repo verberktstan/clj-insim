@@ -15,6 +15,8 @@
 (def ISI
   [:spare-0 :spare-1 :local :mso-cols :nlp :mci :con :obh :hlv :axm-load :axm-edit :req-join])
 
+(def CAR_CONTACT_INFO [:blue :yellow :oob :reserved-4 :reserved-5 :reserved-6 :reserved-7 :lag])
+
 (def OBH [:layout :can-move :was-moving :on-spot])
 
 (def PIT_WORK
@@ -24,7 +26,7 @@
    :body-minor :body-major :setup :refuel])
 
 (def PLAYER
-  [:swapside :reserved-2 :reserved-4 :autogears :shifter :reserved-32 :help-b
+  [:swapside :reserved-2 :reserved-4 :autogears :shifter :flexible-steer :help-b
    :axis-clutch :in-pits :autoclutch :mouse :kb-no-help :kb-stabilised
    :custom-view])
 

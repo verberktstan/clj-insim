@@ -39,13 +39,13 @@
 
 (def SFP [:shift-u-no-opt :show-2d :mspeedup :sound-mute])
 
-(def SMALL_HEADER_DATA [:none :ssp :ssg :vta :tms :stp :rtp :nli :alc :lcs])
+(def SMALL_HEADER_DATA [:none :ssp :ssg :vta :tms :stp :rtp :nli :alc :lcs :lcl])
 
 (def STOP [:carry-on :stop])
 
 (def TINY_HEADER_DATA
-  [:none :ver :close :ping :reply :vtc :scp :sst :gth :mpe :ism :ren :clr :ncn
-   :npl :res :nlp :mci :reo :rst :axi :axc :rip :nci :alc :axm :slc :mal])
+  [:none :ver :close :ping :reply :vtc :scp :sst :gtm :mpe :ism :ren :clr :ncn
+   :npl :res :nlp :mci :reo :rst :axi :axc :rip :nci :alc :axm :slc :mal :plh :ipb :lcl])
 
 (def TTC_HEADER_DATA [:none :sel :sel-start :sel-stop])
 
