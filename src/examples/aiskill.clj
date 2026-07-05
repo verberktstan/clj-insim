@@ -31,15 +31,16 @@
 (defn- calculate-next-skill [current-skill preset-config]
   (cond
     (not (max-skill? current-skill preset-config)) (inc current-skill)
-    (shuffle? preset-config) (random-skill-value preset-config)
-    :else current-skill)) ;; NOTE: Do not update when current-skill remains..
+    (shuffle? preset-config)                       (random-skill-value preset-config)))
 
 (defn- update-ai-skill! [client {:keys [player-id player-name preset current-skill]}]
   (let [preset-config (skill-presets preset)
-        level (calculate-next-skill current-skill preset-config)
-        command (packets/mst {:message (str "/aiset " player-name " " level)})]
-    (swap! players assoc-in [player-id :current-skill] level)
-    (client/>! client command)))
+        level         (calculate-next-skill current-skill preset-config)
+        new-level?    (not= level current-skill)
+        command       (packets/mst {:message (str "/aiset " player-name " " level)})]
+    (when new-level?
+      (swap! players assoc-in [player-id :current-skill] level)
+      (client/>! client command))))
 
 (defn- new-ai-player!
   "Starts tracking a newly joined AI player, assigning it a current
