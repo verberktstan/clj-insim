@@ -2,13 +2,12 @@
   (:gen-class)
   (:require [clj-insim.client :as client]
             [clj-insim.packets :as packets]
-            [clojure.string]
             [clojure.string :as str]))
 
 ;; A simple example that ramps up an AI player's /aiset skill level every time
 ;; they cross the finish line (IS_LAP) or a split point (IS_SPX), based on a
-;; difficulty preset. Use `/aiskill easy`, `/aiskill normal`, or `/aiskill hard`
-;; to change the preset for all players (both existing and new).
+;; difficulty preset. Use `!ai easy`, `!ai normal`, or `!ai hard` to change the
+;; preset for all players (both existing and new).
 
 (def ^:private skill-presets
   ;; /aiset accepts a level between 1 and 5
@@ -33,14 +32,13 @@
     (not (max-skill? current-skill preset-config)) (inc current-skill)
     (shuffle? preset-config)                       (random-skill-value preset-config)))
 
-(defn- update-ai-skill! [client {:keys [player-id player-name preset current-skill]}]
+(defn- update-ai-skill! [{:keys [player-id player-name preset current-skill]}]
   (let [preset-config (skill-presets preset)
         level         (calculate-next-skill current-skill preset-config)
-        new-level?    (not= level current-skill)
-        command       (packets/mst {:message (str "/aiset " player-name " " level)})]
-    (when new-level?
+        new-level?    (not= level current-skill)]
+    (when (and level new-level?)
       (swap! players assoc-in [player-id :current-skill] level)
-      (client/>! client command))))
+      (packets/mst {:message (str "/aiset " player-name " " level)}))))
 
 (defn- new-ai-player!
   "Starts tracking a newly joined AI player, assigning it a current
@@ -94,11 +92,12 @@
              (zipmap [:command :argument]))
         :argument parse-difficulty))))
 
-(defn- handle-aiskill-command! [{:body/keys [text-start message user-type] :as packet}]
+(defn- handle-aiskill-command! [{:body/keys [text-start message user-type]}]
   (when (= :prefix user-type)
     (let [message                    (subs message text-start)
           {:keys [command argument]} (parse-aiskill-command message)]
-      (println :message message :user-type user-type :command command :argument argument)
+      (when command
+        (println "Received !ai command with argument:" argument))
       (or
        (when (and command argument)
          (set-difficulty! argument))
@@ -109,8 +108,8 @@
            (packets/mst {:message report-message})))))))
 
 (defn- dispatch [client
-   {:header/keys [type player-id ucid]
-    :body/keys [player-type player-name new-ucid user-type message] :as packet}]
+                 {:header/keys [type player-id ucid]
+                  :body/keys [player-type player-name new-ucid] :as packet}]
   (case type
     :npl        (when (= :ai player-type) (new-ai-player! packet @current-difficulty))
     :pll        (swap! players dissoc player-id)
@@ -121,8 +120,8 @@
                   (swap! players assoc-in [player-id :ucid] new-ucid))
     :mso        (when-let [response (handle-aiskill-command! packet)]
                   (client/>! client response))
-    (:lap :spx) (when-let [player (get @players player-id)]
-                  (update-ai-skill! client player))
+    (:lap :spx) (when-let [response (some-> @players (get player-id) update-ai-skill!)]
+                  (client/>! client response))
     :ver        (client/>! client (packets/tiny {:request-info 1 :data :npl}))
     nil))
 
@@ -154,7 +153,6 @@
 
   ;; To start the aiskill process
   (def aiskill-client (aiskill))
-  (def aiskill-client (aiskill {:host "192.168.2.11" :port 29999}))
 
   ;; To stop the client and aiskill process, simply call the stored function
   (aiskill-client)
