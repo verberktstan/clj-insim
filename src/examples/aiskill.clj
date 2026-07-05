@@ -136,10 +136,11 @@
     ;; car handed to a different connection - only relevant if we're already tracking it
     :toc        (when (contains? @players player-id)
                   (swap! players assoc-in [player-id :ucid] new-ucid))
-    :mso        (when-let [packet (handle-aiskill-command! packet)]
-                  (client/>! client packet))
+    :mso        (when-let [response (handle-aiskill-command! packet)]
+                  (client/>! client response))
     (:lap :spx) (when-let [player (get @players player-id)]
                   (update-ai-skill! client player))
+    :ver        (client/>! client (packets/tiny {:request-info 1 :data :npl}))
     nil))
 
 (defn aiskill
@@ -161,7 +162,6 @@
        ;; Request an IS_NPL for every player already in the race - LFS only sends
        ;; them for players joining *after* we connect otherwise. ReqI must be
        ;; non-zero or LFS ignores the request.
-       (client/>! client (packets/tiny {:request-info 1 :data :npl}))
        stop))))
 
 (defn -main
