@@ -25,28 +25,19 @@
 (defn- shuffle? [{:keys [shuffle-odds-1-in]}]
   (-> shuffle-odds-1-in rand-int zero?))
 
-(defn- random-skill-value
-  "Picks a random skill level within the preset's `:min-skill`/`:max-skill`
-   range, inclusive on both ends."
-  [{:keys [min-skill max-skill]}]
+(defn- random-skill-value [{:keys [min-skill max-skill]}]
   (-> max-skill (- min-skill) inc rand-int (+ min-skill)))
 
-(defn- update-ai-skill!
-  "Advances `player`'s AI skill level by one, or reshuffles it to a random
-   value within its preset once maxed out, then sends the corresponding
-   `/aiset` command over `client` and records the new level in `players`."
-  [client {:keys [player-id player-name preset current-skill]}]
+(defn- calculate-next-skill [current-skill preset-config]
+  (cond
+    (not (max-skill? current-skill preset-config)) (inc current-skill)
+    (shuffle? preset-config) (random-skill-value preset-config)
+    :else current-skill)) ;; NOTE: Do not update when current-skill remains..
+
+(defn- update-ai-skill! [client {:keys [player-id player-name preset current-skill]}]
   (let [preset-config (skill-presets preset)
-        level         (cond
-                        (not (max-skill? current-skill preset-config))
-                        (inc current-skill)
-
-                        (shuffle? preset-config)
-                        (random-skill-value preset-config)
-
-                        :else
-                        current-skill)
-        command       (packets/mst {:message (str "/aiset " player-name " " level)})]
+        level (calculate-next-skill current-skill preset-config)
+        command (packets/mst {:message (str "/aiset " player-name " " level)})]
     (swap! players assoc-in [player-id :current-skill] level)
     (client/>! client command)))
 
@@ -61,10 +52,9 @@
           :preset        preset
           :current-skill (get-in skill-presets [preset :max-skill])}))
 
-(defn- rename-players-by-ucid!
-  "IS_CPR (connection renamed) is keyed by ucid, not player-id, so every
-   tracked player owned by that connection needs its name updated."
-  [ucid player-name]
+(defn- rename-players-by-ucid! [ucid player-name]
+  "IS_CPR is keyed by ucid, not player-id, so all tracked players owned by this
+  connection need renaming"
   (swap! players
          (fn [players]
            (reduce-kv (fn [players player-id player]
@@ -83,19 +73,16 @@
    players
    players))
 
-(defn- set-difficulty!
-  "Changes the current difficulty preset and updates all existing players
-   to use the new preset, resetting their skill to that preset's `:max-skill`."
-  [difficulty]
+(defn- set-difficulty! [difficulty]
   (when (contains? skill-presets difficulty)
     (println "Setting difficulty to" difficulty)
     (reset! current-difficulty difficulty)
     (swap! players override-player-skills difficulty nil)
     (packets/mst {:message (str "ai skill preset set to " (name difficulty))})))
 
-(def ai-argument (comp #{:hard :normal :easy} keyword))
+(def parse-difficulty (comp #{:hard :normal :easy} keyword))
 
-(defn- parse-command [s]
+(defn- parse-aiskill-command [s]
   (when (string? s)
     (when (str/starts-with? s "!ai")
       (update
@@ -104,14 +91,12 @@
              (map str/lower-case)
              (remove str/blank?)
              (zipmap [:command :argument]))
-        :argument ai-argument))))
+        :argument parse-difficulty))))
 
-(defn- handle-aiskill-command!
-  "Parses `/ais <difficulty>` chat commands and updates the preset."
-  [{:body/keys [text-start message user-type] :as packet}]
+(defn- handle-aiskill-command! [{:body/keys [text-start message user-type] :as packet}]
   (when (= :prefix user-type)
     (let [message                    (subs message text-start)
-          {:keys [command argument]} (parse-command message)]
+          {:keys [command argument]} (parse-aiskill-command message)]
       (println :message message :user-type user-type :command command :argument argument)
       (or
        (when (and command argument)
@@ -122,10 +107,7 @@
                                    ", try: !ai hard, !ai normal or !ai easy")]
            (packets/mst {:message report-message})))))))
 
-(defn- dispatch
-  "Routes an incoming InSim packet to the appropriate player-tracking or
-   skill-update logic based on its `:header/type`."
-  [client
+(defn- dispatch [client
    {:header/keys [type player-id ucid]
     :body/keys [player-type player-name new-ucid user-type message] :as packet}]
   (case type
@@ -144,14 +126,7 @@
     nil))
 
 (defn aiskill
-  "Starts a process that ramps up an AI player's skill (per their assigned
-   difficulty preset) every time they cross the finish line or a split point,
-   occasionally reshuffling to a random skill within the preset's range.
-   Players start with the current difficulty (default :hard). Use the
-   `/aiskill easy`, `/aiskill normal`, or `/aiskill hard` commands in-game
-   to change the preset for all players.
-   `opts` accepts `:host` and `:port` to override `client/start`'s defaults
-   (127.0.0.1:29999)."
+  "Starts the aiskill process; accepts opts with :host/:port. Returns stop fn."
   ([] (aiskill nil))
   ([{:keys [host port]}]
    ;; `client/start` returns nil when it can't connect to LFS (e.g. `/insim`
