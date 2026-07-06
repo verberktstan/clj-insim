@@ -17,13 +17,13 @@
 
 (defonce ^:private players (atom {})) ;; player-id -> {:player-name :player-id :ucid :preset :current-skill}
 (defonce ^:private current-difficulty (atom :hard)) ;; tracks the active difficulty preset
-(defonce ^:private volatility-override (atom {:shuffle-odds-in-1 nil}))
+(defonce ^:private volatility-override (atom {:shuffle-odds-1-in nil}))
 
 (defn- max-skill? [current-skill {:keys [max-skill]}]
   (>= current-skill max-skill))
 
-(defn- shuffle? [{:keys [shuffle-odds-1-in]}]
-  (-> shuffle-odds-1-in rand-int zero?))
+(defn- shuffle? [{override-n :shuffle-odds-1-in} {preset-n :shuffle-odds-1-in}]
+  (some-> (or override-n preset-n 3) rand-int zero?))
 
 (defn- random-skill-value [{:keys [min-skill max-skill]}]
   (-> max-skill (- min-skill) inc rand-int (+ min-skill)))
@@ -31,7 +31,7 @@
 (defn- calculate-next-skill [current-skill volatility-override preset-config]
   (cond
     (not (max-skill? current-skill preset-config))    (inc current-skill)
-    (shuffle? (or volatility-override preset-config)) (random-skill-value preset-config)))
+    (shuffle? volatility-override preset-config) (random-skill-value preset-config)))
 
 ;; Let's store volatility override with the user
 (defn- update-ai-skill! [{:keys [player-id player-name preset current-skill]}]
