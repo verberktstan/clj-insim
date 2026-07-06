@@ -17,6 +17,7 @@
 
 (defonce ^:private players (atom {})) ;; player-id -> {:player-name :player-id :ucid :preset :current-skill}
 (defonce ^:private current-difficulty (atom :hard)) ;; tracks the active difficulty preset
+(defonce ^:private volatility-override (atom {:shuffle-odds-in-1 nil}))
 
 (defn- max-skill? [current-skill {:keys [max-skill]}]
   (>= current-skill max-skill))
@@ -27,14 +28,15 @@
 (defn- random-skill-value [{:keys [min-skill max-skill]}]
   (-> max-skill (- min-skill) inc rand-int (+ min-skill)))
 
-(defn- calculate-next-skill [current-skill preset-config]
+(defn- calculate-next-skill [current-skill volatility-override preset-config]
   (cond
-    (not (max-skill? current-skill preset-config)) (inc current-skill)
-    (shuffle? preset-config)                       (random-skill-value preset-config)))
+    (not (max-skill? current-skill preset-config))    (inc current-skill)
+    (shuffle? (or volatility-override preset-config)) (random-skill-value preset-config)))
 
+;; Let's store volatility override with the user
 (defn- update-ai-skill! [{:keys [player-id player-name preset current-skill]}]
   (let [preset-config (skill-presets preset)
-        level         (calculate-next-skill current-skill preset-config)
+        level         (calculate-next-skill current-skill @volatility-override preset-config)
         new-level?    (not= level current-skill)]
     (when (and level new-level?)
       (swap! players assoc-in [player-id :current-skill] level)
@@ -72,40 +74,50 @@
    players
    players))
 
-(defn- set-difficulty! [difficulty]
+(def ^:private volatility-mapping {:rare 4 :balanced 3 :frequent 2})
+
+(defn- set-difficulty! [difficulty volatility]
   (when (contains? skill-presets difficulty)
-    (println "Setting difficulty to" difficulty)
+    (println "Setting difficulty to" (name difficulty))
+    (println "Setting volatility to" (or (some-> volatility name) "default"))
     (reset! current-difficulty difficulty)
     (swap! players override-player-skills difficulty nil)
-    (packets/mst {:message (str "ai skill preset set to " (name difficulty))})))
+    (reset! volatility-override {:shuffle-odds-1-in (get volatility-mapping volatility)}) ;; Could be nil or a keyword
+    [(packets/mst {:message (str "ai difficulty set to " (name difficulty))})
+     (packets/mst {:message (str "ai volatility set to " (or (some-> volatility name) "default"))})]))
 
 (def parse-difficulty (comp #{:hard :normal :easy} keyword))
+(def parse-volatility (comp #{:rare :balanced :frequent} keyword))
 
 (defn- parse-aiskill-command [s]
   (when (string? s)
     (when (str/starts-with? s "!ai")
-      (update
-        (->> (str/split s #" ")
-             (map str/trim)
-             (map str/lower-case)
-             (remove str/blank?)
-             (zipmap [:command :argument]))
-        :argument parse-difficulty))))
+      (-> (update
+           (->> (str/split s #" ")
+                (map str/trim)
+                (map str/lower-case)
+                (remove str/blank?)
+                (zipmap [:command :argument :volatility]))
+           :argument parse-difficulty)
+          (update :volatility parse-volatility)))))
 
 (defn- handle-aiskill-command! [{:body/keys [text-start message user-type]}]
   (when (= :prefix user-type)
-    (let [message                    (subs message text-start)
-          {:keys [command argument]} (parse-aiskill-command message)]
+    (let [message                               (subs message text-start)
+          {:keys [command argument volatility]} (parse-aiskill-command message)]
       (when command
-        (println "Received !ai command with argument:" argument))
+        (apply println "Received !ai command with argument:" argument
+               (when volatility ["and volatility" volatility])))
       (or
        (when (and command argument)
-         (set-difficulty! argument))
+         (set-difficulty! argument volatility))
        (when command
          (let [report-message (str "AI preset: "
                                    (name @current-difficulty)
-                                   ", try: !ai hard, !ai normal or !ai easy")]
-           (packets/mst {:message report-message})))))))
+                                   ", try: !ai <difficulty> or !ai <difficulty> <volatility>")
+               next-message   ".. difficulty choose [easy normal hard], volatility choose [frequent balanced rare]."]
+           [(packets/msx {:message report-message})
+            (packets/msx {:message next-message})]))))))
 
 (defn- dispatch [client
                  {:header/keys [type player-id ucid]
@@ -118,8 +130,9 @@
     ;; car handed to a different connection - only relevant if we're already tracking it
     :toc        (when (contains? @players player-id)
                   (swap! players assoc-in [player-id :ucid] new-ucid))
-    :mso        (when-let [response (handle-aiskill-command! packet)]
-                  (client/>! client response))
+    :mso        (when-let [responses (handle-aiskill-command! packet)]
+                  (run! (partial client/>! client) responses)
+                  )
     (:lap :spx) (when-let [response (some-> @players (get player-id) update-ai-skill!)]
                   (client/>! client response))
     :ver        (client/>! client (packets/tiny {:request-info 1 :data :npl}))
@@ -150,6 +163,7 @@
 
   @players
   @current-difficulty
+  @volatility-override
 
   ;; To start the aiskill process
   (def aiskill-client (aiskill))
@@ -158,6 +172,6 @@
   (aiskill-client)
 
   ;; Change difficulty and update all existing players (can also use /aiskill commands in-game)
-  (set-difficulty! :easy)
-  (set-difficulty! :normal)
-  (set-difficulty! :hard))
+  (set-difficulty! :easy :frequent)
+  (set-difficulty! :normal :rare)
+  (set-difficulty! :hard :balanced))
