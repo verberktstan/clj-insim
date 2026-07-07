@@ -10,7 +10,7 @@
         1 (encode :b)
         nil (encode :z))))
   (testing "accepts only sequential enum"
-    (is (fn? (sut/encode '(:x :y :z))))
+    (is (ifn? (sut/encode '(:x :y :z))))
     (is (thrown? AssertionError (sut/encode {:test "map"})))))
 
 (deftest decode-test
