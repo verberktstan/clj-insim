@@ -14,3 +14,17 @@
       :rip
       :csc
       :uco)))
+
+;; PLH (Player Handicaps) codec tests
+(deftest plh-codec-test
+  (testing "PLH codec structure"
+    (let [body-fn (get sut/body :plh)]
+      (is (some? body-fn) "PLH codec function exists")))
+  (testing "PLH codec with 2 players"
+    (let [body-fn (get sut/body :plh)
+          codec (body-fn #:header{:data 2})]
+      (is (some? codec) "PLH codec returns a structure for 2 players")))
+  (testing "PLH codec with zero players"
+    (let [body-fn (get sut/body :plh)
+          codec (body-fn #:header{:data 0})]
+      (is (some? codec) "PLH codec handles zero players"))))

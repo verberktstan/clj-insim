@@ -58,3 +58,41 @@
 ;; The parse-time-ms helper respects the parse context (insim-version)
 ;; v9: time values multiplied by 10 (hundredths -> milliseconds)
 ;; v10: time values used as-is (already milliseconds)
+
+;; PLH (Player Handicaps) parsing tests
+(deftest plh-header-rename-test
+  (testing "PLH header renaming"
+    (testing "renames :header/data to :header/num-players"
+      (is (= #:header{:size 12 :type :plh :request-info 0 :num-players 2}
+             (sut/header #:header{:size 12 :type 66 :request-info 0 :data 2}))))))
+
+(deftest plh-body-parse-test
+  (testing "PLH body parsing (incoming) - flags byte to set"
+    (let [packet (merge #:header{:type :plh}
+                        #:body{:player-handicaps [{:player-handicap/player-id 1
+                                                   :player-handicap/flags 3
+                                                   :player-handicap/mass 50
+                                                   :player-handicap/restriction 20}]})]
+      (let [parsed (sut/body packet)
+            parsed-hcaps (get parsed :body/player-handicaps)]
+        (is (= #{:set-mass :set-restriction}
+               (:player-handicap/flags (first parsed-hcaps)))
+            "Flags byte (3) converted to set of keywords"))))
+  (testing "PLH body parsing with empty handicaps"
+    (let [packet (merge #:header{:type :plh}
+                        #:body{:player-handicaps []})]
+      (let [parsed (sut/body packet)]
+        (is (= [] (get parsed :body/player-handicaps)))))))
+
+(deftest plh-instruction-test
+  (testing "PLH instruction (outgoing) - flags set to byte"
+    (let [packet (merge #:header{:size 8 :type :plh :request-info 0}
+                        #:body{:player-handicaps [{:player-handicap/player-id 1
+                                                   :player-handicap/flags #{:set-mass :set-restriction}
+                                                   :player-handicap/mass 50
+                                                   :player-handicap/restriction 20}]})]
+      (let [result ((comp sut/body sut/instruction) 10 packet)
+            result-hcaps (get result :body/player-handicaps)]
+        (is (= 3
+               (:player-handicap/flags (first result-hcaps)))
+            "Flag set #{:set-mass :set-restriction} converted to byte value 3")))))

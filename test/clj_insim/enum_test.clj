@@ -40,3 +40,8 @@
   (testing "SMALL_HEADER_DATA - v10 changes"
     (testing "position 10: SMALL_LCL added"
       (is (= :lcl (nth sut/SMALL_HEADER_DATA 10))))))
+
+(deftest insim-v10-header-type-test
+  (testing "HEADER_TYPE - v10 changes"
+    (testing "position 66: ISP_PLH added"
+      (is (= :plh (nth sut/HEADER_TYPE 66))))))
