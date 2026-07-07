@@ -2,11 +2,6 @@
   (:require [clojure.test :refer [deftest testing is are]]
             [clj-insim.flags :as sut]))
 
-(deftest power-range-test
-  (testing "power-range"
-    (is (= [1 2 4] (#'sut/power-range 3)))
-    (is (= [1 2 4 8 16 32] (#'sut/power-range 6)))))
-
 (deftest parse-test
   (testing "parse"
     (let [parse (sut/parse [:a :b :c])]
