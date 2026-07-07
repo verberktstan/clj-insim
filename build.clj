@@ -53,10 +53,25 @@
 (defn aiskill [_]
   (b/delete {:path class-dir})
   (b/delete {:path uber-file})
-  (let [basis (b/create-basis {:project "deps.edn"})]
+  (let [basis (b/create-basis {:project "deps.edn"})
+        examples-dir (io/file class-dir "examples")]
     (b/copy-dir {:src-dirs ["src"] :target-dir class-dir})
+    ;; Keep only aiskill example source, remove all others
+    (when (.exists examples-dir)
+      (doseq [file (.listFiles examples-dir)]
+        (let [name (.getName file)]
+          (when (and (.endsWith name ".clj") (not= name "aiskill.clj"))
+            (b/delete {:path (.getPath file)})))))
     (println " - compiling clojure")
     (b/compile-clj {:basis basis :src-dirs ["src"] :class-dir class-dir})
+    ;; Remove compiled classes for examples other than aiskill
+    (when (.exists examples-dir)
+      (doseq [file (.listFiles examples-dir)]
+        (let [name (.getName file)]
+          (when (and (.isFile file)
+                     (.endsWith name ".class")
+                     (not (str/starts-with? name "aiskill")))
+            (b/delete {:path (.getPath file)})))))
     (println " - creating artifact" uber-file)
     (b/uber {:class-dir class-dir
              :uber-file uber-file
