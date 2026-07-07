@@ -79,6 +79,16 @@
     time-raw                 ;; v10: already milliseconds
     (* time-raw 10)))       ;; v9: hundredths -> milliseconds
 
+(defn- parse-plh-flags
+  "Parse a single player handicap map, converting flags byte to set."
+  [hcap]
+  (update hcap :player-handicap/flags (flags/parse flags/PLH_FLAGS)))
+
+(defn- unparse-plh-flags
+  "Unparse a single player handicap map, converting flags set to byte."
+  [hcap]
+  (update hcap :player-handicap/flags (flags/unparse flags/PLH_FLAGS)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Private parsing data
 
@@ -108,6 +118,7 @@
    :ncn data->ucid
    :npl data->player-id
    :pll data->player-id
+   :plh {:header/data :header/num-players}
    :plp data->player-id
    :spx data->player-id
    :toc data->player-id})
@@ -168,6 +179,7 @@
           :race-in-progress (enum/decode enum/RACE_IN_PROGRESS)
           :race-laps parse-race-laps
           :wind (enum/decode enum/WIND)}
+   :plh #:body{:player-handicaps (partial mapv parse-plh-flags)}
    :uco #:body{:action (enum/decode enum/ACTION)
                :time parse-time-ms}
    :vtn #:body{:action (enum/decode enum/ACTION)}})
@@ -230,6 +242,7 @@
    :msx #:body{:message #(u/c-str % 96)}
    :mtc #:body{:text #(u/c-str % (count %))}
    :plc #:body{:cars (flags/unparse flags/CARS)}
+   :plh #:body{:player-handicaps (partial mapv unparse-plh-flags)}
    :scc #:body{:in-game-cam (enum/encode enum/VIEW_IDENTIFIERS)}
    :sch #:body{:char int :flag (enum/encode [:shift :ctrl])}
    :sfp #:body{:flag (enum/encode enum/SFP) :on-off (enum/encode [:off :on])}

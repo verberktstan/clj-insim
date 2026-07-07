@@ -43,6 +43,8 @@
 
 (def SWITCHES [:set-signals :set-flash :headlights :horn :siren])
 
+(def PLH_FLAGS [:set-mass :set-restriction :reserved-3 :reserved-4 :reserved-5 :reserved-6 :reserved-7 :silent])
+
 (defn- power-range
   "Returns a vector where each item in a range raised by the power of 2
   `(power-range 4) => [1 2 4 8]`"

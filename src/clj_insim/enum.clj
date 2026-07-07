@@ -12,7 +12,7 @@
    :mod :vtn :rst :ncn :cnl :cpr :npl :plp :pll :lap :spx :pit :psf :pla :cch
    :pen :toc :flg :pfl :fin :res :reo :nlp :mci :msx :msl :crs :bfn :axi :axo
    :btn :btc :btt :rip :ssh :con :obh :hlv :plc :axm :acr :hcp :nci :jrr :uco :oco
-   :ttc :slc :csc :cim :mal])
+   :ttc :slc :csc :cim :mal :plh])
 
 (def HOST [:guest :host])
 

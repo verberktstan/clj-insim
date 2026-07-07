@@ -96,6 +96,16 @@
    #:header{:size 12 :type :plc :request-info 0 :data 0}
    #:body{:ucid ucid :spare "000" :cars cars}))
 
+(defn plh
+  "Build an IS_PLH packet. player-handicaps should be a sequence of handicap maps:
+   [{:player-handicap/player-id 1 :player-handicap/flags 3 :player-handicap/mass 10 :player-handicap/restriction 5} ...]"
+  [{:keys [player-handicaps request-info]
+    :or {player-handicaps [] request-info 0}}]
+  (let [n (count player-handicaps)]
+    (merge
+     #:header{:size (+ 4 (* n 4)) :type :plh :request-info request-info :data n}
+     #:body{:player-handicaps player-handicaps})))
+
 (defn reo [{:keys [player-ids] :or {player-ids [1 2 3]}}]
   (let [[_ zeroes] (split-at (count player-ids) (repeat 40 0))]
     (merge

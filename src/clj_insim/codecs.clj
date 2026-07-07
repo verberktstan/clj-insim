@@ -48,6 +48,13 @@
    :car-handicap/mass m/ubyte
    :car-handicap/restriction m/ubyte))
 
+(def ^:private PLAYER_HANDICAP
+  (m/struct
+   :player-handicap/player-id m/ubyte
+   :player-handicap/flags m/ubyte
+   :player-handicap/mass m/ubyte
+   :player-handicap/restriction m/ubyte))
+
 (def ^:private OBJECT_INFO
   (m/struct
    :object-info/x m/sshort
@@ -242,6 +249,12 @@
         :body/flags m/ubyte
         :body/spare (m/ascii-string 2)
         :body/skin-ids (m/array m/uint32 num-mods))))
+
+   :plh
+   (fn [{:header/keys [data]}]
+     (let [num-players data]
+       (m/struct
+        :body/player-handicaps (m/array PLAYER_HANDICAP num-players))))
 
    ;; TODO: Add MCI packet
 
