@@ -28,7 +28,11 @@
   {:pre [(packet/raw? instruction)]}
   (m/write output-stream codecs/header instruction)
   (when body-codec
-    (m/write output-stream body-codec instruction))
+    (m/write output-stream body-codec instruction)))
+
+(defn flush!
+  "Flushes the output stream, sending any written-but-buffered instructions to LFS."
+  [output-stream]
   (.flush output-stream))
 
 (defn instruction

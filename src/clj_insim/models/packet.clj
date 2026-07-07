@@ -10,17 +10,31 @@
   (s/keys :req [:header/size :header/type :header/request-info]
           :opt [:header/data :header/player-id])) ;; data is somethings renamed to player-id 
 
+(def ^:dynamic *strict-validation*
+  "When true (default), parsed?/raw? validate the full header shape via
+  clojure.spec. Defaults to false when the clj-insim.strict-validation
+  system property is set to \"false\" (set by the built jar's launcher
+  scripts). Bind or alter-var-root to override at runtime."
+  (not= "false" (System/getProperty "clj-insim.strict-validation")))
+
 (defn- conform-header-type [{:header/keys [type] :as packet}]
   (when (s/valid? ::header packet)
     (-> (s/conform :header/type type) first)))
 
+(defn- valid-header? [{:header/keys [size type request-info]}]
+  (and (pos-int? size)
+       (or (nat-int? type) (keyword? type))
+       (nat-int? request-info)))
+
 (defn parsed? [packet]
-  (when-let [conformed (conform-header-type packet)]
-    (= :parsed conformed)))
+  (if *strict-validation*
+    (= :parsed (conform-header-type packet))
+    (and (valid-header? packet) (keyword? (:header/type packet)))))
 
 (defn raw? [packet]
-  (when-let [conformed (conform-header-type packet)]
-    (= :raw conformed)))
+  (if *strict-validation*
+    (= :raw (conform-header-type packet))
+    (and (valid-header? packet) (nat-int? (:header/type packet)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific packets
