@@ -33,6 +33,4 @@
   "Returns a function that returns the index of an item in sequential `coll`"
   [coll]
   {:pre [(sequential? coll)]}
-  (fn [x]
-    (let [idx (.indexOf coll x)]
-      (when (nat-int? idx) idx))))
+  (zipmap coll (range)))

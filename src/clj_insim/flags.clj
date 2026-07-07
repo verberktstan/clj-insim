@@ -45,12 +45,10 @@
 
 (def PLH_FLAGS [:set-mass :set-restriction :reserved-3 :reserved-4 :reserved-5 :reserved-6 :reserved-7 :silent])
 
-(defn- power-range
-  "Returns a vector where each item in a range raised by the power of 2
-  `(power-range 4) => [1 2 4 8]`"
-  [n]
-  {:pre [(pos-int? n)]}
-  (into [] (comp (take n) (map #(int (Math/pow 2 %)))) (range)))
+(defn- flag-at-bit
+  "Returns the item in `coll` at index `idx` when bit `idx` is set in `i`."
+  [coll i idx]
+  (when (bit-test i idx) (nth coll idx)))
 
 (defn parse
   "Returns a set of items from `coll` for a given integer `i`.
@@ -63,19 +61,7 @@
   {:pre [(sequential? coll)]}
   (fn [i]
     {:pre [(nat-int? i)]}
-    (let [powr (power-range (count coll))
-          get-flag #(nth coll (.indexOf powr %))]
-      (loop [acc #{}, i i]
-        (cond
-          (zero? i)
-          acc
-
-          (contains? (set powr) i)
-          (conj acc (get-flag i))
-
-          :else
-          (let [below (apply max (take-while #(< % i) powr))]
-            (recur (conj acc (get-flag below)) (- i below))))))))
+    (into #{} (keep #(flag-at-bit coll i %)) (range (count coll)))))
 
 (defn unparse
   "Returns integer representation of flags.
@@ -87,12 +73,11 @@
   {:pre [(sequential? coll)]}
   (fn [flags]
     {:pre [(set? flags)]}
-    (int
-     (reduce
-      (fn [sum flag]
-        (if (contains? (set coll) flag)
-          (+ sum (Math/pow 2 (.indexOf coll flag)))
-          sum))
-      0
-      flags))))
+    (reduce
+     (fn [sum idx]
+       (if (contains? flags (nth coll idx))
+         (+ sum (bit-shift-left 1 idx))
+         sum))
+     0
+     (range (count coll)))))
 

@@ -74,8 +74,14 @@
        (a/go
          (a/>!! to-lfs isi)
          (while @running?
-           (let [packet (a/<! to-lfs)]
-             (logging/wrap-try-catch (write/instruction new-byte-size?) output-stream packet))))
+           (let [packet (a/<! to-lfs)
+                 write! (write/instruction new-byte-size?)]
+             (logging/wrap-try-catch write! output-stream packet)
+             (loop []
+               (when-let [queued (a/poll! to-lfs)]
+                 (logging/wrap-try-catch write! output-stream queued)
+                 (recur)))
+             (write/flush! output-stream))))
        (a/go
          (while @running?
            (when-let [packet (logging/wrap-try-catch (read/packet new-byte-size?) input-stream)]
