@@ -17,7 +17,7 @@
   (byte-array [97 98 99 100 0 0 0 0, 48 49 50 0 0 0, 8, 0]))
 
 (def ^:private RAW_SMALL_ALC_BODY
-  (byte-array [0 0 0 1]))
+  (byte-array [0 0 8 0]))
 
 (deftest read-body-test
   (testing "read-body"
