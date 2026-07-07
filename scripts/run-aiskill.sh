@@ -2,4 +2,4 @@
 
 set -euo pipefail
 
-java -jar [[::JAR-TARGET::]] 127.0.0.1 29999 "$@"
+java -Dclj-insim.strict-validation=false -jar [[::JAR-TARGET::]] 127.0.0.1 29999 "$@"
