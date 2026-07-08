@@ -46,6 +46,7 @@
     (Thread/sleep 10) ;; TODO, fix this!
     (reset! running? false)
     (connection/close-socket! socket input-stream output-stream)
+    (logging/stop-packet-logging!)
     (println "clj-insim: client stopped")))
 
 (defn start
@@ -59,6 +60,7 @@
   ([{:keys [host port isi] :or {host "127.0.0.1" port 29999 isi (packets/isi)} :as options}]
    (println "Starting clj-insim client on host:" host "port:" port)
    (when-let [socket (connection/make-socket host port)]
+     (logging/init-packet-logging!)
      (let [input-stream (io/input-stream socket)
            output-stream (io/output-stream socket)
            from-lfs (a/chan (a/sliding-buffer 10))
@@ -68,18 +70,26 @@
        (println "clj-insim: using INSIM_VERSION:" (:body/insim-version isi))
        (a/go
          (a/>!! to-lfs isi)
+         (logging/log-outgoing isi)
          (while @running?
            (let [packet (a/<! to-lfs)
                  write! (write/instruction new-byte-size?)]
+             (when packet (logging/log-outgoing packet))
              (logging/wrap-try-catch write! output-stream packet)
              (loop []
                (when-let [queued (a/poll! to-lfs)]
+                 (logging/log-outgoing queued)
                  (logging/wrap-try-catch write! output-stream queued)
                  (recur)))
              (write/flush! output-stream))))
        (a/go
          (while @running?
            (when-let [packet (logging/wrap-try-catch (read/packet new-byte-size?) input-stream)]
+             (logging/log-raw-bytes
+              (byte-array [(-> packet :header/size byte)
+                           (-> packet :header/size (bit-shift-right 8) byte)
+                           (-> packet :header/type name first byte)
+                           (byte 0)]))
              (dispatch {:to-lfs to-lfs} packet)
              (a/>! from-lfs packet))))
        (println "clj-insim: client started")
