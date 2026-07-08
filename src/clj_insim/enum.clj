@@ -12,7 +12,7 @@
    :mod :vtn :rst :ncn :cnl :cpr :npl :plp :pll :lap :spx :pit :psf :pla :cch
    :pen :toc :flg :pfl :fin :res :reo :nlp :mci :msx :msl :crs :bfn :axi :axo
    :btn :btc :btt :rip :ssh :con :obh :hlv :plc :axm :acr :hcp :nci :jrr :uco :oco
-   :ttc :slc :csc :cim :mal])
+   :ttc :slc :csc :cim :mal :plh :ipb :aic :aii :set])
 
 (def HOST [:guest :host])
 
@@ -39,7 +39,7 @@
 
 (def SFP [:shift-u-no-opt :show-2d :mspeedup :sound-mute])
 
-(def SMALL_HEADER_DATA [:none :ssp :ssg :vta :tms :stp :rtp :nli :alc :lcs])
+(def SMALL_HEADER_DATA [:none :ssp :ssg :vta :tms :stp :rtp :nli :alc :lcs :lcl :aii])
 
 (def STOP [:carry-on :stop])
 
@@ -54,6 +54,29 @@
 (def VIEW_IDENTIFIERS [:follow :heli :cam :driver :custom])
 
 (def WIND [:off :weak :strong])
+
+;; AI Control input types (for IS_AIC)
+(def AI_CONTROL_INPUTS
+  [:steer :throttle :brake :shift-up :shift-down :ignition :extralight :headlights
+   :siren :horn :flash :clutch :handbrake :indicators :gear :look
+   :pitspeed :tcdisable :fogrear :fogfront])
+
+;; AI Control special commands (values 240-255)
+(def AI_CONTROL_SPECIAL
+  {:send-ai-info 240
+   :repeat-ai-info 241
+   :set-help-flags 253
+   :reset-inputs 254
+   :stop-control 255})
+
+;; AI Flags (for IS_AII)
+(def AI_FLAGS [:ignition :reserved-2 :shift-up :shift-down])
+
+;; Headlights values (for AI control)
+(def HEADLIGHTS [:off :side :low :high])
+
+;; Siren types (for AI control)
+(def SIREN_TYPES [:off :fast :slow])
 
 (defn encode
   "Returns a function that returns the integer value of item in enum.

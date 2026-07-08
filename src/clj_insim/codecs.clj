@@ -10,7 +10,8 @@
 
 (def ^:private SMALL
   ;; NLI, SSG & SSP use the default `:body/interval` codec
-  {:alc [:body/cars m/uint32]
+  {:aii [:body/player-id m/uint32]
+   :alc [:body/cars m/uint32]
    :lcs [:body/switches m/uint32]
    :rtp [:body/time m/uint32]
    :stp [:body/number m/uint32]
@@ -48,6 +49,12 @@
    :car-handicap/mass m/ubyte
    :car-handicap/restriction m/ubyte))
 
+(def ^:private AI_INPUT_VAL
+  (m/struct
+   :ai-input/input m/ubyte
+   :ai-input/time m/ubyte
+   :ai-input/value m/ushort))
+
 (def ^:private OBJECT_INFO
   (m/struct
    :object-info/x m/sshort
@@ -63,7 +70,46 @@
 ;; type/data. Take a look at `:small` for an example.
 
 (def body
-  {:axi
+  {:aic
+   ;; header/data holds the player-id (PLID), not a count - the number of
+   ;; inputs is derived from the packet size instead.
+   (fn [{:header/keys [size]}]
+     (let [n (/ (- size 4) 4)]
+       (m/struct
+        :body/inputs (m/array AI_INPUT_VAL n))))
+
+   :aii
+   (fn [_]
+     (m/struct
+      ;; OSMain physics data (60 bytes)
+      :body/ang-vel-x m/float
+      :body/ang-vel-y m/float
+      :body/ang-vel-z m/float
+      :body/heading m/float
+      :body/pitch m/float
+      :body/roll m/float
+      :body/accel-x m/float
+      :body/accel-y m/float
+      :body/accel-z m/float
+      :body/vel-x m/float
+      :body/vel-y m/float
+      :body/vel-z m/float
+      :body/pos-x m/sint32
+      :body/pos-y m/sint32
+      :body/pos-z m/sint32
+      :body/flags m/ubyte
+      :body/gear m/ubyte
+      :body/sp2 m/ubyte
+      :body/sp3 m/ubyte
+      :body/rpm m/float
+      :body/spare-f0 m/float
+      :body/spare-f1 m/float
+      :body/show-lights m/uint32
+      :body/spu1 m/uint32
+      :body/spu2 m/uint32
+      :body/spu3 m/uint32))
+
+   :axi
    (fn [_]
      (m/struct
       :body/autocross-start m/ubyte
