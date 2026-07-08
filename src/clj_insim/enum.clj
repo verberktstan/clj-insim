@@ -57,7 +57,7 @@
 
 ;; AI Control input types (for IS_AIC)
 (def AI_CONTROL_INPUTS
-  [:steer :throttle :brake :chup :chdn :ignition :extralight :headlights
+  [:steer :throttle :brake :shift-up :shift-down :ignition :extralight :headlights
    :siren :horn :flash :clutch :handbrake :indicators :gear :look
    :pitspeed :tcdisable :fogrear :fogfront])
 
@@ -70,7 +70,7 @@
    :stop-control 255})
 
 ;; AI Flags (for IS_AII)
-(def AI_FLAGS [:ignition :reserved-2 :chup :chdn])
+(def AI_FLAGS [:ignition :reserved-2 :shift-up :shift-down])
 
 ;; Headlights values (for AI control)
 (def HEADLIGHTS [:off :side :low :high])

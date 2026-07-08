@@ -61,7 +61,9 @@
 ;; In some cases, the header/data key must be renamed so we provide rename-keys
 ;; kmaps per packet type here.
 (def ^:private HEADER_RENAMES
-  {:axi data->player-id
+  {:aic data->player-id
+   :aii data->player-id
+   :axi data->player-id
    :btc data->ucid
    :cpr data->ucid
    :crs data->player-id
@@ -76,7 +78,8 @@
    :toc data->player-id})
 
 (def ^:private INFO_BODY_PARSERS
-  {:axm #:body{:action (enum/decode enum/PMO_ACTION)
+  {:aii #:body{:flags (flags/parse enum/AI_FLAGS)}
+   :axm #:body{:action (enum/decode enum/PMO_ACTION)
                :flags (flags/parse flags/PMO)}
    :btc #:body{:flags (flags/parse [:lmb :rmb :ctrl :shift])}
    :cch #:body{:camera (enum/decode enum/VIEW_IDENTIFIERS)}
