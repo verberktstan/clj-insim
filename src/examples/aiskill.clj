@@ -19,6 +19,7 @@
 (defonce ^:private players (atom {})) ;; player-id -> {:player-name :player-id :ucid :preset :current-skill}
 (defonce ^:private current-difficulty (atom :hard)) ;; tracks the active difficulty preset
 (defonce ^:private volatility-override (atom {:shuffle-odds-1-in nil}))
+(defonce ^:private game-state (atom {:race-in-progress? false})) ;; tracks if in race/quali session
 
 (defn- max-skill? [current-skill {:keys [max-skill]}]
   (>= current-skill max-skill))
@@ -122,8 +123,9 @@
 
 (defn- dispatch [client
                  {:header/keys [type player-id ucid]
-                  :body/keys [player-type player-name new-ucid] :as packet}]
+                  :body/keys [player-type player-name new-ucid race-in-progress] :as packet}]
   (case type
+    :sta        (swap! game-state assoc :race-in-progress? (pos? race-in-progress))
     :npl        (when (= :ai player-type) (new-ai-player! packet @current-difficulty))
     :pll        (swap! players dissoc player-id)
     :plp        nil ;; player stays in the race (pit garage) - player-id is retained, nothing to update
@@ -132,10 +134,10 @@
     :toc        (when (contains? @players player-id)
                   (swap! players assoc-in [player-id :ucid] new-ucid))
     :mso        (when-let [responses (handle-aiskill-command! packet)]
-                  (run! (partial client/>! client) responses)
-                  )
-    (:lap :spx) (when-let [response (some-> @players (get player-id) update-ai-skill!)]
-                  (client/>! client response))
+                  (run! (partial client/>! client) responses))
+    (:lap :spx) (when (:race-in-progress? @game-state)
+                  (when-let [response (some-> @players (get player-id) update-ai-skill!)]
+                    (client/>! client response)))
     :ver        (client/>! client (packets/tiny {:request-info 1 :data :npl}))
     nil))
 
@@ -148,9 +150,10 @@
    (when-let [client (client/start (cond-> {} host (assoc :host host) port (assoc :port port)))]
      (let [stop #(client/stop client)]
        (client/go client dispatch)
-       ;; Request an IS_NPL for every player already in the race - LFS only sends
-       ;; them for players joining *after* we connect otherwise. ReqI must be
-       ;; non-zero or LFS ignores the request.
+       ;; Request initial state and player info - LFS only sends IS_NPL for players
+       ;; joining *after* we connect otherwise. ReqI must be non-zero or LFS ignores.
+       (client/>! client (packets/tiny {:request-info 1 :data :sst})) ;; STA packet for game state
+       (client/>! client (packets/tiny {:request-info 1 :data :npl})) ;; NPL for existing players
        stop))))
 
 (defn -main
@@ -165,6 +168,7 @@
   @players
   @current-difficulty
   @volatility-override
+  @game-state
 
   ;; To start the aiskill process
   (binding [logging/*packet-logging* false] ;; Control packet logging!
