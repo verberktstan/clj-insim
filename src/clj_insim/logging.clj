@@ -202,10 +202,10 @@
   "**Purpose:** Write all queued raw bytes entries from RAM to raw-bytes.txt on disk.
 
    **How it works:**
-   1. Takes a snapshot of RAW_BYTES_BUFFER (immutable view)
-   2. For each buffered entry, writes a line: \"TIMESTAMP [HEX HEX HEX] (N bytes)\"
-   3. Clears the in-memory buffer (reset to [])
-   4. Calls .flush on the BufferedWriter to push data to OS and disk
+   1. Atomically drains RAW_BYTES_BUFFER (swap-vals! returns the old value and clears
+      it in one step, so entries logged during the flush are never lost)
+   2. For each drained entry, writes a line: \"TIMESTAMP [HEX HEX HEX] (N bytes)\"
+   3. Calls .flush on the BufferedWriter to push data to OS and disk
 
    **Connection to system:** Triggered by either:
      - log-raw-bytes when buffer reaches 100 entries (eager flush)
@@ -213,22 +213,21 @@
      - stop-packet-logging! when shutting down (final flush)
    Each line is one packet's worth of raw TCP bytes. Format is line-based text for easy inspection."
   []
-  (let [entries @RAW_BYTES_BUFFER]
+  (let [entries (first (swap-vals! RAW_BYTES_BUFFER (constantly [])))]
     (when (pos? (count entries))
       (doseq [{:keys [timestamp data]} entries]
         (.write @RAW_WRITER (str timestamp " " data "\n")))
-      (reset! RAW_BYTES_BUFFER [])
       (.flush @RAW_WRITER))))
 
 (defn- flush-parsed-incoming!
   "**Purpose:** Write all queued parsed incoming packet entries from RAM to parsed-incoming.edn on disk.
 
    **How it works:**
-   1. Takes a snapshot of PARSED_INCOMING_BUFFER
-   2. For each buffered entry, writes a single EDN map line:
+   1. Atomically drains PARSED_INCOMING_BUFFER (swap-vals! returns the old value and
+      clears it in one step, so entries logged during the flush are never lost)
+   2. For each drained entry, writes a single EDN map line:
       {:timestamp 1234567890 :packet {:header/type :ISI :body/insim-version 9 ...}}
-   3. Clears the in-memory buffer (reset to [])
-   4. Calls .flush on the BufferedWriter to push data to disk
+   3. Calls .flush on the BufferedWriter to push data to disk
 
    **Connection to system:** Triggered by either:
      - log-parsed-incoming when buffer reaches 100 entries (eager flush)
@@ -237,22 +236,21 @@
    Each line is valid EDN that can be read with clojure.edn/read-string.
    Packets here are after full decoding (marshal unmarshalling + InSim parsing)."
   []
-  (let [entries @PARSED_INCOMING_BUFFER]
+  (let [entries (first (swap-vals! PARSED_INCOMING_BUFFER (constantly [])))]
     (when (pos? (count entries))
       (doseq [{:keys [timestamp packet]} entries]
         (.write @PARSED_INCOMING_WRITER (str "{:timestamp " timestamp " :packet " (pr-str packet) "}\n")))
-      (reset! PARSED_INCOMING_BUFFER [])
       (.flush @PARSED_INCOMING_WRITER))))
 
 (defn- flush-outgoing!
   "**Purpose:** Write all queued outgoing packet entries from RAM to outgoing.edn on disk.
 
    **How it works:**
-   1. Takes a snapshot of OUTGOING_BUFFER
-   2. For each buffered entry, writes a single EDN map line:
+   1. Atomically drains OUTGOING_BUFFER (swap-vals! returns the old value and clears
+      it in one step, so entries logged during the flush are never lost)
+   2. For each drained entry, writes a single EDN map line:
       {:timestamp 1234567890 :packet {:header/type :ISM :body/text \"hello\" ...}}
-   3. Clears the in-memory buffer (reset to [])
-   4. Calls .flush on the BufferedWriter to push data to disk
+   3. Calls .flush on the BufferedWriter to push data to disk
 
    **Connection to system:** Triggered by either:
      - log-outgoing when buffer reaches 100 entries (eager flush)
@@ -261,11 +259,10 @@
    Each line is valid EDN. Packets here are high-level Clojure maps before
    marshal encoding (before they become bytes on the wire)."
   []
-  (let [entries @OUTGOING_BUFFER]
+  (let [entries (first (swap-vals! OUTGOING_BUFFER (constantly [])))]
     (when (pos? (count entries))
       (doseq [{:keys [timestamp packet]} entries]
         (.write @OUTGOING_WRITER (str "{:timestamp " timestamp " :packet " (pr-str packet) "}\n")))
-      (reset! OUTGOING_BUFFER [])
       (.flush @OUTGOING_WRITER))))
 
 (defn flush-all-buffers!
