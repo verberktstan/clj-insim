@@ -82,7 +82,7 @@
 
 (defn- current-volatility []
   (let [override-n (:shuffle-odds-1-in @volatility-override)
-        preset-n (get-in skill-presets [@current-difficulty :shuffle-odds-1-in])]
+        preset-n   (get-in skill-presets [@current-difficulty :shuffle-odds-1-in])]
     (volatility-reverse-mapping (or override-n preset-n))))
 
 (defn- set-difficulty! [difficulty volatility]
@@ -123,18 +123,25 @@
        (when command
          (let [report-message (str "AI preset: "
                                    (name @current-difficulty)
-                                   ", volatility: "
-                                   (name (current-volatility))
+                                   (when-let [cv (current-volatility)]
+                                     (str ", volatility: " (name cv)))
                                    " | try: !ai <difficulty> or !ai <difficulty> <volatility>")
                next-message   ".. difficulty choose [easy normal hard], volatility choose [frequent balanced rare]."]
            [(packets/msx {:message report-message})
             (packets/msx {:message next-message})]))))))
 
+(defn- update-game-state! [{:body/keys [race-in-progress]}]
+  (let [no-race? (= :no-race race-in-progress)]
+    (swap! game-state assoc :race-in-progress? (not no-race?))
+    (println
+      "Update game state:"
+      (if no-race? "NO race in progress." "Race/qualifying in progress."))))
+
 (defn- dispatch [client
                  {:header/keys [type player-id ucid]
-                  :body/keys [player-type player-name new-ucid race-in-progress] :as packet}]
+                  :body/keys [player-type player-name new-ucid] :as packet}]
   (case type
-    :sta        (swap! game-state assoc :race-in-progress? (pos? race-in-progress))
+    :sta        (update-game-state! packet)
     :npl        (when (= :ai player-type) (new-ai-player! packet @current-difficulty))
     :pll        (swap! players dissoc player-id)
     :plp        nil ;; player stays in the race (pit garage) - player-id is retained, nothing to update
@@ -147,7 +154,10 @@
     (:lap :spx) (when (:race-in-progress? @game-state)
                   (when-let [response (some-> @players (get player-id) update-ai-skill!)]
                     (client/>! client response)))
-    :ver        (client/>! client (packets/tiny {:request-info 1 :data :npl}))
+    :ver        (run! #(some->> % packets/tiny (client/>! client))
+                      [{:request-info 1 :data :npl}
+                       {:request-info 1 :data :sst}
+                       {:request-info 1 :data :npl}])
     nil))
 
 (defn aiskill
@@ -159,10 +169,6 @@
    (when-let [client (client/start (cond-> {} host (assoc :host host) port (assoc :port port)))]
      (let [stop #(client/stop client)]
        (client/go client dispatch)
-       ;; Request initial state and player info - LFS only sends IS_NPL for players
-       ;; joining *after* we connect otherwise. ReqI must be non-zero or LFS ignores.
-       (client/>! client (packets/tiny {:request-info 1 :data :sst})) ;; STA packet for game state
-       (client/>! client (packets/tiny {:request-info 1 :data :npl})) ;; NPL for existing players
        stop))))
 
 (defn -main
