@@ -41,8 +41,7 @@
 
    This design handles traffic spikes without dropping data while still batching writes for I/O efficiency."
   (:require [clojure.string :as str]
-            [clojure.java.io :as io])
-  (:import [java.io BufferedWriter]))
+            [clojure.java.io :as io]))
 
 (def ERROR_LOG (atom nil))
 (defonce ERRORS (atom true))
@@ -52,9 +51,9 @@
 (def RAW_BYTES_BUFFER (atom []))
 (def PARSED_INCOMING_BUFFER (atom []))
 (def OUTGOING_BUFFER (atom []))
-(def ^BufferedWriter RAW_WRITER (atom nil))
-(def ^BufferedWriter PARSED_INCOMING_WRITER (atom nil))
-(def ^BufferedWriter OUTGOING_WRITER (atom nil))
+(def RAW_WRITER (atom nil))
+(def PARSED_INCOMING_WRITER (atom nil))
+(def OUTGOING_WRITER (atom nil))
 (def FLUSH_THREAD (atom nil))
 
 (def BUFFER_SIZE 100)
@@ -214,7 +213,7 @@
    Each line is one packet's worth of raw TCP bytes. Format is line-based text for easy inspection."
   []
   (let [entries (first (swap-vals! RAW_BYTES_BUFFER (constantly [])))]
-    (when (pos? (count entries))
+    (when (seq entries)
       (doseq [{:keys [timestamp data]} entries]
         (.write @RAW_WRITER (str timestamp " " data "\n")))
       (.flush @RAW_WRITER))))
@@ -237,7 +236,7 @@
    Packets here are after full decoding (marshal unmarshalling + InSim parsing)."
   []
   (let [entries (first (swap-vals! PARSED_INCOMING_BUFFER (constantly [])))]
-    (when (pos? (count entries))
+    (when (seq entries)
       (doseq [{:keys [timestamp packet]} entries]
         (.write @PARSED_INCOMING_WRITER (str "{:timestamp " timestamp " :packet " (pr-str packet) "}\n")))
       (.flush @PARSED_INCOMING_WRITER))))
@@ -260,7 +259,7 @@
    marshal encoding (before they become bytes on the wire)."
   []
   (let [entries (first (swap-vals! OUTGOING_BUFFER (constantly [])))]
-    (when (pos? (count entries))
+    (when (seq entries)
       (doseq [{:keys [timestamp packet]} entries]
         (.write @OUTGOING_WRITER (str "{:timestamp " timestamp " :packet " (pr-str packet) "}\n")))
       (.flush @OUTGOING_WRITER))))
