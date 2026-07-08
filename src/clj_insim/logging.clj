@@ -49,13 +49,13 @@
 (defonce VERBOSE (atom false))
 
 (def ^:dynamic *packet-logging* false)
-(defonce RAW_BYTES_BUFFER (atom []))
-(defonce PARSED_INCOMING_BUFFER (atom []))
-(defonce OUTGOING_BUFFER (atom []))
-(defonce ^BufferedWriter RAW_WRITER (atom nil))
-(defonce ^BufferedWriter PARSED_INCOMING_WRITER (atom nil))
-(defonce ^BufferedWriter OUTGOING_WRITER (atom nil))
-(defonce FLUSH_THREAD (atom nil))
+(def RAW_BYTES_BUFFER (atom []))
+(def PARSED_INCOMING_BUFFER (atom []))
+(def OUTGOING_BUFFER (atom []))
+(def ^BufferedWriter RAW_WRITER (atom nil))
+(def ^BufferedWriter PARSED_INCOMING_WRITER (atom nil))
+(def ^BufferedWriter OUTGOING_WRITER (atom nil))
+(def FLUSH_THREAD (atom nil))
 
 (def BUFFER_SIZE 100)
 (def FLUSH_INTERVAL_MS 5000)
@@ -121,7 +121,7 @@
     (reset! OUTGOING_WRITER nil)
     (println "clj-insim: packet logging stopped")))
 
-(defn- hex-dump [bytes]
+(defn- hex-dump
   "**Purpose:** Convert raw binary bytes into human-readable hex format.
 
    **How it works:**
@@ -132,6 +132,7 @@
 
    **Connection to system:** Used only by log-raw-bytes when writing raw TCP bytes
    to raw-bytes.txt. Makes the binary data inspectable without a hex editor."
+  [bytes]
   (let [len (count bytes)]
     (str "["
          (str/join " " (map (fn [b] (format "%02X" (bit-and b 0xFF))) bytes))
@@ -311,7 +312,7 @@
               (println "clj-insim: error flushing logs:" (.getMessage e))))
           (recur))))))
 
-(defn print-verbose [packet]
+(defn print-verbose
   "**Purpose:** Print packet to stdout if verbose mode is enabled, AND queue it for file logging.
 
    **How it works:**
@@ -323,13 +324,14 @@
    client.clj after every successfully parsed incoming packet. This means packets
    go to both the console (if verbose) and always to the parsed-incoming.edn file.
    The file logging is decoupled from console verbosity."
+  [packet]
   (when @VERBOSE
     (newline)
     (println (str "IS_" (-> (:header/type packet) name str/upper-case) " packet!"))
     (println (str packet)))
   (log-parsed-incoming packet))
 
-(defn log-throwable [t]
+(defn log-throwable
   "**Purpose:** Record exceptions to an error log and optionally print them.
 
    **How it works:**
@@ -339,11 +341,12 @@
    **Connection to system:** Called by wrap-try-catch when any exception occurs.
    The ERROR_LOG atom accumulates all errors during a session, separate from
    packet logging. This is for debugging code errors, not packet data."
+  [t]
   (when @ERRORS
     (swap! ERROR_LOG conj (Throwable->map t))
     (println "clj-insim error:" (.getMessage t))))
 
-(defn wrap-try-catch [f & args]
+(defn wrap-try-catch
   "**Purpose:** Execute a function safely, catching and logging any exceptions.
 
    **How it works:**
@@ -354,4 +357,5 @@
    **Connection to system:** Used in client.clj to wrap the read and write functions.
    If a parse error or network error occurs, it's caught and logged without crashing
    the client loop. Paired with log-throwable for error tracking."
+  [f & args]
   (try (apply f args) (catch Throwable t (log-throwable t))))
