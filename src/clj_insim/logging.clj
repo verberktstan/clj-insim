@@ -60,21 +60,7 @@
 (declare flush-all-buffers! flush-stream!)
 
 (defn init-packet-logging!
-  "**Purpose:** Set up the entire packet logging infrastructure.
-
-   **How it works:**
-   1. Creates a logs directory (or specified dir) if it doesn't exist
-   2. Opens three buffered file writers with 64KB internal buffers:
-      - raw-bytes.txt: Raw incoming TCP bytes in hex format
-      - parsed-incoming.edn: Clojure maps of received packets
-      - outgoing.edn: Clojure maps of sent packets
-   3. Enables the global PACKET_LOGGING flag
-   4. Starts a background thread that auto-flushes every 5 seconds
-
-   **Connection to system:** This is the entry point. Call this once at startup.
-   All logging functions check *packet-logging* before writing, so nothing happens
-   until this is called. The buffered writers hold data in RAM until flush operations
-   write to disk (either triggered by reaching BUFFER_SIZE=100 entries or the auto-flush thread)."
+  "Create logs directory, open buffered writers for all streams, and start the auto-flush thread."
   ([]
    (init-packet-logging! "logs"))
   ([dir]
@@ -87,18 +73,7 @@
        (println "clj-insim: packet logging initialized in" dir)))))
 
 (defn stop-packet-logging!
-  "**Purpose:** Cleanly shut down the logging system and ensure no data loss.
-
-   **How it works:**
-   1. Cancels the background flush thread (stops periodic flushing)
-   2. Calls flush-all-buffers! to write any remaining queued data to disk
-   3. Closes all three file writers, finalizing the files
-   4. Resets all atom states back to nil/false
-   5. Disables *packet-logging* to prevent new log calls from executing
-
-   **Connection to system:** Call this when shutting down the client or when you're
-   done testing. Without this, in-memory buffered data may be lost and file handles
-   will remain open. Safe to call multiple times (checks *packet-logging* first)."
+  "Stop the auto-flush thread, flush all buffers to disk, and close all writers."
   []
   (when (and *packet-logging* (boolean @RAW_WRITER))
     (when @FLUSH_THREAD
@@ -111,16 +86,7 @@
     (println "clj-insim: packet logging stopped")))
 
 (defn- hex-dump
-  "**Purpose:** Convert raw binary bytes into human-readable hex format.
-
-   **How it works:**
-   - Iterates through each byte in the array
-   - Masks with 0xFF and formats as 2-digit uppercase hex (e.g., \"7E\", \"00\", \"FF\")
-   - Joins all bytes with spaces: \"7E 00 FF 04 ...\"
-   - Wraps in brackets and appends byte count: \"[7E 00 FF 04] (4 bytes)\"
-
-   **Connection to system:** Used only by log-raw-bytes when writing raw TCP bytes
-   to raw-bytes.txt. Makes the binary data inspectable without a hex editor."
+  "Convert byte array to readable hex format: \"[7E 00 FF] (3 bytes)\"."
   [bytes]
   (let [len (count bytes)]
     (str "["
@@ -139,45 +105,17 @@
         (flush-stream! stream-key)))))
 
 (defn log-raw-bytes
-  "**Purpose:** Queue raw TCP bytes from the input stream for buffered file writing.
-
-   **How it works:**
-   1. Checks if logging is enabled (*packet-logging*)
-   2. Converts bytes to hex format via hex-dump
-   3. Adds {:timestamp, :data} entry to RAW_BYTES_BUFFER
-   4. If buffer reaches 100 entries, immediately flushes to disk (eager flush to prevent data loss)
-
-   **Connection to system:** This should be called in read.clj right after reading raw bytes
-   from the socket, before marshal decoding. Data reaches disk either via eager flush
-   (BUFFER_SIZE) or the auto-flush thread (every 5 seconds)."
+  "Queue raw TCP bytes (hex-formatted) to the :raw stream buffer for disk writing."
   [bytes]
   (log! :raw (hex-dump bytes)))
 
 (defn log-parsed-incoming
-  "**Purpose:** Queue parsed, decoded incoming packets for buffered EDN file writing.
-
-   **How it works:**
-   1. Checks if logging is enabled (*packet-logging*)
-   2. Adds {:timestamp, :packet} entry to PARSED_INCOMING_BUFFER
-   3. If buffer reaches 100 entries, immediately flushes to disk
-
-   **Connection to system:** Called by print-verbose and should also be called in client.clj
-   after a packet is successfully parsed from bytes. Stores the complete Clojure map
-   representation of the packet (after marshal decoding and InSim parsing)."
+  "Queue decoded packet to the :parsed stream buffer for disk writing."
   [packet]
   (log! :parsed packet))
 
 (defn log-outgoing
-  "**Purpose:** Queue packets being sent to LFS for buffered EDN file writing.
-
-   **How it works:**
-   1. Checks if logging is enabled (*packet-logging*)
-   2. Adds {:timestamp, :packet} entry to OUTGOING_BUFFER
-   3. If buffer reaches 100 entries, immediately flushes to disk
-
-   **Connection to system:** Should be called in client.clj or write.clj after a packet
-   is enqueued for sending but before it's serialized to bytes. Stores the high-level
-   Clojure representation (before marshal encoding)."
+  "Queue outgoing packet to the :outgoing stream buffer for disk writing."
   [packet]
   (log! :outgoing packet))
 
@@ -198,20 +136,7 @@
     (flush-stream! k)))
 
 (defn- start-flush-thread!
-  "**Purpose:** Start a background daemon thread that periodically flushes all buffers.
-
-   **How it works:**
-   1. Creates a future (background thread) that runs an infinite loop
-   2. Every 5000ms (FLUSH_INTERVAL_MS), wakes up and calls flush-all-buffers!
-   3. Wraps in try-catch to avoid crashing on I/O errors; logs errors instead
-   4. Only loops when *packet-logging* is true (stops when logging is disabled)
-   5. Stores the future in FLUSH_THREAD atom so it can be cancelled later
-
-   **Connection to system:** Started by init-packet-logging! and runs until
-   stop-packet-logging! cancels it. Handles the \"buffering\" part of the system:
-   even if burst traffic doesn't fill the 100-entry buffers, this thread ensures
-   data hits disk every 5 seconds. This trades latency for efficiency—data isn't
-   written immediately on every packet, but stays fresh on disk."
+  "Start a background thread that flushes all buffers every 5 seconds."
   []
   (reset! FLUSH_THREAD
     (future
@@ -225,17 +150,7 @@
           (recur))))))
 
 (defn print-verbose
-  "**Purpose:** Print packet to stdout if verbose mode is enabled, AND queue it for file logging.
-
-   **How it works:**
-   1. If @VERBOSE is true, prints to console (original behavior)
-   2. Always calls log-parsed-incoming to queue the packet for file logging
-      (this happens regardless of VERBOSE setting)
-
-   **Connection to system:** Modified to integrate packet logging. Called from
-   client.clj after every successfully parsed incoming packet. This means packets
-   go to both the console (if verbose) and always to the parsed-incoming.edn file.
-   The file logging is decoupled from console verbosity."
+  "Print packet to stdout if @VERBOSE is true, and always queue for logging."
   [packet]
   (when @VERBOSE
     (newline)
@@ -244,30 +159,13 @@
   (log-parsed-incoming packet))
 
 (defn log-throwable
-  "**Purpose:** Record exceptions to an error log and optionally print them.
-
-   **How it works:**
-   1. If @ERRORS is true, appends the exception to ERROR_LOG atom (using Throwable->map)
-   2. Prints the exception message to stdout
-
-   **Connection to system:** Called by wrap-try-catch when any exception occurs.
-   The ERROR_LOG atom accumulates all errors during a session, separate from
-   packet logging. This is for debugging code errors, not packet data."
+  "Record exception to ERROR_LOG and print message to stdout."
   [t]
   (when @ERRORS
     (swap! ERROR_LOG conj (Throwable->map t))
     (println "clj-insim error:" (.getMessage t))))
 
 (defn wrap-try-catch
-  "**Purpose:** Execute a function safely, catching and logging any exceptions.
-
-   **How it works:**
-   1. Tries to call the function f with the given args
-   2. If an exception occurs, catches it and passes to log-throwable
-   3. Returns nil if an exception occurred
-
-   **Connection to system:** Used in client.clj to wrap the read and write functions.
-   If a parse error or network error occurs, it's caught and logged without crashing
-   the client loop. Paired with log-throwable for error tracking."
+  "Execute f with args, catching and logging any exceptions."
   [f & args]
   (try (apply f args) (catch Throwable t (log-throwable t))))
