@@ -69,31 +69,29 @@
            new-byte-size? (> (:body/insim-version isi) 8)]
        (println "clj-insim: using INSIM_VERSION:" (:body/insim-version isi))
        (a/go
-         (binding [logging/*packet-logging* true]
-           (a/>!! to-lfs isi)
-           (logging/log-outgoing isi)
-           (while @running?
-             (let [packet (a/<! to-lfs)
-                   write! (write/instruction new-byte-size?)]
-               (logging/log-outgoing packet)
-               (logging/wrap-try-catch write! output-stream packet)
-               (loop []
-                 (when-let [queued (a/poll! to-lfs)]
-                   (logging/log-outgoing queued)
-                   (logging/wrap-try-catch write! output-stream queued)
-                   (recur)))
-               (write/flush! output-stream)))))
+         (a/>!! to-lfs isi)
+         (logging/log-outgoing isi)
+         (while @running?
+           (let [packet (a/<! to-lfs)
+                 write! (write/instruction new-byte-size?)]
+             (when packet (logging/log-outgoing packet))
+             (logging/wrap-try-catch write! output-stream packet)
+             (loop []
+               (when-let [queued (a/poll! to-lfs)]
+                 (logging/log-outgoing queued)
+                 (logging/wrap-try-catch write! output-stream queued)
+                 (recur)))
+             (write/flush! output-stream))))
        (a/go
-         (binding [logging/*packet-logging* true]
-           (while @running?
-             (when-let [packet (logging/wrap-try-catch (read/packet new-byte-size?) input-stream)]
-               (logging/log-raw-bytes
-                 (byte-array [(-> packet :header/size byte)
-                              (-> packet :header/size (bit-shift-right 8) byte)
-                              (-> packet :header/type name first byte)
-                              (byte 0)]))
-               (dispatch {:to-lfs to-lfs} packet)
-               (a/>! from-lfs packet)))))
+         (while @running?
+           (when-let [packet (logging/wrap-try-catch (read/packet new-byte-size?) input-stream)]
+             (logging/log-raw-bytes
+              (byte-array [(-> packet :header/size byte)
+                           (-> packet :header/size (bit-shift-right 8) byte)
+                           (-> packet :header/type name first byte)
+                           (byte 0)]))
+             (dispatch {:to-lfs to-lfs} packet)
+             (a/>! from-lfs packet))))
        (println "clj-insim: client started")
        {:from-lfs from-lfs
         :to-lfs to-lfs

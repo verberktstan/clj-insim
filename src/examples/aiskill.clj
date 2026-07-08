@@ -1,6 +1,7 @@
 (ns examples.aiskill
   (:gen-class)
   (:require [clj-insim.client :as client]
+            [clj-insim.logging :as logging]
             [clj-insim.packets :as packets]
             [clojure.string :as str]))
 
@@ -166,7 +167,9 @@
   @volatility-override
 
   ;; To start the aiskill process
-  (def aiskill-client (aiskill))
+  (binding [logging/*packet-logging* false] ;; Control packet logging!
+    (def aiskill-client (aiskill)))
+
 
   ;; To stop the client and aiskill process, simply call the stored function
   (aiskill-client)
