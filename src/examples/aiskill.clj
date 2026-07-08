@@ -3,6 +3,7 @@
   (:require [clj-insim.client :as client]
             [clj-insim.logging :as logging]
             [clj-insim.packets :as packets]
+            [clojure.set :as set]
             [clojure.string :as str]))
 
 ;; A simple example that ramps up an AI player's /aiset skill level every time
@@ -77,6 +78,12 @@
    players))
 
 (def ^:private volatility-mapping {:rare 4 :balanced 3 :frequent 2})
+(def ^:private volatility-reverse-mapping (set/map-invert volatility-mapping))
+
+(defn- current-volatility []
+  (let [override-n (:shuffle-odds-1-in @volatility-override)
+        preset-n (get-in skill-presets [@current-difficulty :shuffle-odds-1-in])]
+    (volatility-reverse-mapping (or override-n preset-n))))
 
 (defn- set-difficulty! [difficulty volatility]
   (when (contains? skill-presets difficulty)
@@ -116,7 +123,9 @@
        (when command
          (let [report-message (str "AI preset: "
                                    (name @current-difficulty)
-                                   ", try: !ai <difficulty> or !ai <difficulty> <volatility>")
+                                   ", volatility: "
+                                   (name (current-volatility))
+                                   " | try: !ai <difficulty> or !ai <difficulty> <volatility>")
                next-message   ".. difficulty choose [easy normal hard], volatility choose [frequent balanced rare]."]
            [(packets/msx {:message report-message})
             (packets/msx {:message next-message})]))))))
