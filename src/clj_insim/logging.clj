@@ -59,8 +59,37 @@
 (def BUFFER_SIZE 100)
 (def FLUSH_INTERVAL_MS 5000)
 
+(defn- format-raw-entry
+  [{:keys [timestamp data]}]
+  (str timestamp " " data "\n"))
+
+(defn- format-packet-entry
+  [{:keys [timestamp packet]}]
+  (str "{:timestamp " timestamp " :packet " (pr-str packet) "}\n"))
+
+(def streams
+  {:raw
+   {:file "raw-bytes.txt"
+    :fmt format-raw-entry
+    :data-key :data
+    :buffer RAW_BYTES_BUFFER
+    :writer RAW_WRITER}
+   :parsed
+   {:file "parsed-incoming.edn"
+    :fmt format-packet-entry
+    :data-key :packet
+    :buffer PARSED_INCOMING_BUFFER
+    :writer PARSED_INCOMING_WRITER}
+   :outgoing
+   {:file "outgoing.edn"
+    :fmt format-packet-entry
+    :data-key :packet
+    :buffer OUTGOING_BUFFER
+    :writer OUTGOING_WRITER}})
+
 (declare start-flush-thread! log-parsed-incoming)
 (declare flush-all-buffers!)
+(declare flush-stream!)
 (declare flush-raw-bytes!)
 (declare flush-parsed-incoming!)
 (declare flush-outgoing!)
@@ -137,6 +166,17 @@
          (str/join " " (map (fn [b] (format "%02X" (bit-and b 0xFF))) bytes))
          "] (" len " bytes)")))
 
+(defn- log!
+  "Queue entry to a stream's buffer, building {:timestamp ... data-key} dict.
+   Auto-flushes when buffer reaches BUFFER_SIZE."
+  [stream-key data]
+  (when *packet-logging*
+    (let [{:keys [buffer data-key]} (streams stream-key)]
+      (swap! buffer conj
+             (assoc {:timestamp (System/currentTimeMillis)} data-key data))
+      (when (>= (count @buffer) BUFFER_SIZE)
+        (flush-stream! stream-key)))))
+
 (defn log-raw-bytes
   "**Purpose:** Queue raw TCP bytes from the input stream for buffered file writing.
 
@@ -151,12 +191,7 @@
    Achieves buffering by accumulating entries in an atom; reaches disk either via eager flush
    (BUFFER_SIZE) or the auto-flush thread (every 5 seconds)."
   [bytes]
-  (when *packet-logging*
-    (swap! RAW_BYTES_BUFFER conj
-           {:timestamp (System/currentTimeMillis)
-            :data (hex-dump bytes)})
-    (when (>= (count @RAW_BYTES_BUFFER) BUFFER_SIZE)
-      (flush-raw-bytes!))))
+  (log! :raw (hex-dump bytes)))
 
 (defn log-parsed-incoming
   "**Purpose:** Queue parsed, decoded incoming packets for buffered EDN file writing.
@@ -171,12 +206,7 @@
    representation of the packet (after marshal decoding and InSim parsing).
    Pairs with flush-parsed-incoming! for disk writes."
   [packet]
-  (when *packet-logging*
-    (swap! PARSED_INCOMING_BUFFER conj
-           {:timestamp (System/currentTimeMillis)
-            :packet packet})
-    (when (>= (count @PARSED_INCOMING_BUFFER) BUFFER_SIZE)
-      (flush-parsed-incoming!))))
+  (log! :parsed packet))
 
 (defn log-outgoing
   "**Purpose:** Queue packets being sent to LFS for buffered EDN file writing.
@@ -190,79 +220,32 @@
    is enqueued for sending but before it's serialized to bytes. Stores the high-level
    Clojure representation (before marshal encoding). Pairs with flush-outgoing! for disk writes."
   [packet]
-  (when *packet-logging*
-    (swap! OUTGOING_BUFFER conj
-           {:timestamp (System/currentTimeMillis)
-            :packet packet})
-    (when (>= (count @OUTGOING_BUFFER) BUFFER_SIZE)
-      (flush-outgoing!))))
+  (log! :outgoing packet))
+
+(defn- flush-stream!
+  "Atomically drain a stream buffer and write formatted entries to disk."
+  [stream-key]
+  (let [{:keys [buffer writer fmt]} (streams stream-key)
+        entries                     (first (swap-vals! buffer (constantly [])))]
+    (when (seq entries)
+      (doseq [entry entries]
+        (.write @writer (fmt entry)))
+      (.flush @writer))))
 
 (defn- flush-raw-bytes!
-  "**Purpose:** Write all queued raw bytes entries from RAM to raw-bytes.txt on disk.
-
-   **How it works:**
-   1. Atomically drains RAW_BYTES_BUFFER (swap-vals! returns the old value and clears
-      it in one step, so entries logged during the flush are never lost)
-   2. For each drained entry, writes a line: \"TIMESTAMP [HEX HEX HEX] (N bytes)\"
-   3. Calls .flush on the BufferedWriter to push data to OS and disk
-
-   **Connection to system:** Triggered by either:
-     - log-raw-bytes when buffer reaches 100 entries (eager flush)
-     - The auto-flush thread every 5 seconds (background flush)
-     - stop-packet-logging! when shutting down (final flush)
-   Each line is one packet's worth of raw TCP bytes. Format is line-based text for easy inspection."
+  "Flush raw bytes buffer to disk via the generic registry-based mechanism."
   []
-  (let [entries (first (swap-vals! RAW_BYTES_BUFFER (constantly [])))]
-    (when (seq entries)
-      (doseq [{:keys [timestamp data]} entries]
-        (.write @RAW_WRITER (str timestamp " " data "\n")))
-      (.flush @RAW_WRITER))))
+  (flush-stream! :raw))
 
 (defn- flush-parsed-incoming!
-  "**Purpose:** Write all queued parsed incoming packet entries from RAM to parsed-incoming.edn on disk.
-
-   **How it works:**
-   1. Atomically drains PARSED_INCOMING_BUFFER (swap-vals! returns the old value and
-      clears it in one step, so entries logged during the flush are never lost)
-   2. For each drained entry, writes a single EDN map line:
-      {:timestamp 1234567890 :packet {:header/type :ISI :body/insim-version 9 ...}}
-   3. Calls .flush on the BufferedWriter to push data to disk
-
-   **Connection to system:** Triggered by either:
-     - log-parsed-incoming when buffer reaches 100 entries (eager flush)
-     - The auto-flush thread every 5 seconds (background flush)
-     - stop-packet-logging! when shutting down (final flush)
-   Each line is valid EDN that can be read with clojure.edn/read-string.
-   Packets here are after full decoding (marshal unmarshalling + InSim parsing)."
+  "Flush parsed incoming packets buffer to disk via the generic registry-based mechanism."
   []
-  (let [entries (first (swap-vals! PARSED_INCOMING_BUFFER (constantly [])))]
-    (when (seq entries)
-      (doseq [{:keys [timestamp packet]} entries]
-        (.write @PARSED_INCOMING_WRITER (str "{:timestamp " timestamp " :packet " (pr-str packet) "}\n")))
-      (.flush @PARSED_INCOMING_WRITER))))
+  (flush-stream! :parsed))
 
 (defn- flush-outgoing!
-  "**Purpose:** Write all queued outgoing packet entries from RAM to outgoing.edn on disk.
-
-   **How it works:**
-   1. Atomically drains OUTGOING_BUFFER (swap-vals! returns the old value and clears
-      it in one step, so entries logged during the flush are never lost)
-   2. For each drained entry, writes a single EDN map line:
-      {:timestamp 1234567890 :packet {:header/type :ISM :body/text \"hello\" ...}}
-   3. Calls .flush on the BufferedWriter to push data to disk
-
-   **Connection to system:** Triggered by either:
-     - log-outgoing when buffer reaches 100 entries (eager flush)
-     - The auto-flush thread every 5 seconds (background flush)
-     - stop-packet-logging! when shutting down (final flush)
-   Each line is valid EDN. Packets here are high-level Clojure maps before
-   marshal encoding (before they become bytes on the wire)."
+  "Flush outgoing packets buffer to disk via the generic registry-based mechanism."
   []
-  (let [entries (first (swap-vals! OUTGOING_BUFFER (constantly [])))]
-    (when (seq entries)
-      (doseq [{:keys [timestamp packet]} entries]
-        (.write @OUTGOING_WRITER (str "{:timestamp " timestamp " :packet " (pr-str packet) "}\n")))
-      (.flush @OUTGOING_WRITER))))
+  (flush-stream! :outgoing))
 
 (defn flush-all-buffers!
   "**Purpose:** Synchronously write all three buffered queues to disk in sequence.
