@@ -248,21 +248,10 @@
   (flush-stream! :outgoing))
 
 (defn flush-all-buffers!
-  "**Purpose:** Synchronously write all three buffered queues to disk in sequence.
-
-   **How it works:**
-   - Calls flush-raw-bytes!, flush-parsed-incoming!, and flush-outgoing! in order
-   - Each call writes its buffer and clears it
-
-   **Connection to system:** Used by:
-     - stop-packet-logging! to ensure no data loss on shutdown
-     - The auto-flush thread (every 5 seconds) to periodically persist data
-   This is a convenience wrapper for manual flushing. If spikes cause buffers to
-   grow, calling this directly will guarantee all data reaches disk immediately."
+  "Synchronously flush all stream buffers to disk via the registry."
   []
-  (flush-raw-bytes!)
-  (flush-parsed-incoming!)
-  (flush-outgoing!))
+  (doseq [k (keys streams)]
+    (flush-stream! k)))
 
 (defn- start-flush-thread!
   "**Purpose:** Start a background daemon thread that periodically flushes all buffers.
