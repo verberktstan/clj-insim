@@ -1,45 +1,14 @@
 (ns clj-insim.logging
   "Verbose packet logging and error tracking for the InSim client.
 
-   ## Architecture Overview
+   Three registry-managed streams, each with its own buffer and file:
+   - :raw (raw-bytes.txt): Raw TCP bytes before decoding
+   - :parsed (parsed-incoming.edn): Decoded packets after parsing
+   - :outgoing (outgoing.edn): Packets before encoding
 
-   This logging system has three independent data flows, each with its own buffer and file:
-
-   **FLOW 1: Raw Bytes (raw-bytes.txt)**
-   read.clj → log-raw-bytes → RAW_BYTES_BUFFER → [flush-raw-bytes! or auto-flush] → disk
-
-   Captures the actual TCP bytes received before any decoding. Useful for:
-   - Reproducing exact packet sequences
-   - Debugging protocol-level issues
-   - Inspecting corrupt packets
-
-   **FLOW 2: Parsed Incoming (parsed-incoming.edn)**
-   read.clj → parse → client.clj → print-verbose → log-parsed-incoming → PARSED_INCOMING_BUFFER
-   → [flush-parsed-incoming! or auto-flush] → disk
-
-   Captures the Clojure map representation after successful decoding and parsing.
-   Useful for:
-   - Analyzing game state changes
-   - Replaying a session
-   - Testing packet handlers
-
-   **FLOW 3: Outgoing (outgoing.edn)**
-   client.clj → channel → log-outgoing → OUTGOING_BUFFER → [flush-outgoing! or auto-flush] → disk
-
-   Captures packets being sent before encoding to bytes. Useful for:
-   - Verifying commands sent to LFS
-   - Debugging client behavior
-   - Full session reconstruction
-
-   ## Buffering Strategy
-
-   Each log buffer holds up to 100 entries in RAM. Writes to disk are triggered by:
-   - EAGER: When 100 entries accumulate (flush immediately, prevent buffer overflow on bursts)
-   - PERIODIC: Every 5 seconds from auto-flush thread (ensures data reaches disk even during quiet periods)
-   - MANUAL: Call flush-all-buffers! explicitly
-   - SHUTDOWN: stop-packet-logging! flushes and closes all files
-
-   This design handles traffic spikes without dropping data while still batching writes for I/O efficiency."
+   Buffers hold up to 100 entries. Writes triggered by: eager flush (buffer full),
+   periodic auto-flush (every 5s), manual flush-all-buffers!, or shutdown.
+   This trades latency for I/O efficiency while preventing data loss."
   (:require [clojure.string :as str]
             [clojure.java.io :as io]))
 
@@ -88,11 +57,7 @@
     :writer OUTGOING_WRITER}})
 
 (declare start-flush-thread! log-parsed-incoming)
-(declare flush-all-buffers!)
-(declare flush-stream!)
-(declare flush-raw-bytes!)
-(declare flush-parsed-incoming!)
-(declare flush-outgoing!)
+(declare flush-all-buffers! flush-stream!)
 
 (defn init-packet-logging!
   "**Purpose:** Set up the entire packet logging infrastructure.
@@ -183,8 +148,7 @@
    4. If buffer reaches 100 entries, immediately flushes to disk (eager flush to prevent data loss)
 
    **Connection to system:** This should be called in read.clj right after reading raw bytes
-   from the socket, before marshal decoding. Paired with flush-raw-bytes! to write to disk.
-   Achieves buffering by accumulating entries in an atom; reaches disk either via eager flush
+   from the socket, before marshal decoding. Data reaches disk either via eager flush
    (BUFFER_SIZE) or the auto-flush thread (every 5 seconds)."
   [bytes]
   (log! :raw (hex-dump bytes)))
@@ -199,8 +163,7 @@
 
    **Connection to system:** Called by print-verbose and should also be called in client.clj
    after a packet is successfully parsed from bytes. Stores the complete Clojure map
-   representation of the packet (after marshal decoding and InSim parsing).
-   Pairs with flush-parsed-incoming! for disk writes."
+   representation of the packet (after marshal decoding and InSim parsing)."
   [packet]
   (log! :parsed packet))
 
@@ -214,7 +177,7 @@
 
    **Connection to system:** Should be called in client.clj or write.clj after a packet
    is enqueued for sending but before it's serialized to bytes. Stores the high-level
-   Clojure representation (before marshal encoding). Pairs with flush-outgoing! for disk writes."
+   Clojure representation (before marshal encoding)."
   [packet]
   (log! :outgoing packet))
 
@@ -227,21 +190,6 @@
       (doseq [entry entries]
         (.write @writer (fmt entry)))
       (.flush @writer))))
-
-(defn- flush-raw-bytes!
-  "Flush raw bytes buffer to disk via the generic registry-based mechanism."
-  []
-  (flush-stream! :raw))
-
-(defn- flush-parsed-incoming!
-  "Flush parsed incoming packets buffer to disk via the generic registry-based mechanism."
-  []
-  (flush-stream! :parsed))
-
-(defn- flush-outgoing!
-  "Flush outgoing packets buffer to disk via the generic registry-based mechanism."
-  []
-  (flush-stream! :outgoing))
 
 (defn flush-all-buffers!
   "Synchronously flush all stream buffers to disk via the registry."
