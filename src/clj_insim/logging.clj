@@ -85,7 +85,7 @@
   ([]
    (init-packet-logging! "logs"))
   ([dir]
-   (when (nil? @RAW_WRITER)
+   (when (and *packet-logging* (nil? @RAW_WRITER))
      (let [dir-file (io/file dir)]
        (.mkdirs dir-file)
        (reset! RAW_WRITER (io/writer (io/file dir "raw-bytes.txt") :append true :buffer-size 65536))
@@ -108,7 +108,7 @@
    done testing. Without this, in-memory buffered data may be lost and file handles
    will remain open. Safe to call multiple times (checks *packet-logging* first)."
   []
-  (when (not (nil? @RAW_WRITER))
+  (when (and *packet-logging* (boolean @RAW_WRITER))
     (when @FLUSH_THREAD
       (future-cancel @FLUSH_THREAD)
       (reset! FLUSH_THREAD nil))
