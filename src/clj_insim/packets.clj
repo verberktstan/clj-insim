@@ -18,6 +18,16 @@
      #:header{:size (+ 4 4 (* n 8)) :type :axm :request-info 0 :data n}
      #:body{:ucid ucid :action action :flags flags :spare "0" :object-infos object-infos})))
 
+(defn aic
+  "Create an IS_AIC (AI Control) packet to set control values for the AI driver
+   `player-id`. `inputs` is a vector of maps with :ai-input/input, :ai-input/time
+   and :ai-input/value."
+  [{:keys [player-id inputs] :or {player-id 0 inputs []}}]
+  {:pre [(<= (count inputs) 20)]}
+  (merge
+   #:header{:size (+ 4 (* (count inputs) 4)) :type :aic :request-info 0 :data player-id}
+   #:body{:inputs inputs}))
+
 (defn btn [{:keys [text request-info ucid click-id inst button-style type-in left top width height]
             :or {text "Hello button"
                  request-info 1
