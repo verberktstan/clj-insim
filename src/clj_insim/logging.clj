@@ -116,9 +116,8 @@
    (when (and *packet-logging* (nil? @RAW_WRITER))
      (let [dir-file (io/file dir)]
        (.mkdirs dir-file)
-       (reset! RAW_WRITER (io/writer (io/file dir "raw-bytes.txt") :append true :buffer-size 65536))
-       (reset! PARSED_INCOMING_WRITER (io/writer (io/file dir "parsed-incoming.edn") :append true :buffer-size 65536))
-       (reset! OUTGOING_WRITER (io/writer (io/file dir "outgoing.edn") :append true :buffer-size 65536))
+       (doseq [[k {:keys [file writer]}] streams]
+         (reset! writer (io/writer (io/file dir file) :append true :buffer-size 65536)))
        (start-flush-thread!)
        (println "clj-insim: packet logging initialized in" dir)))))
 
@@ -141,12 +140,9 @@
       (future-cancel @FLUSH_THREAD)
       (reset! FLUSH_THREAD nil))
     (flush-all-buffers!)
-    (.close @RAW_WRITER)
-    (.close @PARSED_INCOMING_WRITER)
-    (.close @OUTGOING_WRITER)
-    (reset! RAW_WRITER nil)
-    (reset! PARSED_INCOMING_WRITER nil)
-    (reset! OUTGOING_WRITER nil)
+    (doseq [[k {:keys [writer]}] streams]
+      (.close @writer)
+      (reset! writer nil))
     (println "clj-insim: packet logging stopped")))
 
 (defn- hex-dump
