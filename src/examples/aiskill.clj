@@ -17,6 +17,7 @@
    :hard   {:min-skill 4 :max-skill 5 :shuffle-odds-1-in 4}})
 
 (defonce ^:private players (atom {})) ;; player-id -> {:player-name :player-id :ucid :preset :current-skill}
+(defonce ^:private connections (atom {})) ;; ucid -> {:connection-name :ucid}
 (defonce ^:private current-difficulty (atom :hard)) ;; tracks the active difficulty preset
 (defonce ^:private volatility-override (atom {:shuffle-odds-1-in nil}))
 
@@ -34,14 +35,23 @@
     (not (max-skill? current-skill preset-config))    (inc current-skill)
     (shuffle? volatility-override preset-config) (random-skill-value preset-config)))
 
-;; Let's store volatility override with the user
-(defn- update-ai-skill! [{:keys [player-id player-name preset current-skill]}]
+
+(defn checked-player-name
+  "Only return the player-name if it matches the player's name in players state map."
+  [players {:keys [player-id player-name]}]
+  (some-> players (get player-id) :player-name #{player-name}))
+
+(defn- update-ai-skill! [{:keys [player-id preset current-skill] :as props}]
   (let [preset-config (skill-presets preset)
         level         (calculate-next-skill current-skill @volatility-override preset-config)
-        new-level?    (not= level current-skill)]
-    (when (and level new-level?)
+        new-level?    (not= level current-skill)
+        player-name   (checked-player-name @players props)]
+    (when (and player-name level new-level?)
       (swap! players assoc-in [player-id :current-skill] level)
       (packets/mst {:message (str "/aiset " player-name " " level)}))))
+
+(defn- new-connection! [{:body/keys [ucid player-name]}]
+  (swap! connections assoc ucid {:connection-name player-name :ucid ucid}))
 
 (defn- new-ai-player!
   "Starts tracking a newly joined AI player, assigning it a current
@@ -55,8 +65,7 @@
           :current-skill (get-in skill-presets [preset :max-skill])}))
 
 (defn- rename-players-by-ucid! [ucid player-name]
-  "IS_CPR is keyed by ucid, not player-id, so all tracked players owned by this
-  connection need renaming"
+  (swap! connections assoc-in [ucid :connection-name] player-name)
   (swap! players
          (fn [players]
            (reduce-kv (fn [players player-id player]
@@ -122,22 +131,24 @@
 
 (defn- dispatch [client
                  {:header/keys [type player-id ucid]
-                  :body/keys [player-type player-name new-ucid] :as packet}]
-  (case type
-    :npl        (when (= :ai player-type) (new-ai-player! packet @current-difficulty))
-    :pll        (swap! players dissoc player-id)
-    :plp        nil ;; player stays in the race (pit garage) - player-id is retained, nothing to update
-    :cpr        (rename-players-by-ucid! ucid player-name)
+                  :body/keys   [player-type player-name new-ucid] :as packet}]
+  (let [send! (partial client/>! client)]
+    (case type
+      :ncn        (new-connection! packet)
+      :npl        (when (= :ai player-type) (new-ai-player! packet @current-difficulty))
+      :pll        (swap! players dissoc player-id)
+      :plp        nil ;; player stays in the race (pit garage) - player-id is retained, nothing to update
+      :cnl        (swap! connections dissoc ucid)
+      :cpr        (rename-players-by-ucid! ucid player-name)
     ;; car handed to a different connection - only relevant if we're already tracking it
-    :toc        (when (contains? @players player-id)
-                  (swap! players assoc-in [player-id :ucid] new-ucid))
-    :mso        (when-let [responses (handle-aiskill-command! packet)]
-                  (run! (partial client/>! client) responses)
-                  )
-    (:lap :spx) (when-let [response (some-> @players (get player-id) update-ai-skill!)]
-                  (client/>! client response))
-    :ver        (client/>! client (packets/tiny {:request-info 1 :data :npl}))
-    nil))
+      :toc        (when (contains? @players player-id)
+                    (swap! players assoc-in [player-id :ucid] new-ucid))
+      :mso        (when-let [responses (handle-aiskill-command! packet)]
+                    (run! send! responses))
+      (:lap :spx) (when-let [response (some-> @players (get player-id) update-ai-skill!)]
+                    (send! response))
+      :ver        (send! (packets/tiny {:request-info 1 :data :npl}))
+      nil)))
 
 (defn aiskill
   "Starts the aiskill process; accepts opts with :host/:port. Returns stop fn."
@@ -163,6 +174,7 @@
 (comment
 
   @players
+  @connections
   @current-difficulty
   @volatility-override
 
