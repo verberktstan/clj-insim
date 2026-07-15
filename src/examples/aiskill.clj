@@ -3,6 +3,7 @@
   (:require [clj-insim.client :as client]
             [clj-insim.logging :as logging]
             [clj-insim.packets :as packets]
+            [clojure.set :as set]
             [clojure.string :as str]))
 
 ;; A simple example that ramps up an AI player's /aiset skill level every time
@@ -50,8 +51,8 @@
       (swap! players assoc-in [player-id :current-skill] level)
       (packets/mst {:message (str "/aiset " player-name " " level)}))))
 
-(defn- new-connection! [{:body/keys [ucid player-name]}]
-  (swap! connections assoc ucid {:connection-name player-name :ucid ucid}))
+(defn- new-connection! [{:header/keys [ucid] :body/keys [player-name admin]}]
+  (swap! connections assoc ucid {:connection-name player-name :ucid ucid :admin (= admin :admin)}))
 
 (defn- new-ai-player!
   "Starts tracking a newly joined AI player, assigning it a current
@@ -85,6 +86,13 @@
    players))
 
 (def ^:private volatility-mapping {:rare 4 :balanced 3 :frequent 2})
+(def ^:private volatility-reverse (set/map-invert volatility-mapping))
+
+(defn- current-volatility-str []
+  (if-let [override-n (:shuffle-odds-1-in @volatility-override)]
+    (when-let [vol (volatility-reverse override-n)]
+      (str " / " (name vol)))
+    nil))
 
 (defn- set-difficulty! [difficulty volatility]
   (when (contains? skill-presets difficulty)
@@ -111,23 +119,28 @@
            :argument parse-difficulty)
           (update :volatility parse-volatility)))))
 
-(defn- handle-aiskill-command! [{:body/keys [text-start message user-type]}]
+(defn- handle-aiskill-command! [ucid {:body/keys [text-start message user-type]}]
   (when (= :prefix user-type)
     (let [message                               (subs message text-start)
-          {:keys [command argument volatility]} (parse-aiskill-command message)]
+          {:keys [command argument volatility]} (parse-aiskill-command message)
+          is-admin?                             (get-in @connections [ucid :admin] false)]
       (when command
-        (apply println "Received !ai command with argument:" argument
+        (apply println "Received !ai command from UCID" ucid "admin:" is-admin? "with argument:" argument
                (when volatility ["and volatility" volatility])))
       (or
        (when (and command argument)
-         (set-difficulty! argument volatility))
+         (if is-admin?
+           (set-difficulty! argument volatility)
+           [(packets/msx {:message "Error: only admins can change AI difficulty"})]))
        (when command
-         (let [report-message (str "AI preset: "
-                                   (name @current-difficulty)
-                                   ", try: !ai <difficulty> or !ai <difficulty> <volatility>")
-               next-message   ".. difficulty choose [easy normal hard], volatility choose [frequent balanced rare]."]
-           [(packets/msx {:message report-message})
-            (packets/msx {:message next-message})]))))))
+         (let [report-message (str "AI preset: " (name @current-difficulty)
+                                   (current-volatility-str)
+                                   (when is-admin? " (type !ai <difficulty> to change)"))
+               responses      [(packets/msx {:message report-message})]
+               responses      (if is-admin?
+                                (conj responses (packets/msx {:message "difficulty choose [easy normal hard], volatility choose [frequent balanced rare]."}))
+                                responses)]
+           responses)))))
 
 (defn- dispatch [client
                  {:header/keys [type player-id ucid]
@@ -143,7 +156,7 @@
     ;; car handed to a different connection - only relevant if we're already tracking it
       :toc        (when (contains? @players player-id)
                     (swap! players assoc-in [player-id :ucid] new-ucid))
-      :mso        (when-let [responses (handle-aiskill-command! packet)]
+      :mso        (when-let [responses (handle-aiskill-command! ucid packet)]
                     (run! send! responses))
       (:lap :spx) (when-let [response (some-> @players (get player-id) update-ai-skill!)]
                     (send! response))
