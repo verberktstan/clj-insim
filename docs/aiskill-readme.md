@@ -44,3 +44,8 @@ Difficulty, volatility and skill cap can be combined in any order, e.g.:
 Changing difficulty applies to every AI player, both already in the race and
 joining later. In multiplayer, only admins can change it; in single-player,
 anyone can.
+
+## License
+
+Copyright (c) Stan Verberkt ([github.com/verberktstan/clj-insim](https://github.com/verberktstan/clj-insim)).
+Released into the public domain under the Unlicense - see `LICENSE`.

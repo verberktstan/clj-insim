@@ -57,7 +57,7 @@
     (b/copy-file {:src uber-file :target (str stage-dir "/aiskill.jar")})
     (b/copy-dir {:src-dirs [class-dir] :target-dir (str stage-dir "/classes")})
     (b/copy-file {:src "LICENSE" :target (str stage-dir "/LICENSE")})
-    (b/copy-file {:src "scripts/aiskill-readme.md" :target (str stage-dir "/README.md")})
+    (b/copy-file {:src "docs/aiskill-readme.md" :target (str stage-dir "/README.md")})
     (doseq [script (->> (io/file target-dir)
                         .listFiles
                         (filter #(-> (.getName %) runner-script?)))]
