@@ -25,6 +25,7 @@
 (defonce ^:private current-difficulty (atom :hard)) ;; tracks the active difficulty preset
 (defonce ^:private current-skill-level (atom :pro)) ;; tracks the active skill-level cap
 (defonce ^:private volatility-override (atom {:shuffle-odds-1-in nil}))
+(defonce ^:private multiplayer? (atom false)) ;; tracks IS_STA's :multi flag
 
 (defn- effective-preset-config
   "Returns `preset`'s config with :min-skill/:max-skill shifted down by the
@@ -122,6 +123,12 @@
   (when (not= :pro @current-skill-level)
     (str " / " (name @current-skill-level))))
 
+(defn- can-change-difficulty?
+  "Admins can always change difficulty. On a local/single-player session
+   (no IS_STA :multi flag) there's no admin concept, so allow it too."
+  [is-admin?]
+  (or is-admin? (not @multiplayer?)))
+
 (defn- set-difficulty! [difficulty volatility skill-level]
   (when (contains? skill-presets difficulty)
     (println "Setting difficulty to" (name difficulty))
@@ -163,23 +170,26 @@
                        (when skill-level ["and skill cap" skill-level]))))
       (or
        (when (and command argument)
-         (if is-admin?
+         (if (can-change-difficulty? is-admin?)
            (set-difficulty! argument volatility skill-level)
            [(packets/msx {:message "Error: only admins can change AI difficulty"})]))
        (when command
-         (let [report-message (str "AI preset: " (name @current-difficulty)
+         (let [can-change?    (can-change-difficulty? is-admin?)
+               report-message (str "AI preset: " (name @current-difficulty)
                                    (current-volatility-str)
                                    (current-skill-level-str)
-                                   (when is-admin? " (type !ai <difficulty> to change)"))
+                                   (when can-change? " (type !ai <difficulty> <volatility> <skill cap> to change)"))
                responses      [(packets/msx {:message report-message})]
-               responses      (if is-admin?
-                                (conj responses (packets/msx {:message "difficulty choose [easy normal hard], volatility choose [frequent balanced rare], skill cap choose [pro advanced intermediate beginner newbie]."}))
+               responses      (if can-change?
+                                (concat responses [(packets/msx {:message "difficulty choose [easy normal hard]"})
+                                                   (packets/msx {:message "volatility choose [frequent balanced rare]"})
+                                                   (packets/msx {:message "skill cap choose [pro advanced intermediate beginner newbie]."})])
                                 responses)]
            responses))))))
 
 (defn- dispatch [client
                  {:header/keys [type player-id ucid]
-                  :body/keys   [player-type player-name new-ucid] :as packet}]
+                  :body/keys   [player-type player-name new-ucid flags] :as packet}]
   (let [send! (partial client/>! client)]
     (case type
       :ncn        (new-connection! packet)
@@ -195,7 +205,9 @@
                     (run! send! responses))
       (:lap :spx) (when-let [response (some-> @players (get player-id) update-ai-skill!)]
                     (send! response))
-      :ver        (send! (packets/tiny {:request-info 1 :data :npl}))
+      :sta        (reset! multiplayer? (contains? flags :multi))
+      :ver        (run! send! [(packets/tiny {:request-info 1 :data :npl})
+                               (packets/tiny {:request-info 1 :data :sst})])
       nil)))
 
 (defn aiskill
@@ -226,14 +238,11 @@
   @current-difficulty
   @current-skill-level
   @volatility-override
+  @multiplayer?
 
   ;; To start the aiskill process
   (binding [logging/*packet-logging* false] ;; Control packet logging!
     (def aiskill-client (aiskill)))
-
-  (binding [logging/*packet-logging* false] ;; Control packet logging!
-    (def aiskill-client
-      (aiskill {:host "192.168.2.11" :port 29999})))
 
 ;; To stop the client and aiskill process, simply call the stored function
   (aiskill-client)
