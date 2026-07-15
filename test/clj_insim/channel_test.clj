@@ -20,7 +20,7 @@
 (deftest >!-test
   (testing ">!"
     (let [client {:to-lfs (a/chan 1)}]
-      (a/<!! (sut/>! client (packets/tiny)))
+      (sut/>! client (packets/tiny))
       (is (= (packets/tiny) (a/<!! (:to-lfs client)))))))
 
 (deftest <!-test

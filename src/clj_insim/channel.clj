@@ -16,7 +16,7 @@
 (defn >!
   "(Async) put packet on the channel for sending to LFS."
   [client packet]
-  (a/go (a/>! (:to-lfs client) packet)))
+  (a/put! (:to-lfs client) packet))
 
 (defn <!
   "(Ascync) take packet from the channel for receiving from LFS."

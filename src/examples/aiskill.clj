@@ -130,18 +130,19 @@
   (or is-admin? (not @multiplayer?)))
 
 (defn- set-difficulty! [difficulty volatility skill-level]
-  (when (contains? skill-presets difficulty)
-    (println "Setting difficulty to" (name difficulty))
-    (println "Setting volatility to" (or (some-> volatility name) "default"))
-    (println "Setting skill cap to" (or (some-> skill-level name) "pro"))
-    (reset! current-difficulty difficulty)
-    (reset! current-skill-level (or skill-level :pro))
-    (swap! players override-player-skills difficulty nil)
-    (swap! players clamp-player-skills (:max-skill (effective-preset-config difficulty)))
-    (reset! volatility-override {:shuffle-odds-1-in (get volatility-mapping volatility)}) ;; Could be nil or a keyword
-    [(packets/mst {:message (str "ai difficulty set to " (name difficulty))})
-     (packets/mst {:message (str "ai volatility set to " (or (some-> volatility name) "default"))})
-     (packets/mst {:message (str "ai skill cap set to " (or (some-> skill-level name) "pro"))})]))
+  (let [d (name difficulty)
+        v (or (some-> volatility name) "default")
+        c (or (some-> skill-level name) "pro")]
+    (when (contains? skill-presets difficulty)
+      (println "Setting difficulty to" d)
+      (println "Setting volatility to" v)
+      (println "Setting skill cap to" c)
+      (reset! current-difficulty difficulty)
+      (reset! current-skill-level (or skill-level :pro))
+      (swap! players override-player-skills difficulty nil)
+      (swap! players clamp-player-skills (:max-skill (effective-preset-config difficulty)))
+      (reset! volatility-override {:shuffle-odds-1-in (get volatility-mapping volatility)}) ;; Could be nil or a keyword
+      [(packets/mst {:message (str "ai difficulty = " d ", volatility = " v ", skill cap = " c)})])))
 
 (def parse-difficulty (comp #{:hard :normal :easy} keyword))
 (def parse-volatility (comp #{:rare :balanced :frequent} keyword))
