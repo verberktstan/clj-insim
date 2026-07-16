@@ -18,7 +18,13 @@
    :hard   {:min-skill 4 :max-skill 5 :shuffle-odds-1-in 4}})
 
 ;; Shifts a preset's :min-skill/:max-skill down from the "pro" (no shift) baseline
-(def ^:private skill-level-mapping {:pro 0 :advanced 1 :intermediate 2 :beginner 3 :newbie 4})
+(def ^:private skill-level-mapping
+  {:pro 0 :quick 1 :ok 2 :learner 3 :beginner 4
+   5 0 4 1 3 2 2 3 1 4})
+
+(def ^:private skill-level-display
+  {:pro "pro/5" :quick "quick/4" :ok "ok/3" :learner "learner/2" :beginner "beginner/1"
+   5 "pro/5" 4 "quick/4" 3 "ok/3" 2 "learner/2" 1 "beginner/1"})
 
 (defonce ^:private players (atom {})) ;; player-id -> {:player-name :player-id :ucid :preset :current-skill}
 (defonce ^:private connections (atom {})) ;; ucid -> {:connection-name :ucid}
@@ -116,12 +122,12 @@
 (defn- current-volatility-str []
   (if-let [override-n (:shuffle-odds-1-in @volatility-override)]
     (when-let [vol (volatility-reverse override-n)]
-      (str " / " (name vol)))
+      (str ", " (name vol)))
     nil))
 
 (defn- current-skill-level-str []
   (when (not= :pro @current-skill-level)
-    (str " / " (name @current-skill-level))))
+    (str ", " (get skill-level-display @current-skill-level))))
 
 (defn- can-change-difficulty?
   "Admins can always change difficulty. On a local/single-player session
@@ -132,7 +138,7 @@
 (defn- set-difficulty! [difficulty volatility skill-level]
   (let [d (name difficulty)
         v (or (some-> volatility name) "default")
-        c (or (some-> skill-level name) "pro")]
+        c (get skill-level-display skill-level "pro/5")]
     (when (contains? skill-presets difficulty)
       (println "Setting difficulty to" d)
       (println "Setting volatility to" v)
@@ -146,7 +152,14 @@
 
 (def parse-difficulty (comp #{:hard :normal :easy} keyword))
 (def parse-volatility (comp #{:rare :balanced :frequent} keyword))
-(def parse-skill-level (comp #{:pro :advanced :intermediate :beginner :newbie} keyword))
+(defn- parse-skill-level [s]
+  (when s
+    (let [as-keyword (keyword s)]
+      (if (contains? #{:pro :quick :ok :learner :beginner} as-keyword)
+        as-keyword
+        (let [as-number (try (Long/parseLong s) (catch Exception _))]
+          (when (contains? #{5 4 3 2 1} as-number)
+            as-number))))))
 
 (defn- parse-aiskill-command [s]
   (when (string? s)
@@ -184,7 +197,7 @@
                responses      (if can-change?
                                 (concat responses [(packets/msx {:message "difficulty choose [easy normal hard]"})
                                                    (packets/msx {:message "volatility choose [frequent balanced rare]"})
-                                                   (packets/msx {:message "skill cap choose [pro advanced intermediate beginner newbie]."})])
+                                                   (packets/msx {:message "skill cap choose [pro/5 quick/4 ok/3 learner/2 beginner/1]."})])
                                 responses)]
            responses))))))
 
