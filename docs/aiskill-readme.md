@@ -4,6 +4,8 @@ Automatically ramps up AI drivers' `/aiset` skill level as they complete laps
 or split points, based on a difficulty preset. Connects to a running Live For
 Speed (LFS) instance via InSim.
 
+**Version**: v0.4
+
 ## Requirements
 
 - Java (JRE 11+) installed and on your `PATH`.
@@ -33,12 +35,12 @@ Type these in the LFS chat:
 - `!ai <difficulty> <volatility>` - also set how often skill randomly
   shuffles instead of just increasing. Choices: `frequent`, `balanced`, `rare`.
 - `!ai <difficulty> <skill cap>` - also cap the maximum skill level.
-  Choices: `pro`, `advanced`, `intermediate`, `beginner`, `newbie`.
+  Choices: `pro`/`5`, `quick`/`4`, `ok`/`3`, `learner`/`2`, `beginner`/`1`.
 
 Difficulty, volatility and skill cap can be combined in any order, e.g.:
 
 ```
-!ai hard rare advanced
+!ai hard rare quick
 ```
 
 Changing difficulty applies to every AI player, both already in the race and
