@@ -77,15 +77,17 @@
 (defn- new-ai-player!
   "Starts tracking a newly joined AI player, assigning it a current
    difficulty preset and seeding its skill at that preset's `:max-skill`."
-  [{:header/keys [player-id] :body/keys [player-name ucid]} preset]
-  (swap! players assoc player-id
-         {:player-name   player-name
-          :player-id     player-id ;; duplicated so `update-ai-skill!` can `swap!` by id from the player map alone
-          :ucid          ucid ;; tracked so a later IS_CPR rename (keyed by ucid, not player-id) can find this player
-          :preset        preset
-          :current-skill (:max-skill (effective-preset-config preset))}))
+  [{:header/keys [player-id] :body/keys [player-type player-name ucid]} preset]
+  (when (= :ai player-type)
+    (swap! players assoc player-id
+           {:player-name   player-name
+            :player-id     player-id ;; duplicated so `update-ai-skill!` can `swap!` by id from the player map alone
+            :ucid          ucid ;; tracked so a later IS_CPR rename (keyed by ucid, not player-id) can find this player
+            :preset        preset
+            :current-skill (:max-skill (effective-preset-config preset))})))
 
-(defn- rename-players-by-ucid! [ucid player-name]
+(defn- rename-players-by-ucid!
+  [{:header/keys [ucid] :body/keys [player-name]}]
   (swap! connections assoc-in [ucid :connection-name] player-name)
   (swap! players
          (fn [players]
@@ -173,7 +175,8 @@
          :volatility  (some parse-volatility args)
          :skill-level (some parse-skill-level args)}))))
 
-(defn- handle-aiskill-command! [ucid {:body/keys [text-start message user-type]}]
+(defn- handle-aiskill-command!
+  [{:header/keys [ucid] :body/keys [text-start message user-type]}]
   (when (= :prefix user-type)
     (let [message                                            (subs message text-start)
           {:keys [command argument volatility skill-level]} (parse-aiskill-command message)
@@ -203,19 +206,19 @@
 
 (defn- dispatch [client
                  {:header/keys [type player-id ucid]
-                  :body/keys   [player-type player-name new-ucid flags] :as packet}]
+                  :body/keys   [new-ucid flags] :as packet}]
   (let [send! (partial client/>! client)]
     (case type
       :ncn        (new-connection! packet)
-      :npl        (when (= :ai player-type) (new-ai-player! packet @current-difficulty))
+      :npl        (new-ai-player! packet @current-difficulty)
       :pll        (swap! players dissoc player-id)
       :plp        nil ;; player stays in the race (pit garage) - player-id is retained, nothing to update
       :cnl        (swap! connections dissoc ucid)
-      :cpr        (rename-players-by-ucid! ucid player-name)
+      :cpr        (rename-players-by-ucid! packet)
     ;; car handed to a different connection - only relevant if we're already tracking it
       :toc        (when (contains? @players player-id)
                     (swap! players assoc-in [player-id :ucid] new-ucid))
-      :mso        (when-let [responses (handle-aiskill-command! ucid packet)]
+      :mso        (when-let [responses (handle-aiskill-command! packet)]
                     (run! send! responses))
       (:lap :spx) (when-let [response (some-> @players (get player-id) update-ai-skill!)]
                     (send! response))
