@@ -4,7 +4,7 @@ Automatically ramps up AI drivers' `/aiset` skill level as they complete laps
 or split points, based on a difficulty preset. Connects to a running Live For
 Speed (LFS) instance via InSim.
 
-**Version**: v0.4
+**Version**: v0.5
 
 ## Requirements
 
@@ -46,6 +46,19 @@ Difficulty, volatility and skill cap can be combined in any order, e.g.:
 Changing difficulty applies to every AI player, both already in the race and
 joining later. In multiplayer, only admins can change it; in single-player,
 anyone can.
+
+## Changelog
+
+### v0.5
+- Using red/white colorscheme for messages
+- Simplified dispatch logic for command parsing
+
+### v0.4
+- Improved skill cap argument handling - now accepts both shorthand (`pro`/`quick`/`ok`/`learner`/`beginner`) and numeric (1-5) values
+
+### v0.2
+- Initial public release
+
 
 ## License
 
