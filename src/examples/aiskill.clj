@@ -23,8 +23,8 @@
    5 0 4 1 3 2 2 3 1 4})
 
 (def ^:private skill-level-display
-  {:pro "pro/5" :quick "quick/4" :ok "ok/3" :learner "learner/2" :beginner "beginner/1"
-   5 "pro/5" 4 "quick/4" 3 "ok/3" 2 "learner/2" 1 "beginner/1"})
+  {:pro "5/pro" :quick "4/quick" :ok  "3/ok" :learner "2/learner" :beginner "1/beginner"
+   5 "5/pro" 4 "4/quick" 3 "3/ok" 2 "2/learner" 1 "1/beginner"})
 
 (defonce ^:private players (atom {})) ;; player-id -> {:player-name :player-id :ucid :preset :current-skill}
 (defonce ^:private connections (atom {})) ;; ucid -> {:connection-name :ucid}
@@ -137,10 +137,16 @@
   [is-admin?]
   (or is-admin? (not @multiplayer?)))
 
+(defn color-code [k]
+  (get {:black "^0" :red "^1" :green "^2" :yellow "^3" :blue "^4" :pink "^5" :cyan "^6" :white "^7" :default "^8"} (keyword k) "^8"))
+
+(defn str-with-color [k & args]
+  (apply str (color-code k) args))
+
 (defn- set-difficulty! [difficulty volatility skill-level]
   (let [d (name difficulty)
         v (or (some-> volatility name) "default")
-        c (get skill-level-display skill-level "pro/5")]
+        c (get skill-level-display skill-level "5/pro")]
     (when (contains? skill-presets difficulty)
       (println "Setting difficulty to" d)
       (println "Setting volatility to" v)
@@ -150,7 +156,12 @@
       (swap! players override-player-skills difficulty nil)
       (swap! players clamp-player-skills (:max-skill (effective-preset-config difficulty)))
       (reset! volatility-override {:shuffle-odds-1-in (get volatility-mapping volatility)}) ;; Could be nil or a keyword
-      [(packets/mst {:message (str "ai difficulty = " d ", volatility = " v ", skill cap = " c)})])))
+      [(packets/msx {:message (str-with-color :red "ai difficulty = "
+                                              (str-with-color :white d)
+                                              (str-with-color :red " volatility = ")
+                                              (str-with-color :white v)
+                                              (str-with-color :red " skill cap = ")
+                                              (str-with-color :white c))})])))
 
 (def parse-difficulty (comp #{:hard :normal :easy} keyword))
 (def parse-volatility (comp #{:rare :balanced :frequent} keyword))
@@ -189,18 +200,18 @@
        (when (and command argument)
          (if (can-change-difficulty? is-admin?)
            (set-difficulty! argument volatility skill-level)
-           [(packets/msx {:message "Error: only admins can change AI difficulty"})]))
+           [(packets/msx {:message (str-with-color :red "Error: only admins can change AI difficulty")})]))
        (when command
          (let [can-change?    (can-change-difficulty? is-admin?)
-               report-message (str "AI preset: " (name @current-difficulty)
-                                   (current-volatility-str)
-                                   (current-skill-level-str)
-                                   (when can-change? " (type !ai <difficulty> <volatility> <skill cap> to change)"))
+               report-message (str-with-color :red "AI preset: " (name @current-difficulty)
+                                              (current-volatility-str)
+                                              (current-skill-level-str)
+                                              (when can-change? " (type !ai <difficulty> <volatility> <skill cap> to change)"))
                responses      [(packets/msx {:message report-message})]
                responses      (if can-change?
-                                (concat responses [(packets/msx {:message "difficulty choose [easy normal hard]"})
-                                                   (packets/msx {:message "volatility choose [frequent balanced rare]"})
-                                                   (packets/msx {:message "skill cap choose [pro/5 quick/4 ok/3 learner/2 beginner/1]."})])
+                                (concat responses [(packets/msx {:message (str-with-color :red "difficulty: " (str-with-color :white "[easy | normal | hard]"))})
+                                                   (packets/msx {:message (str-with-color :red "volatility: " (str-with-color :white "[frequent | balanced | rare]"))})
+                                                   (packets/msx {:message (str-with-color :red "skill cap: " (str-with-color :white "[5/pro | 4/quick | 3/ok | 2/learner | 1/beginner]"))})])
                                 responses)]
            responses))))))
 
