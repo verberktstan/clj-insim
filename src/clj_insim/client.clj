@@ -15,25 +15,9 @@
 (defonce ^:private players (atom {}))       ;; player-id -> full packet
 (defonce ^:private connections (atom {}))   ;; ucid -> full packet
 
-(defn >!!
-  "(Blocking) put packet on the channel for sending to LFS."
-  [client packet]
-  (channel/>!! client packet))
+(def >!! channel/>!!)
 
-(defn <!!
-  "(Blocking) take packet from the channel for receiving from LFS."
-  [client packet]
-  (channel/<!! client packet))
-
-(defn >!
-  "(Async) put packet on the channel for sending to LFS."
-  [client packet]
-  (channel/>! client packet))
-
-(defn <!
-  "(Ascync) take packet from the channel for receiving from LFS."
-  [client packet]
-  (channel/<! client packet))
+(def >! channel/>!)
 
 (defn get-game-state
   "Returns the latest IS_STA packet received from LFS, or nil if not yet received.
@@ -120,18 +104,18 @@
     :toc (when (contains? @players player-id)
            (swap! players assoc-in [player-id :header/ucid] new-ucid))
     :ver (when to-lfs
-           (run! (partial channel/>!! client)
+           (run! (partial >!! client)
                  [(packets/tiny {:request-info 1 :data :sst})
                   (packets/tiny {:request-info 1 :data :npl})
                   (packets/tiny {:request-info 1 :data :ncn})]))
     nil)
   (when (packet/maintain-connection? packet)
-    (channel/>!! client (packets/tiny)))
+    (>!! client (packets/tiny)))
   (logging/print-verbose packet))
 
 (defn- close-fn [{:keys [running? from-lfs to-lfs input-stream output-stream socket] :as client}]
   (when @running?
-    (channel/>!! client (packets/tiny {:data :close}))
+    (>!! client (packets/tiny {:data :close}))
     (channel/close! client)
     (Thread/sleep 10) ;; TODO, fix this!
     (reset! running? false)
