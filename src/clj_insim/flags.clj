@@ -15,6 +15,8 @@
 (def ISI
   [:spare-0 :spare-1 :local :mso-cols :nlp :mci :con :obh :hlv :axm-load :axm-edit :req-join])
 
+(def NCN [:unknown-0 :unknown-1 :remote])
+
 (def OBH [:layout :can-move :was-moving :on-spot])
 
 (def PIT_WORK

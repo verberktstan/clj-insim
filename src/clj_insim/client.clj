@@ -84,6 +84,18 @@
               :camera-mode in-game-cam
               :viewed-player-id (when (pos? view-player-id) view-player-id)})))
 
+(defn- format-connection
+  "Converts the raw IS_NCN packet to a user-friendly map with :player/ namespaced keys.
+   admin is already parsed to :admin or nil; coerced to boolean.
+   Returns nil if packet is nil."
+  [raw-packet]
+  (when raw-packet
+    (let [{:body/keys [user-name player-name admin flags]} raw-packet]
+      #:player{:user-name user-name
+               :name player-name
+               :admin? (boolean admin)
+               :flags flags})))
+
 (defn- rename-player-by-ucid [players ucid player-name]
   (reduce-kv (fn [players pid player]
                (cond-> players
@@ -98,12 +110,12 @@
   [{:keys [to-lfs] :as client} {:header/keys [type ucid player-id] :body/keys [player-name new-ucid] :as packet}]
   (case type
     :sta (reset! game-state (format-game-state packet))
-    :ncn (swap! connections assoc ucid packet)
+    :ncn (swap! connections assoc ucid (format-connection packet))
     :npl (swap! players assoc player-id packet)
     :pll (swap! players dissoc player-id)
     :cnl (swap! connections dissoc ucid)
     :cpr (do
-           (swap! connections assoc-in [ucid :body/player-name] player-name)
+           (swap! connections assoc-in [ucid :player/name] player-name)
            (swap! players rename-player-by-ucid ucid player-name))
     :toc (when (contains? @players player-id)
            (swap! players assoc-in [player-id :header/ucid] new-ucid))
