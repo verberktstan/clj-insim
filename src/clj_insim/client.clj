@@ -11,6 +11,8 @@
             [clojure.core.async :as a]
             [clojure.java.io :as io]))
 
+(defonce ^:private game-state (atom nil))
+
 (defn >!!
   "(Blocking) put packet on the channel for sending to LFS."
   [client packet]
@@ -31,10 +33,21 @@
   [client packet]
   (channel/<! client packet))
 
+(defn get-game-state
+  "Returns the latest IS_STA packet received from LFS, or nil if not yet received.
+   Contains game state info like track, weather, player counts, race status, etc."
+  []
+  @game-state)
+
 (defn- dispatch
   "Dispatch is the entrypoint for automatic responses to certain packets, like
    the maintain connection concern."
-  [client packet]
+  [{:keys [to-lfs] :as client} {:header/keys [type] :as packet}]
+  (case type
+    :sta (reset! game-state packet)
+    :ver (when to-lfs
+           (channel/>!! to-lfs (packets/tiny {:request-info 1 :data :sst})))
+    nil)
   (when (packet/maintain-connection? packet)
     (channel/>!! client (packets/tiny)))
   (logging/print-verbose packet))
@@ -126,9 +139,9 @@
 
 (comment
   (def lfs-client (start))
-  (def lfs-client (start {:host "192.168.2.11" :port 29999}))
   (stop lfs-client)
 
+  (get-game-state)
   ;; In order to set verbose logging (log all incoming packets)
   (reset! logging/VERBOSE true)
 
