@@ -37,7 +37,7 @@
 
 (defn get-game-state
   "Returns the latest IS_STA packet received from LFS, or nil if not yet received.
-   Contains game state info like track, weather, player counts, race status, etc."
+   Contains game state info like track, wind, player counts, race status, etc."
   []
   @game-state)
 
@@ -61,6 +61,29 @@
   [ucid]
   (get @connections ucid))
 
+(defn- format-game-state
+  "Converts the raw IS_STA packet to a user-friendly map with :state/ namespaced keys.
+   race-in-progress is already parsed to :no-race, :race, or :qualifying.
+   Returns nil if packet is nil."
+  [raw-packet]
+  (when raw-packet
+    (let [{:body/keys [replay-speed flags in-game-cam view-player-id
+                       num-players num-connections num-finished race-in-progress
+                       qualify-minutes race-laps track wind]} raw-packet]
+      #:state{:race-state race-in-progress
+              :flags flags
+              :player-count num-players
+              :connection-count num-connections
+              :finished-count num-finished
+              :session-duration-minutes qualify-minutes
+              :total-laps race-laps
+              :track track
+              ;; :weather weather ; NOTE: No documented enum!
+              :wind wind
+              :replay-speed replay-speed
+              :camera-mode in-game-cam
+              :viewed-player-id (when (pos? view-player-id) view-player-id)})))
+
 (defn- rename-player-by-ucid [players ucid player-name]
   (reduce-kv (fn [players pid player]
                (cond-> players
@@ -74,7 +97,7 @@
    the maintain connection concern."
   [{:keys [to-lfs] :as client} {:header/keys [type ucid player-id] :body/keys [player-name new-ucid] :as packet}]
   (case type
-    :sta (reset! game-state packet)
+    :sta (reset! game-state (format-game-state packet))
     :ncn (swap! connections assoc ucid packet)
     :npl (swap! players assoc player-id packet)
     :pll (swap! players dissoc player-id)
