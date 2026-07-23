@@ -12,6 +12,8 @@
             [clojure.java.io :as io]))
 
 (defonce ^:private game-state (atom nil))
+(defonce ^:private players (atom {}))       ;; player-id -> full packet
+(defonce ^:private connections (atom {}))   ;; ucid -> full packet
 
 (defn >!!
   "(Blocking) put packet on the channel for sending to LFS."
@@ -39,14 +41,54 @@
   []
   @game-state)
 
+(defn get-players
+  "Returns map of all players: player-id -> full IS_NPL packet"
+  []
+  @players)
+
+(defn get-player
+  "Returns IS_NPL packet for player by player-id, or nil"
+  [player-id]
+  (get @players player-id))
+
+(defn get-connections
+  "Returns map of all connections: ucid -> full IS_NCN packet"
+  []
+  @connections)
+
+(defn get-connection
+  "Returns IS_NCN packet for connection by ucid, or nil"
+  [ucid]
+  (get @connections ucid))
+
+(defn- rename-player-by-ucid [players ucid player-name]
+  (reduce-kv (fn [players pid player]
+               (cond-> players
+                 (= ucid (get-in player [:header/ucid]))
+                 (assoc-in [pid :body/player-name] player-name)))
+             players
+             players))
+
 (defn- dispatch
   "Dispatch is the entrypoint for automatic responses to certain packets, like
    the maintain connection concern."
-  [{:keys [to-lfs] :as client} {:header/keys [type] :as packet}]
+  [{:keys [to-lfs] :as client} {:header/keys [type ucid player-id] :body/keys [player-name new-ucid] :as packet}]
   (case type
     :sta (reset! game-state packet)
+    :ncn (swap! connections assoc ucid packet)
+    :npl (swap! players assoc player-id packet)
+    :pll (swap! players dissoc player-id)
+    :cnl (swap! connections dissoc ucid)
+    :cpr (do
+           (swap! connections assoc-in [ucid :body/player-name] player-name)
+           (swap! players rename-player-by-ucid ucid player-name))
+    :toc (when (contains? @players player-id)
+           (swap! players assoc-in [player-id :header/ucid] new-ucid))
     :ver (when to-lfs
-           (channel/>!! to-lfs (packets/tiny {:request-info 1 :data :sst})))
+           (run! (partial channel/>!! client)
+                 [(packets/tiny {:request-info 1 :data :sst})
+                  (packets/tiny {:request-info 1 :data :npl})
+                  (packets/tiny {:request-info 1 :data :ncn})]))
     nil)
   (when (packet/maintain-connection? packet)
     (channel/>!! client (packets/tiny)))
@@ -142,6 +184,8 @@
   (stop lfs-client)
 
   (get-game-state)
+  (get-players)
+  (get-connections)
   ;; In order to set verbose logging (log all incoming packets)
   (reset! logging/VERBOSE true)
 
